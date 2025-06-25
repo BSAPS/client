@@ -1,0 +1,912 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>CCTV Remote Client - Professional Monitoring System</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>:/icons/camera.png</normaloff>:/icons/camera.png</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">/* 메인 윈도우 스타일 */
+QMainWindow {
+    background-color: #2b2b2b;
+    color: #ffffff;
+}
+
+/* 탭 위젯 스타일 */
+QTabWidget::pane {
+    border: 2px solid #555555;
+    background-color: #3c3c3c;
+    border-radius: 8px;
+}
+
+QTabWidget::tab-bar {
+    alignment: center;
+}
+
+QTabBar::tab {
+    background-color: #555555;
+    color: #ffffff;
+    padding: 12px 20px;
+    margin: 2px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+QTabBar::tab:selected {
+    background-color: #0078d4;
+    color: #ffffff;
+}
+
+QTabBar::tab:hover {
+    background-color: #666666;
+}
+
+/* 그룹박스 스타일 */
+QGroupBox {
+    font-weight: bold;
+    font-size: 12px;
+    color: #ffffff;
+    border: 2px solid #555555;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 8px 0 8px;
+    color: #0078d4;
+}
+
+/* 버튼 스타일 */
+QPushButton {
+    background-color: #0078d4;
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 6px;
+    min-height: 25px;
+}
+
+QPushButton:hover {
+    background-color: #106ebe;
+}
+
+QPushButton:pressed {
+    background-color: #005a9e;
+}
+
+QPushButton:disabled {
+    background-color: #666666;
+    color: #999999;
+}
+
+/* 특별한 버튼들 */
+QPushButton#connectButton {
+    background-color: #107c10;
+}
+
+QPushButton#connectButton:hover {
+    background-color: #0e6e0e;
+}
+
+QPushButton#disconnectButton {
+    background-color: #d13438;
+}
+
+QPushButton#disconnectButton:hover {
+    background-color: #b52d32;
+}
+
+/* LCD 제어 버튼들 */
+QPushButton[objectName*=&quot;lcd&quot;] {
+    background-color: #ff8c00;
+    min-height: 40px;
+    font-size: 12px;
+}
+
+QPushButton[objectName*=&quot;lcd&quot;]:hover {
+    background-color: #ff7700;
+}
+
+/* 입력 필드 스타일 */
+QLineEdit, QSpinBox {
+    background-color: #4c4c4c;
+    border: 2px solid #666666;
+    border-radius: 4px;
+    padding: 8px;
+    color: #ffffff;
+    font-size: 11px;
+}
+
+QLineEdit:focus, QSpinBox:focus {
+    border-color: #0078d4;
+}
+
+/* 라벨 스타일 */
+QLabel {
+    color: #ffffff;
+    font-size: 11px;
+}
+
+QLabel[objectName*=&quot;status&quot;] {
+    font-weight: bold;
+    font-size: 12px;
+}
+
+QLabel[objectName*=&quot;title&quot;] {
+    font-size: 14px;
+    font-weight: bold;
+    color: #0078d4;
+}
+
+/* 텍스트 에디트 (로그) 스타일 */
+QTextEdit {
+    background-color: #1e1e1e;
+    border: 2px solid #555555;
+    border-radius: 6px;
+    color: #ffffff;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 10px;
+}
+
+/* 슬라이더 스타일 */
+QSlider::groove:horizontal {
+    border: 1px solid #999999;
+    height: 8px;
+    background: #4c4c4c;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal {
+    background: #0078d4;
+    border: 1px solid #5c5c5c;
+    width: 18px;
+    margin: -2px 0;
+    border-radius: 9px;
+}
+
+QSlider::handle:horizontal:hover {
+    background: #106ebe;
+}
+
+/* 스크롤 영역 스타일 */
+QScrollArea {
+    border: 2px solid #555555;
+    border-radius: 6px;
+    background-color: #2b2b2b;
+}
+
+QScrollBar:vertical {
+    background: #3c3c3c;
+    width: 12px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical {
+    background: #0078d4;
+    border-radius: 6px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #106ebe;
+}</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="mainVerticalLayout">
+    <property name="spacing">
+     <number>10</number>
+    </property>
+    <property name="leftMargin">
+     <number>15</number>
+    </property>
+    <property name="topMargin">
+     <number>15</number>
+    </property>
+    <property name="rightMargin">
+     <number>15</number>
+    </property>
+    <property name="bottomMargin">
+     <number>10</number>
+    </property>
+    <item>
+     <widget class="QFrame" name="headerFrame">
+      <property name="styleSheet">
+       <string notr="true">QFrame#headerFrame {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                               stop: 0 #0078d4, stop: 1 #005a9e);
+    border-radius: 10px;
+    border: 2px solid #004578;
+}</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Shape::StyledPanel</enum>
+      </property>
+      <layout class="QHBoxLayout" name="headerLayout">
+       <property name="leftMargin">
+        <number>20</number>
+       </property>
+       <property name="topMargin">
+        <number>15</number>
+       </property>
+       <property name="rightMargin">
+        <number>20</number>
+       </property>
+       <property name="bottomMargin">
+        <number>15</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="titleLabel">
+         <property name="styleSheet">
+          <string notr="true">QLabel {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+}</string>
+         </property>
+         <property name="text">
+          <string>🎥 CCTV Remote Monitoring System</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="headerSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="connectionStatusIcon">
+         <property name="styleSheet">
+          <string notr="true">font-size: 16px;</string>
+         </property>
+         <property name="text">
+          <string>🔴</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="dateTimeLabel">
+         <property name="styleSheet">
+          <string notr="true">QLabel {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+}</string>
+         </property>
+         <property name="text">
+          <string>2024-01-01 12:00:00</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QTabWidget" name="mainTabWidget">
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <widget class="QWidget" name="networkTab">
+       <attribute name="title">
+        <string>🌐 Network Connection</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="networkTabLayout">
+        <property name="spacing">
+         <number>15</number>
+        </property>
+        <item>
+         <widget class="QGroupBox" name="connectionGroupBox">
+          <property name="title">
+           <string>Server Connection Settings</string>
+          </property>
+          <layout class="QGridLayout" name="connectionGridLayout">
+           <property name="horizontalSpacing">
+            <number>15</number>
+           </property>
+           <property name="verticalSpacing">
+            <number>10</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QLabel" name="hostLabel">
+             <property name="styleSheet">
+              <string notr="true">font-weight: bold;</string>
+             </property>
+             <property name="text">
+              <string>🖥️ Server Address:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="hostLineEdit">
+             <property name="text">
+              <string>192.168.1.100</string>
+             </property>
+             <property name="placeholderText">
+              <string>Enter Raspberry Pi IP address (e.g., 192.168.1.100)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="portLabel">
+             <property name="styleSheet">
+              <string notr="true">font-weight: bold;</string>
+             </property>
+             <property name="text">
+              <string>🔌 Port Number:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="portSpinBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>65535</number>
+             </property>
+             <property name="value">
+              <number>8888</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="2">
+            <layout class="QHBoxLayout" name="connectionButtonLayout">
+             <item>
+              <widget class="QPushButton" name="connectButton">
+               <property name="text">
+                <string>🔗 Connect to Server</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="disconnectButton">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>❌ Disconnect</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="3" column="0" colspan="2">
+            <widget class="QLabel" name="connectionStatusLabel">
+             <property name="styleSheet">
+              <string notr="true">QLabel {
+    color: #d13438;
+    font-weight: bold;
+    font-size: 13px;
+    padding: 8px;
+    background-color: rgba(209, 52, 56, 0.1);
+    border-radius: 4px;
+}</string>
+             </property>
+             <property name="text">
+              <string>Status: Disconnected</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="networkStatsGroupBox">
+          <property name="title">
+           <string>Network Statistics</string>
+          </property>
+          <layout class="QGridLayout" name="statsGridLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="pingLabel">
+             <property name="text">
+              <string>📡 Ping:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="pingValueLabel">
+             <property name="styleSheet">
+              <string notr="true">color: #00ff00; font-weight: bold;</string>
+             </property>
+             <property name="text">
+              <string>-- ms</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="dataRateLabel">
+             <property name="text">
+              <string>📊 Data Rate:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLabel" name="dataRateValueLabel">
+             <property name="styleSheet">
+              <string notr="true">color: #00ff00; font-weight: bold;</string>
+             </property>
+             <property name="text">
+              <string>-- KB/s</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <spacer name="networkTabSpacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="videoTab">
+       <attribute name="title">
+        <string>📹 Live Video Stream</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="videoTabLayout">
+        <item>
+         <widget class="QFrame" name="videoFrame">
+          <property name="styleSheet">
+           <string notr="true">QFrame#videoFrame {
+    background-color: #000000;
+    border: 3px solid #555555;
+    border-radius: 10px;
+}</string>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Shape::StyledPanel</enum>
+          </property>
+          <layout class="QVBoxLayout" name="videoFrameLayout">
+           <item>
+            <widget class="QLabel" name="videoLabel">
+             <property name="styleSheet">
+              <string notr="true">QLabel {
+    color: #888888;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: transparent;
+}</string>
+             </property>
+             <property name="text">
+              <string>📺 No Video Stream
+Click 'Start Streaming' to begin</string>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="videoControlGroupBox">
+          <property name="title">
+           <string>Video Stream Controls</string>
+          </property>
+          <layout class="QHBoxLayout" name="videoControlLayout">
+           <item>
+            <widget class="QPushButton" name="startStreamButton">
+             <property name="styleSheet">
+              <string notr="true">QPushButton {
+    background-color: #107c10;
+    min-height: 35px;
+    font-size: 12px;
+}
+QPushButton:hover {
+    background-color: #0e6e0e;
+}</string>
+             </property>
+             <property name="text">
+              <string>▶️ Start Streaming</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="stopStreamButton">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">QPushButton {
+    background-color: #d13438;
+    min-height: 35px;
+    font-size: 12px;
+}
+QPushButton:hover {
+    background-color: #b52d32;
+}</string>
+             </property>
+             <property name="text">
+              <string>⏹️ Stop Streaming</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="videoControlSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="videoStatusLabel">
+             <property name="styleSheet">
+              <string notr="true">QLabel {
+    color: #d13438;
+    font-weight: bold;
+    padding: 8px;
+    background-color: rgba(209, 52, 56, 0.1);
+    border-radius: 4px;
+}</string>
+             </property>
+             <property name="text">
+              <string>Status: Stopped</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="fpsLabel">
+             <property name="styleSheet">
+              <string notr="true">QLabel {
+    color: #0078d4;
+    font-weight: bold;
+    padding: 8px;
+    background-color: rgba(0, 120, 212, 0.1);
+    border-radius: 4px;
+}</string>
+             </property>
+             <property name="text">
+              <string>FPS: 0</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="imageTab">
+       <attribute name="title">
+        <string>🖼️ Captured Images</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="imageTabLayout">
+        <item>
+         <widget class="QLabel" name="imageTabPlaceholder">
+          <property name="styleSheet">
+           <string notr="true">color: #888888; font-size: 14px;</string>
+          </property>
+          <property name="text">
+           <string>📷 Image Viewer will be loaded here programmatically</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="controlTab">
+       <attribute name="title">
+        <string>🎛️ Remote Control</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="controlTabLayout">
+        <property name="spacing">
+         <number>20</number>
+        </property>
+        <item>
+         <widget class="QGroupBox" name="captureGroupBox">
+          <property name="title">
+           <string>Image Capture Control</string>
+          </property>
+          <layout class="QVBoxLayout" name="captureLayout">
+           <item>
+            <widget class="QPushButton" name="captureButton">
+             <property name="styleSheet">
+              <string notr="true">QPushButton {
+    background-color: #8a2be2;
+    min-height: 45px;
+    font-size: 14px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #7b1fa2;
+}</string>
+             </property>
+             <property name="text">
+              <string>📸 Capture Image from Server</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="lcdGroupBox">
+          <property name="title">
+           <string>LCD Display Control Panel</string>
+          </property>
+          <layout class="QGridLayout" name="lcdGridLayout">
+           <property name="spacing">
+            <number>15</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QPushButton" name="lcd1Button">
+             <property name="styleSheet">
+              <string notr="true">QPushButton {
+    background-color: #ff6b35;
+    min-height: 50px;
+    font-size: 13px;
+    font-weight: bold;
+    border-radius: 8px;
+}
+QPushButton:hover {
+    background-color: #e55a2b;
+}</string>
+             </property>
+             <property name="text">
+              <string>💡 LCD 1 (OFF)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QPushButton" name="lcd2Button">
+             <property name="styleSheet">
+              <string notr="true">QPushButton {
+    background-color: #ff6b35;
+    min-height: 50px;
+    font-size: 13px;
+    font-weight: bold;
+    border-radius: 8px;
+}
+QPushButton:hover {
+    background-color: #e55a2b;
+}</string>
+             </property>
+             <property name="text">
+              <string>💡 LCD 2 (OFF)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QPushButton" name="lcd3Button">
+             <property name="styleSheet">
+              <string notr="true">QPushButton {
+    background-color: #ff6b35;
+    min-height: 50px;
+    font-size: 13px;
+    font-weight: bold;
+    border-radius: 8px;
+}
+QPushButton:hover {
+    background-color: #e55a2b;
+}</string>
+             </property>
+             <property name="text">
+              <string>💡 LCD 3 (OFF)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QPushButton" name="lcd4Button">
+             <property name="styleSheet">
+              <string notr="true">QPushButton {
+    background-color: #ff6b35;
+    min-height: 50px;
+    font-size: 13px;
+    font-weight: bold;
+    border-radius: 8px;
+}
+QPushButton:hover {
+    background-color: #e55a2b;
+}</string>
+             </property>
+             <property name="text">
+              <string>💡 LCD 4 (OFF)</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <spacer name="controlTabSpacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="logGroupBox">
+      <property name="title">
+       <string>📋 System Activity Log</string>
+      </property>
+      <layout class="QVBoxLayout" name="logLayout">
+       <item>
+        <widget class="QTextEdit" name="logTextEdit">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+         <property name="html">
+          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: &quot;\2610&quot;; }
+li.checked::marker { content: &quot;\2612&quot;; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Consolas','Monaco','monospace'; font-size:10px; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; color:#00ff00;&quot;&gt;[12:00:00] CCTV Client initialized successfully&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; color:#ffff00;&quot;&gt;[12:00:01] Waiting for server connection...&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1200</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionSave_Settings"/>
+    <addaction name="actionLoad_Settings"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionFullscreen"/>
+    <addaction name="actionShow_Log"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+    <addaction name="actionUser_Manual"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuView"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar">
+   <widget class="QLabel" name="statusBarLabel">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>100</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Ready</string>
+    </property>
+   </widget>
+  </widget>
+  <action name="actionSave_Settings">
+   <property name="text">
+    <string>Save Settings</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionLoad_Settings">
+   <property name="text">
+    <string>Load Settings</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionFullscreen">
+   <property name="text">
+    <string>Fullscreen</string>
+   </property>
+   <property name="shortcut">
+    <string>F11</string>
+   </property>
+  </action>
+  <action name="actionShow_Log">
+   <property name="text">
+    <string>Show/Hide Log</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+L</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="actionUser_Manual">
+   <property name="text">
+    <string>User Manual</string>
+   </property>
+   <property name="shortcut">
+    <string>F1</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -3,6 +3,8 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QUrl>
+#include <QTextCursor>
+#include <QTextDocument>
 
 // VideoOverlayWidget 구현
 VideoOverlayWidget::VideoOverlayWidget(QWidget *parent)
@@ -32,8 +34,6 @@ QList<QPair<QPoint, QPoint>> VideoOverlayWidget::getLines() const
 {
     return m_lines;
 }
-
-
 
 void VideoOverlayWidget::mousePressEvent(QMouseEvent *event)
 {
@@ -74,6 +74,39 @@ void VideoOverlayWidget::mouseReleaseEvent(QMouseEvent *event)
     }
 }
 
+void VideoOverlayWidget::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event)
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    // 저장된 선들 그리기
+    QPen linePen(Qt::red, 3, Qt::SolidLine);
+    painter.setPen(linePen);
+
+    for (const auto &line : m_lines) {
+        painter.drawLine(line.first, line.second);
+
+        // 시작점과 끝점에 작은 원 그리기
+        painter.setBrush(Qt::red);
+        painter.drawEllipse(line.first, 6, 6);
+        painter.drawEllipse(line.second, 6, 6);
+        painter.setBrush(Qt::NoBrush);
+    }
+
+    // 현재 그리고 있는 선 그리기
+    if (m_drawing && m_drawingMode) {
+        QPen currentPen(Qt::yellow, 2, Qt::DashLine);
+        painter.setPen(currentPen);
+        painter.drawLine(m_startPoint, m_currentPoint);
+
+        painter.setBrush(Qt::yellow);
+        painter.drawEllipse(m_startPoint, 4, 4);
+        painter.setBrush(Qt::NoBrush);
+    }
+}
+
 // LineDrawingDialog 구현
 LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     : QDialog(parent)
@@ -94,13 +127,14 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     , m_mediaPlayer(nullptr)
     , m_audioOutput(nullptr)
     , m_rtspUrl(rtspUrl)
+    , m_drawnLines()
     , m_isDrawingMode(false)
     , m_frameTimer(nullptr)
     , m_frameCount(0)
 {
     setWindowTitle("기준선 그리기");
     setModal(true);
-    resize(1200, 700); // 로그 창 때문에 더 넓게
+    resize(1200, 700);
 
     setupUI();
     setupMediaPlayer();
@@ -140,14 +174,16 @@ void LineDrawingDialog::setupUI()
     m_videoWidget->setStyleSheet("background-color: black; border-radius: 5px;");
     videoLayout->addWidget(m_videoWidget);
 
-    // 오버레이 위젯 설정
+    // 오버레이 위젯 설정 - 비디오 위젯과 정확히 같은 크기와 위치로 설정
     m_overlayWidget = new VideoOverlayWidget(videoContainer);
+
+    // 초기 위치 설정 - 비디오 위젯과 같은 위치에 배치
     m_overlayWidget->setGeometry(m_videoWidget->geometry());
     m_overlayWidget->raise();
 
     connect(m_overlayWidget, &VideoOverlayWidget::lineDrawn, this, &LineDrawingDialog::onLineDrawn);
 
-    contentLayout->addWidget(videoContainer, 2); // 비디오 영역이 더 넓게
+    contentLayout->addWidget(videoContainer, 2);
 
     // 오른쪽: 로그 영역
     QWidget *logContainer = new QWidget();
@@ -202,13 +238,13 @@ void LineDrawingDialog::setupUI()
     connect(m_clearLogButton, &QPushButton::clicked, this, &LineDrawingDialog::onClearLogClicked);
     logLayout->addWidget(m_clearLogButton);
 
-    contentLayout->addWidget(logContainer, 1); // 로그 영역
+    contentLayout->addWidget(logContainer, 1);
 
     m_mainLayout->addLayout(contentLayout);
 
     // 상태 정보
     m_statusLabel = new QLabel("비디오 스트림 연결 중...");
-    m_statusLabel->setStyleSheet("color: white; font-weight: bold; padding: 5px;");
+    m_statusLabel->setStyleSheet("color: blue; font-weight: bold; padding: 5px;");
     m_mainLayout->addWidget(m_statusLabel);
 
     m_frameCountLabel = new QLabel("프레임: 0");
@@ -251,7 +287,7 @@ void LineDrawingDialog::setupUI()
     // 프레임 카운터 타이머
     m_frameTimer = new QTimer(this);
     connect(m_frameTimer, &QTimer::timeout, this, &LineDrawingDialog::updateFrameCount);
-    m_frameTimer->start(1000); // 1초마다 업데이트
+    m_frameTimer->start(1000);
 
     // 초기 로그 메시지
     addLogMessage("기준선 그리기 다이얼로그가 시작되었습니다.", "SYSTEM");
@@ -345,7 +381,7 @@ void LineDrawingDialog::onSendCoordinatesClicked()
 
     addLogMessage(QString("좌표 전송을 시작합니다. (%1개 선)").arg(lines.size()), "INFO");
 
-    // 각 선의 좌표를 개별적으로 전송
+    // 모든 선의 좌표를 한 번에 전송
     for (int i = 0; i < lines.size(); ++i) {
         const auto &line = lines[i];
         emit lineCoordinatesReady(line.first.x(), line.first.y(), line.second.x(), line.second.y());
@@ -358,8 +394,11 @@ void LineDrawingDialog::onSendCoordinatesClicked()
     m_statusLabel->setText(QString("%1개의 선 좌표가 전송되었습니다").arg(lines.size()));
     addLogMessage(QString("총 %1개 선의 좌표 전송이 완료되었습니다.").arg(lines.size()), "SUCCESS");
 
+    // 한 번만 알림창 표시
+    QMessageBox::information(this, "전송 완료",
+                             QString("%1개의 기준선 좌표가 서버로 전송되었습니다.").arg(lines.size()));
+
     // 전송 후 다이얼로그 닫기
-    QMessageBox::information(this, "성공", "좌표가 성공적으로 전송되었습니다.");
     accept();
 }
 
@@ -461,38 +500,6 @@ void LineDrawingDialog::updateButtonStates()
     m_clearLinesButton->setEnabled(hasLines);
     m_sendCoordinatesButton->setEnabled(hasLines);
 }
-void VideoOverlayWidget::paintEvent(QPaintEvent *event)
-{
-    Q_UNUSED(event)
-
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
-
-    // 저장된 선들 그리기
-    QPen linePen(Qt::red, 3, Qt::SolidLine);
-    painter.setPen(linePen);
-
-    for (const auto &line : m_lines) {
-        painter.drawLine(line.first, line.second);
-
-        // 시작점과 끝점에 작은 원 그리기
-        painter.setBrush(Qt::red);
-        painter.drawEllipse(line.first, 6, 6);
-        painter.drawEllipse(line.second, 6, 6);
-        painter.setBrush(Qt::NoBrush);
-    }
-
-    // 현재 그리고 있는 선 그리기
-    if (m_drawing && m_drawingMode) {
-        QPen currentPen(Qt::yellow, 2, Qt::DashLine);
-        painter.setPen(currentPen);
-        painter.drawLine(m_startPoint, m_currentPoint);
-
-        painter.setBrush(Qt::yellow);
-        painter.drawEllipse(m_startPoint, 4, 4);
-        painter.setBrush(Qt::NoBrush);
-    }
-}
 
 void LineDrawingDialog::addLogMessage(const QString &message, const QString &type)
 {
@@ -570,4 +577,16 @@ void LineDrawingDialog::clearLog()
 void LineDrawingDialog::onClearLogClicked()
 {
     clearLog();
+}
+
+void LineDrawingDialog::resizeEvent(QResizeEvent *event)
+{
+    QDialog::resizeEvent(event);
+
+    // 다이얼로그 크기가 변경될 때 오버레이 위젯 위치도 업데이트
+    if (m_overlayWidget && m_videoWidget) {
+        QTimer::singleShot(0, [this]() {
+            m_overlayWidget->setGeometry(m_videoWidget->geometry());
+        });
+    }
 }

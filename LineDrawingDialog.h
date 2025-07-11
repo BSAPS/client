@@ -16,6 +16,8 @@
 #include <QList>
 #include <QPair>
 #include <QPoint>
+#include <QTextEdit>
+#include <QTime>
 
 class VideoOverlayWidget : public QWidget
 {
@@ -67,6 +69,7 @@ private slots:
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
     void updateFrameCount();
     void updateButtonStates();
+    void onClearLogClicked();
 
 private:
     void setupUI();
@@ -101,6 +104,15 @@ private:
 
     // 그려진 선들
     QList<QPair<QPoint, QPoint>> m_drawnLines;
+
+    // 로그 관련 멤버 변수 (미디어 관련 변수들 뒤로 이동)
+    QTextEdit *m_logTextEdit;
+    QLabel *m_logCountLabel;
+    QPushButton *m_clearLogButton;
+
+    // 로그 관련 함수
+    void addLogMessage(const QString &message, const QString &type = "INFO");
+    void clearLog();
 };
 
 #endif // LINEDRAWINGDIALOG_H

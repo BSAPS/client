@@ -6,6 +6,8 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFileInfo>
+#include <QSslSocket>
+#include <QSslError>
 
 TcpCommunicator::TcpCommunicator(QObject *parent)
     : QObject(parent)
@@ -20,7 +22,8 @@ TcpCommunicator::TcpCommunicator(QObject *parent)
     , m_maxReconnectAttempts(3)
     , m_reconnectDelayMs(5000)      // 5초
 {
-    m_socket = new QTcpSocket(this);
+    m_socket = new QSslSocket(this);
+    setupSslConfiguration();
 
     // Keep-Alive 설정
     m_socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
@@ -32,6 +35,11 @@ TcpCommunicator::TcpCommunicator(QObject *parent)
     connect(m_socket, &QTcpSocket::readyRead, this, &TcpCommunicator::onReadyRead);
     connect(m_socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::errorOccurred),
             this, &TcpCommunicator::onError);
+
+    // SSL 관련 시그널 연결
+    connect(m_socket, &QSslSocket::encrypted, this, &TcpCommunicator::onSslEncrypted);
+    connect(m_socket, QOverload<const QList<QSslError>&>::of(&QSslSocket::sslErrors),
+            this, &TcpCommunicator::onSslErrors);
 
     // 연결 타임아웃 타이머
     m_connectionTimer = new QTimer(this);
@@ -50,20 +58,27 @@ TcpCommunicator::~TcpCommunicator()
     disconnectFromServer();
 }
 
+void TcpCommunicator::setupSslConfiguration() {
+    // 서버의 CA 인증서 등록 (예: ca-cert.pem 파일)
+    QList<QSslCertificate> caCerts = QSslCertificate::fromPath("ca-cert.pem");
+    if (!caCerts.isEmpty()) {
+        QSslSocket::addDefaultCaCertificates(caCerts);
+    }
+    // 서버 인증서 검증 활성화 (실서비스)
+    m_socket->setPeerVerifyMode(QSslSocket::VerifyPeer);
+}
+
 void TcpCommunicator::connectToServer(const QString &host, int port)
 {
     if (m_isConnected) {
         disconnectFromServer();
     }
-
     m_host = host;
     m_port = port;
     m_reconnectAttempts = 0;
-
     qDebug() << "[TCP] 서버 연결 시도:" << host << ":" << port;
-
     m_connectionTimer->start();
-    m_socket->connectToHost(host, static_cast<quint16>(port));
+    m_socket->connectToHostEncrypted(host, static_cast<quint16>(port));
 }
 
 void TcpCommunicator::disconnectFromServer()
@@ -555,7 +570,19 @@ void TcpCommunicator::attemptReconnection()
     emit statusUpdated(QString("재연결 시도 중... (%1/%2)").arg(m_reconnectAttempts).arg(m_maxReconnectAttempts));
 
     m_connectionTimer->start();
-    m_socket->connectToHost(m_host, static_cast<quint16>(m_port));
+    m_socket->connectToHostEncrypted(m_host, static_cast<quint16>(m_port));
+}
+
+void TcpCommunicator::onSslEncrypted() {
+    qDebug() << "[TCP] SSL 암호화 연결 완료";
+}
+
+void TcpCommunicator::onSslErrors(const QList<QSslError> &errors) {
+    for (const auto &err : errors) {
+        qDebug() << "[TCP] SSL 오류:" << err.errorString();
+    }
+    // 실제 서비스에서는 아래 줄을 주석 처리(테스트용 무시)
+    // m_socket->ignoreSslErrors();
 }
 
 // processJsonMessage 함수에서 request_id 5 처리 추가

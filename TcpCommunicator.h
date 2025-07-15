@@ -9,6 +9,8 @@
 #include <QJsonArray>
 #include <QDateTime>
 #include <QThread>
+#include <QSslSocket>
+#include <QSslError>
 
 // 메시지 타입 열거형
 enum class MessageType {
@@ -102,6 +104,8 @@ private slots:
     void onError(QAbstractSocket::SocketError error);
     void onConnectionTimeout();
     void attemptReconnection();
+    void onSslEncrypted();
+    void onSslErrors(const QList<QSslError> &errors);
 
 private:
     // JSON 메시지 처리
@@ -124,7 +128,7 @@ private:
     void logJsonMessage(const QJsonObject &jsonObj, bool outgoing) const;
 
     // 네트워크 관련
-    QTcpSocket *m_socket;
+    QSslSocket* m_socket;
     QTimer *m_connectionTimer;
     QTimer *m_reconnectTimer;
     QString m_host;
@@ -141,6 +145,7 @@ private:
 
     // private 섹션에 함수 선언 추가
     void handleRoadLineResponse(const QJsonObject &jsonObj);
+    void setupSslConfiguration();
 };
 
 #endif // TCPCOMMUNICATOR_H

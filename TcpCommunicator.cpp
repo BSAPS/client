@@ -117,6 +117,195 @@ bool TcpCommunicator::sendLineCoordinates(int x1, int y1, int x2, int y2)
     return success;
 }
 
+bool TcpCommunicator::sendDetectionLine(const DetectionLineData &lineData)
+{
+    if (!isConnectedToServer()) {
+        qDebug() << "[TCP] 연결이 없어 객체 탐지선 전송 실패";
+        emit errorOccurred("서버에 연결되지 않음");
+        return false;
+    }
+
+    // 서버 양식에 맞춘 JSON 메시지 생성
+    QJsonObject message;
+    message["request_id"] = 2;  // 서버에서 정의한 객체 탐지선 request_id
+
+    QJsonObject data;
+    data["index"] = lineData.index;
+    data["x1"] = lineData.x1;
+    data["x2"] = lineData.x2;
+    data["y1"] = lineData.y1;
+    data["y2"] = lineData.y2;
+    data["name"] = lineData.name;
+    data["mode"] = lineData.mode;  // "Right", "Left", "BothDirections"
+    data["leftMatrixNum"] = lineData.leftMatrixNum;
+    data["rightMatrixNum"] = lineData.rightMatrixNum;
+
+    message["data"] = data;
+
+    bool success = sendJsonMessage(message);
+    if (success) {
+        qDebug() << "[TCP] 객체 탐지선 전송 성공 - index:" << lineData.index
+                 << "name:" << lineData.name << "mode:" << lineData.mode;
+    } else {
+        qDebug() << "[TCP] 객체 탐지선 전송 실패";
+    }
+
+    return success;
+}
+
+// sendRoadLine 함수 추가 (sendDetectionLine 함수 다음에)
+bool TcpCommunicator::sendRoadLine(const RoadLineData &lineData)
+{
+    if (!isConnectedToServer()) {
+        qDebug() << "[TCP] 연결이 없어 도로 기준선 전송 실패";
+        emit errorOccurred("서버에 연결되지 않음");
+        return false;
+    }
+
+    // 서버 양식에 맞춘 JSON 메시지 생성
+    QJsonObject message;
+    message["request_id"] = 5;  // 서버에서 정의한 도로 기준선 request_id
+
+    QJsonObject data;
+    data["matrixNum"] = lineData.matrixNum;
+    data["x1"] = lineData.x1;
+    data["x2"] = lineData.x2;
+
+    message["data"] = data;
+
+    bool success = sendJsonMessage(message);
+    if (success) {
+        qDebug() << "[TCP] 도로 기준선 전송 성공 - matrixNum:" << lineData.matrixNum
+                 << "x1:" << lineData.x1 << "x2:" << lineData.x2;
+    } else {
+        qDebug() << "[TCP] 도로 기준선 전송 실패";
+    }
+
+    return success;
+}
+
+bool TcpCommunicator::sendMultipleRoadLines(const QList<RoadLineData> &roadLines)
+{
+    if (!isConnectedToServer()) {
+        qDebug() << "[TCP] 연결이 없어 다중 도로 기준선 전송 실패";
+        emit errorOccurred("서버에 연결되지 않음");
+        return false;
+    }
+
+    bool allSuccess = true;
+    int successCount = 0;
+
+    for (const auto &line : roadLines) {
+        if (sendRoadLine(line)) {
+            successCount++;
+        } else {
+            allSuccess = false;
+        }
+
+        // 각 전송 사이에 짧은 지연 (서버 처리 시간 고려)
+        QThread::msleep(100);
+    }
+
+    qDebug() << "[TCP] 다중 도로 기준선 전송 완료 - 성공:" << successCount
+             << "/ 총:" << roadLines.size();
+
+    return allSuccess;
+}
+
+bool TcpCommunicator::sendMultipleDetectionLines(const QList<DetectionLineData> &detectionLines)
+{
+    if (!isConnectedToServer()) {
+        qDebug() << "[TCP] 연결이 없어 다중 객체 탐지선 전송 실패";
+        emit errorOccurred("서버에 연결되지 않음");
+        return false;
+    }
+
+    bool allSuccess = true;
+    int successCount = 0;
+
+    for (const auto &line : detectionLines) {
+        if (sendDetectionLine(line)) {
+            successCount++;
+        } else {
+            allSuccess = false;
+        }
+
+        // 각 전송 사이에 짧은 지연 (서버 처리 시간 고려)
+        QThread::msleep(50);
+    }
+
+    qDebug() << "[TCP] 다중 객체 탐지선 전송 완료 - 성공:" << successCount
+             << "/ 총:" << detectionLines.size();
+
+    return allSuccess;
+}
+
+// sendCategorizedLineCoordinates 함수 수정
+bool TcpCommunicator::sendCategorizedLineCoordinates(const QList<CategorizedLineData> &roadLines, const QList<CategorizedLineData> &detectionLines)
+{
+    if (!isConnectedToServer()) {
+        qDebug() << "[TCP] 연결이 없어 카테고리별 좌표 전송 실패";
+        emit errorOccurred("서버에 연결되지 않음");
+        return false;
+    }
+
+    bool roadSuccess = true;
+    bool detectionSuccess = true;
+
+    // 도로 기준선을 서버 양식에 맞춰 변환 및 전송
+    if (!roadLines.isEmpty()) {
+        QList<RoadLineData> serverRoadLines;
+        for (int i = 0; i < roadLines.size(); ++i) {
+            const auto &line = roadLines[i];
+
+            RoadLineData roadLineData;
+            roadLineData.matrixNum = (i % 4) + 1;  // 1-4 순환
+            roadLineData.x1 = line.x1;
+            roadLineData.x2 = line.x2;
+
+            serverRoadLines.append(roadLineData);
+        }
+
+        roadSuccess = sendMultipleRoadLines(serverRoadLines);
+    }
+
+    // 객체 탐지선을 서버 양식에 맞춰 변환 및 전송
+    if (!detectionLines.isEmpty()) {
+        QList<DetectionLineData> serverDetectionLines;
+        for (int i = 0; i < detectionLines.size(); ++i) {
+            const auto &line = detectionLines[i];
+
+            DetectionLineData detectionLineData;
+            detectionLineData.index = i + 1;  // 1부터 시작하는 인덱스
+            detectionLineData.x1 = line.x1;
+            detectionLineData.y1 = line.y1;
+            detectionLineData.x2 = line.x2;
+            detectionLineData.y2 = line.y2;
+            detectionLineData.name = QString("detection_line_%1").arg(i + 1);
+            detectionLineData.mode = "BothDirections";  // 기본값: 양방향
+            detectionLineData.leftMatrixNum = 1;   // 기본값
+            detectionLineData.rightMatrixNum = 2;  // 기본값
+
+            serverDetectionLines.append(detectionLineData);
+        }
+
+        detectionSuccess = sendMultipleDetectionLines(serverDetectionLines);
+    }
+
+    bool overallSuccess = roadSuccess && detectionSuccess;
+
+    if (overallSuccess) {
+        qDebug() << "[TCP] 카테고리별 좌표 전송 성공 - 도로선:" << roadLines.size()
+                 << "개, 탐지선:" << detectionLines.size() << "개";
+        emit categorizedCoordinatesConfirmed(true, "좌표 전송 완료", roadLines.size(), detectionLines.size());
+    } else {
+        qDebug() << "[TCP] 카테고리별 좌표 전송 실패";
+        emit categorizedCoordinatesConfirmed(false, "좌표 전송 실패", 0, 0);
+    }
+
+    return overallSuccess;
+}
+
 void TcpCommunicator::requestImageData(const QString &date, int hour)
 {
     if (!isConnectedToServer()) {
@@ -162,6 +351,9 @@ bool TcpCommunicator::sendJsonMessage(const QJsonObject &message)
     QJsonDocument doc(message);
     QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
 
+    // 전송할 JSON 내용을 로그로 출력
+    qDebug() << "[TCP] 전송할 JSON 데이터:" << QString::fromUtf8(jsonData);
+
     // 1. 메시지 길이를 4바이트로 먼저 전송
     quint32 messageLength = static_cast<quint32>(jsonData.size());
     QByteArray lengthData;
@@ -174,14 +366,15 @@ bool TcpCommunicator::sendJsonMessage(const QJsonObject &message)
     // 2. 길이 정보 전송
     qint64 lengthWritten = m_socket->write(lengthData);
     if (lengthWritten != 4) {
-        qDebug() << "[TCP] 길이 정보 전송 실패";
+        qDebug() << "[TCP] 길이 정보 전송 실패 - 전송된 바이트:" << lengthWritten;
         return false;
     }
 
     // 3. 실제 JSON 데이터 전송
     qint64 dataWritten = m_socket->write(jsonData);
     if (dataWritten != jsonData.size()) {
-        qDebug() << "[TCP] JSON 데이터 전송 실패:" << m_socket->errorString();
+        qDebug() << "[TCP] JSON 데이터 전송 실패 - 예상:" << jsonData.size() << "실제:" << dataWritten;
+        qDebug() << "[TCP] 소켓 에러:" << m_socket->errorString();
         return false;
     }
 
@@ -191,7 +384,7 @@ bool TcpCommunicator::sendJsonMessage(const QJsonObject &message)
         qDebug() << "[TCP] 데이터 플러시 실패";
     }
 
-    qDebug() << "[TCP] 메시지 전송 완료 - 길이:" << messageLength << "바이트";
+    qDebug() << "[TCP] 메시지 전송 완료 - 길이:" << messageLength << "바이트, 플러시:" << (flushed ? "성공" : "실패");
     return true;
 }
 
@@ -213,7 +406,7 @@ void TcpCommunicator::onConnected()
     m_reconnectAttempts = 0;
 
     qDebug() << "[TCP] 서버 연결 성공";
-    emit connected();  // 변경: connectionStatusChanged(true) -> connected()
+    emit connected();
     emit statusUpdated("서버 연결됨");
 }
 
@@ -226,7 +419,7 @@ void TcpCommunicator::onDisconnected()
     qDebug() << "[TCP] 소켓 상태:" << m_socket->state();
     qDebug() << "[TCP] 소켓 에러:" << m_socket->errorString();
 
-    emit disconnected();  // 변경: connectionStatusChanged(false) -> disconnected()
+    emit disconnected();
     emit statusUpdated("서버 연결 해제됨");
 
     // 예상치 못한 연결 해제인 경우에만 재연결 시도
@@ -365,6 +558,7 @@ void TcpCommunicator::attemptReconnection()
     m_socket->connectToHost(m_host, static_cast<quint16>(m_port));
 }
 
+// processJsonMessage 함수에서 request_id 5 처리 추가
 void TcpCommunicator::processJsonMessage(const QJsonObject &jsonObj)
 {
     int requestId = jsonObj["request_id"].toInt();
@@ -385,8 +579,14 @@ void TcpCommunicator::processJsonMessage(const QJsonObject &jsonObj)
             emit errorOccurred("서버 응답 형식 오류: data 배열이 없음");
         }
     } else if (requestId == 2) {
-        // 좌표 응답 (예상)
-        handleCoordinatesResponse(jsonObj);
+        // 객체 탐지선 응답
+        handleDetectionLineResponse(jsonObj);
+    } else if (requestId == 5) {
+        // 도로 기준선 응답
+        handleRoadLineResponse(jsonObj);
+    } else if (requestId == 4) {
+        // 카테고리별 좌표 응답 (기존 방식)
+        handleCategorizedCoordinatesResponse(jsonObj);
     } else {
         qDebug() << "[TCP] 알 수 없는 request_id:" << requestId;
         qDebug() << "[TCP] 전체 JSON:" << QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
@@ -495,6 +695,108 @@ void TcpCommunicator::handleCoordinatesResponse(const QJsonObject &jsonObj)
         emit statusUpdated("좌표 전송 완료");
     } else {
         emit errorOccurred("좌표 전송 실패: " + message);
+    }
+}
+
+void TcpCommunicator::handleDetectionLineResponse(const QJsonObject &jsonObj)
+{
+    // 서버에서 객체 탐지선 설정에 대한 응답 처리
+    bool success = true;  // 기본값
+    QString message = "객체 탐지선 설정 완료";
+
+    if (jsonObj.contains("success")) {
+        success = jsonObj["success"].toBool();
+    }
+
+    if (jsonObj.contains("message")) {
+        message = jsonObj["message"].toString();
+    }
+
+    // data 필드에서 추가 정보 추출
+    if (jsonObj.contains("data") && jsonObj["data"].isObject()) {
+        QJsonObject data = jsonObj["data"].toObject();
+        int index = data["index"].toInt();
+        QString name = data["name"].toString();
+        QString mode = data["mode"].toString();
+
+        qDebug() << "[TCP] 객체 탐지선 응답 - index:" << index
+                 << "name:" << name << "mode:" << mode << "성공:" << success;
+
+        message = QString("객체 탐지선 '%1' (index: %2, mode: %3) 설정 %4")
+                      .arg(name).arg(index).arg(mode).arg(success ? "성공" : "실패");
+    }
+
+    emit detectionLineConfirmed(success, message);
+
+    if (success) {
+        emit statusUpdated("객체 탐지선 설정 완료");
+    } else {
+        emit errorOccurred("객체 탐지선 설정 실패: " + message);
+    }
+}
+
+// handleRoadLineResponse 함수 추가 (handleDetectionLineResponse 함수 다음에)
+void TcpCommunicator::handleRoadLineResponse(const QJsonObject &jsonObj)
+{
+    // 서버에서 도로 기준선 설정에 대한 응답 처리
+    bool success = true;  // 기본값
+    QString message = "도로 기준선 설정 완료";
+
+    if (jsonObj.contains("success")) {
+        success = jsonObj["success"].toBool();
+    }
+
+    if (jsonObj.contains("message")) {
+        message = jsonObj["message"].toString();
+    }
+
+    // data 필드에서 추가 정보 추출
+    if (jsonObj.contains("data") && jsonObj["data"].isObject()) {
+        QJsonObject data = jsonObj["data"].toObject();
+        int matrixNum = data["matrixNum"].toInt();
+        int x1 = data["x1"].toInt();
+        int x2 = data["x2"].toInt();
+
+        qDebug() << "[TCP] 도로 기준선 응답 - matrixNum:" << matrixNum
+                 << "x1:" << x1 << "x2:" << x2 << "성공:" << success;
+
+        message = QString("도로 기준선 (매트릭스: %1, x1:%2, x2:%3) 설정 %4")
+                      .arg(matrixNum).arg(x1).arg(x2).arg(success ? "성공" : "실패");
+    }
+
+    emit roadLineConfirmed(success, message);
+
+    if (success) {
+        emit statusUpdated("도로 기준선 설정 완료");
+    } else {
+        emit errorOccurred("도로 기준선 설정 실패: " + message);
+    }
+}
+
+void TcpCommunicator::handleCategorizedCoordinatesResponse(const QJsonObject &jsonObj)
+{
+    bool success = jsonObj["success"].toBool();
+    QString message = jsonObj["message"].toString();
+
+    qDebug() << "[TCP] 카테고리별 좌표 응답 - 성공:" << success << "메시지:" << message;
+
+    if (jsonObj.contains("data") && jsonObj["data"].isObject()) {
+        QJsonObject data = jsonObj["data"].toObject();
+        int roadLinesProcessed = data["road_lines_processed"].toInt();
+        int detectionLinesProcessed = data["detection_lines_processed"].toInt();
+        int totalProcessed = data["total_processed"].toInt();
+
+        qDebug() << "[TCP] 처리된 좌표 - 도로선:" << roadLinesProcessed << "개, 탐지선:" << detectionLinesProcessed << "개, 총:" << totalProcessed << "개";
+
+        emit categorizedCoordinatesConfirmed(success, message, roadLinesProcessed, detectionLinesProcessed);
+    } else {
+        emit categorizedCoordinatesConfirmed(success, message, 0, 0);
+    }
+
+    if (success) {
+        emit statusUpdated("카테고리별 좌표 전송 완료");
+    } else {
+        emit errorOccurred("카테고리별 좌표 전송 실패: " + message);
     }
 }
 

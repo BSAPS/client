@@ -92,6 +92,7 @@ private:
     void displayImages(const QList<ImageData> &images);
     void sendMultipleLineCoordinates(const QList<QPair<QPoint, QPoint>> &lines);
     void sendSingleLineCoordinates(int x1, int y1, int x2, int y2);
+    void sendCategorizedCoordinates(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines);
 
     // UI 컴포넌트
     QWidget *m_centralWidget;

@@ -92,15 +92,20 @@ MainWindow::MainWindow(QWidget *parent)
     QRect screenGeometry = screen->availableGeometry();
 
     // 화면의 80%로 설정
-    int maxWidth = screenGeometry.width() * 0.8;
-    int maxHeight = screenGeometry.height() * 0.8;
+    //int maxWidth = screenGeometry.width() * 0.8;
+    //int maxHeight = screenGeometry.height() * 0.8;
 
-    setMinimumSize(800, 600);
-    resize(maxWidth, maxHeight);
+    //setMinimumSize(800, 600);
+    //resize(maxWidth, maxHeight);
+
+    int fixedWidth = 1000;
+    int fixedHeight = 670;
+
+    setFixedSize(fixedWidth, fixedHeight);
 
     // 화면 중앙에 배치
-    move((screenGeometry.width() - maxWidth) / 2,
-         (screenGeometry.height() - maxHeight) / 2);
+    move((screenGeometry.width() - fixedWidth) / 2,
+         (screenGeometry.height() - fixedHeight) / 2);
 }
 
 MainWindow::~MainWindow()
@@ -121,6 +126,7 @@ void MainWindow::setupUI()
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
 
+
     QVBoxLayout *mainLayout = new QVBoxLayout(m_centralWidget);
 
     // 헤더 영역
@@ -133,9 +139,10 @@ void MainWindow::setupUI()
     headerLayout->addStretch();
 
     m_networkButton = new QPushButton();
-    m_networkButton->setIcon(QIcon(":/CCTVMonitoringSystem/icons/NetworkConnect.png"));
+    m_networkButton->setIcon(QIcon(":/icons/NetworkConnect.png"));
     m_networkButton->setIconSize(QSize(24, 24));
-    m_networkButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; } QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 20px; }");
+    m_networkButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; } "
+                                   "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
     connect(m_networkButton, &QPushButton::clicked, this, &MainWindow::onNetworkConfigClicked);
 
     headerLayout->addWidget(m_networkButton);
@@ -166,19 +173,7 @@ void MainWindow::setupUI()
     QVBoxLayout *sidebarLayout = new QVBoxLayout(sidebarWidget);
 
     m_modeComboBox = new QComboBox();
-    m_modeComboBox->addItem("🤖 Automatic");
-    m_modeComboBox->addItem("⚙️ Manual");
-    m_modeComboBox->setStyleSheet("QComboBox { background-color: #6750a4; color: white; padding: 10px; border: none; border-radius: 5px; font-weight: bold; } QComboBox::drop-down { border: none; } QComboBox::down-arrow { image: none; }");
     sidebarLayout->addWidget(m_modeComboBox);
-
-    setupWarningButtons();
-    for (QPushButton *button : m_warningButtons) {
-        sidebarLayout->addWidget(button);
-    }
-
-    sidebarLayout->addStretch();
-
-    contentLayout->addWidget(sidebarWidget, 1);
 
     mainLayout->addLayout(contentLayout);
 }
@@ -355,6 +350,18 @@ void MainWindow::setupNetworkConnection()
     connect(m_tcpCommunicator, &TcpCommunicator::coordinatesConfirmed, this, &MainWindow::onCoordinatesConfirmed);
     connect(m_tcpCommunicator, &TcpCommunicator::statusUpdated, this, &MainWindow::onStatusUpdated);
 
+    // 수직선 확인 시그널 연결 추가
+    connect(m_tcpCommunicator, &TcpCommunicator::perpendicularLineConfirmed,
+            this, [this](bool success, const QString &message) {
+                qDebug() << "수직선 서버 응답 - 성공:" << success << "메시지:" << message;
+
+                if (success) {
+                    QMessageBox::information(this, "수직선 전송 완료", "수직선이 성공적으로 서버에 전송되었습니다.");
+                } else {
+                    QMessageBox::warning(this, "수직선 전송 실패", "수직선 전송에 실패했습니다: " + message);
+                }
+            });
+
     // 이미지 요청 타임아웃 타이머 설정
     m_requestTimeoutTimer = new QTimer(this);
     m_requestTimeoutTimer->setSingleShot(true);
@@ -514,10 +521,38 @@ void MainWindow::onVideoStreamClicked()
 
     if (!m_lineDrawingDialog) {
         m_lineDrawingDialog = new LineDrawingDialog(m_rtspUrl, this);
-        // Use lambda to resolve the overload ambiguity
+        // 기존 시그널 연결
         connect(m_lineDrawingDialog, &LineDrawingDialog::lineCoordinatesReady,
                 this, [this](int x1, int y1, int x2, int y2) {
                     this->sendSingleLineCoordinates(x1, y1, x2, y2);
+                });
+
+        // 새로운 카테고리별 좌표 시그널 연결 추가
+        connect(m_lineDrawingDialog, &LineDrawingDialog::categorizedLinesReady,
+                this, [this](const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines) {
+                    this->sendCategorizedCoordinates(roadLines, detectionLines);
+                });
+
+        // 수직선 생성 시그널 연결 추가
+        connect(m_lineDrawingDialog, &LineDrawingDialog::perpendicularLineGenerated,
+                this, [this](int detectionLineIndex, double a, double b) {
+                    if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
+                        PerpendicularLineData perpData;
+                        perpData.index = detectionLineIndex;
+                        perpData.a = a;
+                        perpData.b = b;
+
+                        bool success = m_tcpCommunicator->sendPerpendicularLine(perpData);
+                        if (success) {
+                            qDebug() << "수직선 전송 성공 - index:" << detectionLineIndex
+                                     << "y = " << a << "x + " << b;
+                        } else {
+                            qDebug() << "수직선 전송 실패";
+                            QMessageBox::warning(this, "전송 실패", "수직선 데이터 전송에 실패했습니다.");
+                        }
+                    } else {
+                        QMessageBox::warning(this, "연결 오류", "서버에 연결되어 있지 않습니다.");
+                    }
                 });
     }
 
@@ -547,7 +582,6 @@ void MainWindow::sendSingleLineCoordinates(int x1, int y1, int x2, int y2)
         m_tcpCommunicator->sendLineCoordinates(x1, y1, x2, y2);
         qDebug() << "기준선 좌표 전송 성공:" << x1 << y1 << x2 << y2;
 
-        QMessageBox::information(this, "전송 완료", "기준선 좌표가 서버로 전송되었습니다.");
     } else {
         qDebug() << "TCP 연결이 없어 좌표 전송 실패";
         QMessageBox::warning(this, "전송 실패", "서버에 연결되어 있지 않습니다.");
@@ -760,5 +794,38 @@ void MainWindow::onStatusUpdated(const QString &status)
 
     if (m_statusLabel) {
         m_statusLabel->setText(status);
+    }
+}
+
+void MainWindow::sendCategorizedCoordinates(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines)
+{
+    if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
+        // CategorizedLineData로 변환하여 기존 함수 호출
+        QList<CategorizedLineData> oldRoadLines;
+        QList<CategorizedLineData> oldDetectionLines;
+
+        for (const auto &road : roadLines) {
+            CategorizedLineData oldRoad;
+            oldRoad.x1 = road.x1;
+            oldRoad.y1 = 0;  // 도로선은 y 좌표 사용 안함
+            oldRoad.x2 = road.x2;
+            oldRoad.y2 = 0;
+            oldRoadLines.append(oldRoad);
+        }
+
+        for (const auto &detection : detectionLines) {
+            CategorizedLineData oldDetection;
+            oldDetection.x1 = detection.x1;
+            oldDetection.y1 = detection.y1;
+            oldDetection.x2 = detection.x2;
+            oldDetection.y2 = detection.y2;
+            oldDetectionLines.append(oldDetection);
+        }
+
+        m_tcpCommunicator->sendCategorizedLineCoordinates(oldRoadLines, oldDetectionLines);
+        qDebug() << "카테고리별 좌표 전송 완료 - 도로선:" << roadLines.size() << "개, 탐지선:" << detectionLines.size() << "개";
+    } else {
+        qDebug() << "TCP 연결이 없어 좌표 전송 실패";
+        QMessageBox::warning(this, "전송 실패", "서버에 연결되어 있지 않습니다.");
     }
 }

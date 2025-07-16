@@ -9,6 +9,12 @@
 #include <QJsonArray>
 #include <QDateTime>
 #include <QThread>
+#include <QSslSocket>
+#include <QSslError>
+
+
+
+
 
 // 메시지 타입 열거형
 enum class MessageType {
@@ -47,7 +53,6 @@ struct DetectionLineData {
     int rightMatrixNum;     // 오른쪽 매트릭스 번호
 };
 
-// 수직선 데이터 구조체 수정 (DetectionLineData 구조체 다음에)
 struct PerpendicularLineData {
     int index;              // 원본 감지선 번호
     double a;               // y = ax + b에서 a값 (기울기)
@@ -87,9 +92,9 @@ public:
     // TcpCommunicator 클래스의 public 섹션에 함수 선언 추가
     bool sendRoadLine(const RoadLineData &lineData);
     bool sendMultipleRoadLines(const QList<RoadLineData> &roadLines);
-
-    // TcpCommunicator 클래스의 public 섹션에 함수 선언 추가 (sendMultipleRoadLines 함수 다음에)
     bool sendPerpendicularLine(const PerpendicularLineData &lineData);
+
+
 
 signals:
     void connected();
@@ -104,8 +109,6 @@ signals:
 
     // signals 섹션에 시그널 추가
     void roadLineConfirmed(bool success, const QString &message);
-
-    // signals 섹션에 시그널 추가 (roadLineConfirmed 시그널 다음에)
     void perpendicularLineConfirmed(bool success, const QString &message);
 
 private slots:
@@ -115,6 +118,8 @@ private slots:
     void onError(QAbstractSocket::SocketError error);
     void onConnectionTimeout();
     void attemptReconnection();
+    void onSslEncrypted();
+    void onSslErrors(const QList<QSslError> &errors);
 
 private:
     // JSON 메시지 처리
@@ -137,7 +142,7 @@ private:
     void logJsonMessage(const QJsonObject &jsonObj, bool outgoing) const;
 
     // 네트워크 관련
-    QTcpSocket *m_socket;
+    QSslSocket* m_socket;
     QTimer *m_connectionTimer;
     QTimer *m_reconnectTimer;
     QString m_host;
@@ -154,9 +159,8 @@ private:
 
     // private 섹션에 함수 선언 추가
     void handleRoadLineResponse(const QJsonObject &jsonObj);
-
-    // private 섹션에 함수 선언 추가 (handleRoadLineResponse 함수 다음에)
     void handlePerpendicularLineResponse(const QJsonObject &jsonObj);
+    void setupSslConfiguration();
 };
 
 #endif // TCPCOMMUNICATOR_H

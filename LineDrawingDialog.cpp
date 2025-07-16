@@ -389,6 +389,7 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     , m_mappingCountLabel(nullptr)
     , m_clearMappingsButton(nullptr)
     , m_sendMappingsButton(nullptr)
+    , m_sendPerpendicularButton(nullptr)
 {
     setWindowTitle("기준선 그리기");
     setModal(true);
@@ -400,6 +401,9 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
 
     // 좌표별 클릭 연결
     connect(m_videoView, &VideoGraphicsView::coordinateClicked, this, &LineDrawingDialog::onCoordinateClicked);
+    // LineDrawingDialog 생성자에서 TCP 연결 추가 (기존 connect 문들 다음에)
+    // 수직선 확인 연결 추가
+    // connect(tcpCommunicator, &TcpCommunicator::perpendicularLineConfirmed, this, &LineDrawingDialog::onPerpendicularLineGenerated);
 }
 
 void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordinate, bool isStartPoint)
@@ -653,16 +657,16 @@ void LineDrawingDialog::setupUI()
     connect(m_clearLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onClearLinesClicked);
     m_buttonLayout->addWidget(m_clearLinesButton);
 
-    m_sendCoordinatesButton = new QPushButton("📤 좌표 전송");
-    m_sendCoordinatesButton->setStyleSheet("QPushButton { background-color: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #1976D2; }");
-    connect(m_sendCoordinatesButton, &QPushButton::clicked, this, &LineDrawingDialog::onSendCoordinatesClicked);
-    m_buttonLayout->addWidget(m_sendCoordinatesButton);
-
     m_clearMappingsButton = new QPushButton("🗑️ 매핑 지우기");
     m_clearMappingsButton->setStyleSheet("QPushButton { background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #c82333; }");
     m_clearMappingsButton->setEnabled(false);
     connect(m_clearMappingsButton, &QPushButton::clicked, this, &LineDrawingDialog::clearCoordinateMappings);
     m_buttonLayout->addWidget(m_clearMappingsButton);
+
+    m_sendCoordinatesButton = new QPushButton("📤 좌표 전송");
+    m_sendCoordinatesButton->setStyleSheet("QPushButton { background-color: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #1976D2; }");
+    connect(m_sendCoordinatesButton, &QPushButton::clicked, this, &LineDrawingDialog::onSendCoordinatesClicked);
+    m_buttonLayout->addWidget(m_sendCoordinatesButton);
 
     m_sendMappingsButton = new QPushButton("📤 매핑 전송");
     m_sendMappingsButton->setStyleSheet("QPushButton { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #218838; }");
@@ -689,6 +693,12 @@ void LineDrawingDialog::setupUI()
         }
     });
     m_buttonLayout->addWidget(m_sendMappingsButton);
+
+    m_sendPerpendicularButton = new QPushButton("📐 수직선 전송");
+    m_sendPerpendicularButton->setStyleSheet("QPushButton { background-color: #17a2b8; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #138496; }");
+    m_sendPerpendicularButton->setEnabled(false);
+    connect(m_sendPerpendicularButton, &QPushButton::clicked, this, &LineDrawingDialog::onSendPerpendicularClicked);
+    m_buttonLayout->addWidget(m_sendPerpendicularButton);
 
     m_buttonLayout->addStretch();
 
@@ -826,6 +836,7 @@ void LineDrawingDialog::onClearCategoryClicked()
     updateButtonStates();
 }
 
+// onLineDrawn 함수 수정 (탐지선이 그려졌을 때 수직선 자동 생성)
 void LineDrawingDialog::onLineDrawn(const QPoint &start, const QPoint &end, LineCategory category)
 {
     QString categoryName = (category == LineCategory::ROAD_DEFINITION) ? "도로 명시선" : "객체 탐지선";
@@ -833,6 +844,30 @@ void LineDrawingDialog::onLineDrawn(const QPoint &start, const QPoint &end, Line
                       .arg(categoryName)
                       .arg(start.x()).arg(start.y())
                       .arg(end.x()).arg(end.y()), "DRAW");
+
+    // 탐지선인 경우 수직선 자동 생성
+    if (category == LineCategory::OBJECT_DETECTION) {
+        QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
+        int detectionLineIndex = 0;
+
+        // 현재 그려진 탐지선의 인덱스 찾기
+        for (int i = 0; i < allLines.size(); ++i) {
+            if (allLines[i].category == LineCategory::OBJECT_DETECTION) {
+                detectionLineIndex++;
+                if (allLines[i].start == start && allLines[i].end == end) {
+                    break;
+                }
+            }
+        }
+
+        // 수직선 생성
+        CategorizedLine detectionLine;
+        detectionLine.start = start;
+        detectionLine.end = end;
+        detectionLine.category = category;
+
+        generatePerpendicularLine(detectionLine, detectionLineIndex);
+    }
 
     updateCategoryInfo();
     updateButtonStates();
@@ -1007,6 +1042,7 @@ void LineDrawingDialog::updateButtonStates()
 {
     bool isStreaming = (m_mediaPlayer && m_mediaPlayer->playbackState() == QMediaPlayer::PlayingState);
     bool hasLines = !m_videoView->getLines().isEmpty();
+    bool hasDetectionLines = m_videoView->getCategoryLineCount(LineCategory::OBJECT_DETECTION) > 0;
 
     m_startDrawingButton->setEnabled(isStreaming && !m_isDrawingMode);
     m_stopDrawingButton->setEnabled(isStreaming && m_isDrawingMode);
@@ -1014,6 +1050,7 @@ void LineDrawingDialog::updateButtonStates()
     m_sendCoordinatesButton->setEnabled(hasLines);
     m_clearMappingsButton->setEnabled(m_coordinateMatrixMappings.size() > 0);
     m_sendMappingsButton->setEnabled(m_coordinateMatrixMappings.size() > 0);
+    m_sendPerpendicularButton->setEnabled(hasDetectionLines);
 }
 
 void LineDrawingDialog::addLogMessage(const QString &message, const QString &type)
@@ -1165,4 +1202,137 @@ QList<RoadLineData> LineDrawingDialog::getCoordinateMappingsAsRoadLines() const
     }
 
     return roadLines;
+}
+
+// calculatePerpendicularLine 함수 구현 (파일 끝 부분에 추가)
+// calculatePerpendicularLine 함수를 y = ax + b 형태로 수정
+PerpendicularLineData LineDrawingDialog::calculatePerpendicularLine(const QPoint &start, const QPoint &end, int detectionLineIndex)
+{
+    PerpendicularLineData perpData;
+    perpData.index = detectionLineIndex;
+
+    // 원래 선의 벡터 계산
+    double dx = end.x() - start.x();
+    double dy = end.y() - start.y();
+
+    // 원래 선의 중점 계산
+    double midX = (start.x() + end.x()) / 2.0;
+    double midY = (start.y() + end.y()) / 2.0;
+
+    // 수직선의 기울기 계산
+    if (abs(dx) < 0.001) {
+        // 원래 선이 거의 수직인 경우 → 수직선은 수평선 (기울기 = 0)
+        perpData.a = 0.0;
+        perpData.b = midY;  // y = midY (수평선)
+    } else if (abs(dy) < 0.001) {
+        // 원래 선이 거의 수평인 경우 → 수직선은 수직선
+        // 수직선은 y = ax + b로 표현할 수 없으므로 매우 큰 기울기로 근사
+        perpData.a = 999999.0;  // 거의 무한대 기울기
+        perpData.b = midY - perpData.a * midX;
+    } else {
+        // 일반적인 경우
+        // 원래 선의 기울기: m1 = dy/dx
+        // 수직선의 기울기: m2 = -dx/dy (수직 조건)
+        perpData.a = -dx / dy;
+
+        // 수직선이 중점 (midX, midY)를 지나므로
+        // midY = a * midX + b
+        // b = midY - a * midX
+        perpData.b = midY - perpData.a * midX;
+    }
+
+    return perpData;
+}
+
+// generatePerpendicularLine 함수 구현 (calculatePerpendicularLine 함수 다음에)
+// generatePerpendicularLine 함수도 수정
+void LineDrawingDialog::generatePerpendicularLine(const CategorizedLine &detectionLine, int index)
+{
+    // 수직선 데이터 계산
+    PerpendicularLineData perpData = calculatePerpendicularLine(detectionLine.start, detectionLine.end, index);
+
+    // 로그 메시지 추가
+    addLogMessage(QString("탐지선 #%1에 대한 수직선 생성됨: y = %2x + %3")
+                      .arg(index)
+                      .arg(perpData.a, 0, 'f', 3)
+                      .arg(perpData.b, 0, 'f', 3), "DRAW");
+
+    // 수직선을 화면에 시각적으로 표시
+    double midX = (detectionLine.start.x() + detectionLine.end.x()) / 2.0;
+    double midY = (detectionLine.start.y() + detectionLine.end.y()) / 2.0;
+
+    // 수직선 표시용 선분 계산 (화면 범위 내에서)
+    QPoint perpStart, perpEnd;
+
+    if (abs(perpData.a) > 1000) {
+        // 거의 수직선인 경우
+        perpStart = QPoint(midX, midY - 30);
+        perpEnd = QPoint(midX, midY + 30);
+    } else {
+        // 일반적인 경우: 중점 기준으로 좌우 30픽셀 범위에서 선분 그리기
+        double x1 = midX - 30;
+        double y1 = perpData.a * x1 + perpData.b;
+        double x2 = midX + 30;
+        double y2 = perpData.a * x2 + perpData.b;
+
+        perpStart = QPoint(x1, y1);
+        perpEnd = QPoint(x2, y2);
+    }
+
+    // 수직선을 노란색 점선으로 표시
+    QGraphicsLineItem *perpLineItem = new QGraphicsLineItem(QLineF(perpStart, perpEnd));
+    QPen perpPen(Qt::yellow, 2, Qt::DashLine);
+    perpLineItem->setPen(perpPen);
+    perpLineItem->setZValue(5); // 다른 선들보다 위에 표시
+    m_videoView->scene()->addItem(perpLineItem);
+
+    addLogMessage(QString("수직선이 화면에 표시되었습니다 (중점: %.1f, %.1f)")
+                      .arg(midX).arg(midY), "INFO");
+
+    // 서버로 수직선 데이터 전송을 위한 시그널 발생
+    emit perpendicularLineGenerated(perpData.index, perpData.a, perpData.b);
+}
+
+// onPerpendicularLineGenerated 슬롯 구현 (generatePerpendicularLine 함수 다음에)
+// onPerpendicularLineGenerated 슬롯도 수정
+void LineDrawingDialog::onPerpendicularLineGenerated(int detectionLineIndex, double a, double b)
+{
+    addLogMessage(QString("수직선 #%1 서버 전송 준비: y = %2x + %3")
+                      .arg(detectionLineIndex)
+                      .arg(a, 0, 'f', 3)
+                      .arg(b, 0, 'f', 3), "SUCCESS");
+
+    m_statusLabel->setText(QString("수직선 #%1 방정식: y = %2x + %3")
+                               .arg(detectionLineIndex)
+                               .arg(a, 0, 'f', 3)
+                               .arg(b, 0, 'f', 3));
+}
+
+void LineDrawingDialog::onSendPerpendicularClicked()
+{
+    QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
+    int detectionLineCount = 0;
+
+    for (const auto &line : allLines) {
+        if (line.category == LineCategory::OBJECT_DETECTION) {
+            detectionLineCount++;
+
+            // 수직선 계산 및 전송
+            PerpendicularLineData perpData = calculatePerpendicularLine(line.start, line.end, detectionLineCount);
+
+            addLogMessage(QString("수직선 #%1 수동 전송: y = %2x + %3")
+                              .arg(detectionLineCount)
+                              .arg(perpData.a, 0, 'f', 3)
+                              .arg(perpData.b, 0, 'f', 3), "ACTION");
+
+            emit perpendicularLineGenerated(perpData.index, perpData.a, perpData.b);
+        }
+    }
+
+    if (detectionLineCount == 0) {
+        addLogMessage("전송할 탐지선이 없습니다. 먼저 탐지선을 그려주세요.", "WARNING");
+        QMessageBox::information(this, "알림", "전송할 탐지선이 없습니다. 먼저 탐지선을 그려주세요.");
+    } else {
+        addLogMessage(QString("%1개의 수직선을 수동으로 전송했습니다.").arg(detectionLineCount), "SUCCESS");
+    }
 }

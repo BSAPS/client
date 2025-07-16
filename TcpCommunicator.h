@@ -47,6 +47,13 @@ struct DetectionLineData {
     int rightMatrixNum;     // 오른쪽 매트릭스 번호
 };
 
+// 수직선 데이터 구조체 수정 (DetectionLineData 구조체 다음에)
+struct PerpendicularLineData {
+    int index;              // 원본 감지선 번호
+    double a;               // y = ax + b에서 a값 (기울기)
+    double b;               // y = ax + b에서 b값 (y절편)
+};
+
 // 서버 양식에 맞춘 도로 기준선 데이터 구조체 추가
 struct RoadLineData {
     int matrixNum;          // 매트릭스 번호 (1-4)
@@ -81,6 +88,9 @@ public:
     bool sendRoadLine(const RoadLineData &lineData);
     bool sendMultipleRoadLines(const QList<RoadLineData> &roadLines);
 
+    // TcpCommunicator 클래스의 public 섹션에 함수 선언 추가 (sendMultipleRoadLines 함수 다음에)
+    bool sendPerpendicularLine(const PerpendicularLineData &lineData);
+
 signals:
     void connected();
     void disconnected();
@@ -94,6 +104,9 @@ signals:
 
     // signals 섹션에 시그널 추가
     void roadLineConfirmed(bool success, const QString &message);
+
+    // signals 섹션에 시그널 추가 (roadLineConfirmed 시그널 다음에)
+    void perpendicularLineConfirmed(bool success, const QString &message);
 
 private slots:
     void onConnected();
@@ -141,6 +154,9 @@ private:
 
     // private 섹션에 함수 선언 추가
     void handleRoadLineResponse(const QJsonObject &jsonObj);
+
+    // private 섹션에 함수 선언 추가 (handleRoadLineResponse 함수 다음에)
+    void handlePerpendicularLineResponse(const QJsonObject &jsonObj);
 };
 
 #endif // TCPCOMMUNICATOR_H

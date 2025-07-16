@@ -350,6 +350,18 @@ void MainWindow::setupNetworkConnection()
     connect(m_tcpCommunicator, &TcpCommunicator::coordinatesConfirmed, this, &MainWindow::onCoordinatesConfirmed);
     connect(m_tcpCommunicator, &TcpCommunicator::statusUpdated, this, &MainWindow::onStatusUpdated);
 
+    // 수직선 확인 시그널 연결 추가
+    connect(m_tcpCommunicator, &TcpCommunicator::perpendicularLineConfirmed,
+            this, [this](bool success, const QString &message) {
+                qDebug() << "수직선 서버 응답 - 성공:" << success << "메시지:" << message;
+
+                if (success) {
+                    QMessageBox::information(this, "수직선 전송 완료", "수직선이 성공적으로 서버에 전송되었습니다.");
+                } else {
+                    QMessageBox::warning(this, "수직선 전송 실패", "수직선 전송에 실패했습니다: " + message);
+                }
+            });
+
     // 이미지 요청 타임아웃 타이머 설정
     m_requestTimeoutTimer = new QTimer(this);
     m_requestTimeoutTimer->setSingleShot(true);
@@ -519,6 +531,28 @@ void MainWindow::onVideoStreamClicked()
         connect(m_lineDrawingDialog, &LineDrawingDialog::categorizedLinesReady,
                 this, [this](const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines) {
                     this->sendCategorizedCoordinates(roadLines, detectionLines);
+                });
+
+        // 수직선 생성 시그널 연결 추가
+        connect(m_lineDrawingDialog, &LineDrawingDialog::perpendicularLineGenerated,
+                this, [this](int detectionLineIndex, double a, double b) {
+                    if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
+                        PerpendicularLineData perpData;
+                        perpData.index = detectionLineIndex;
+                        perpData.a = a;
+                        perpData.b = b;
+
+                        bool success = m_tcpCommunicator->sendPerpendicularLine(perpData);
+                        if (success) {
+                            qDebug() << "수직선 전송 성공 - index:" << detectionLineIndex
+                                     << "y = " << a << "x + " << b;
+                        } else {
+                            qDebug() << "수직선 전송 실패";
+                            QMessageBox::warning(this, "전송 실패", "수직선 데이터 전송에 실패했습니다.");
+                        }
+                    } else {
+                        QMessageBox::warning(this, "연결 오류", "서버에 연결되어 있지 않습니다.");
+                    }
                 });
     }
 

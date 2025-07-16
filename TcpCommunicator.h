@@ -12,6 +12,10 @@
 #include <QSslSocket>
 #include <QSslError>
 
+
+
+
+
 // 메시지 타입 열거형
 enum class MessageType {
     REQUEST_IMAGES,
@@ -49,6 +53,12 @@ struct DetectionLineData {
     int rightMatrixNum;     // 오른쪽 매트릭스 번호
 };
 
+struct PerpendicularLineData {
+    int index;              // 원본 감지선 번호
+    double a;               // y = ax + b에서 a값 (기울기)
+    double b;               // y = ax + b에서 b값 (y절편)
+};
+
 // 서버 양식에 맞춘 도로 기준선 데이터 구조체 추가
 struct RoadLineData {
     int matrixNum;          // 매트릭스 번호 (1-4)
@@ -82,6 +92,9 @@ public:
     // TcpCommunicator 클래스의 public 섹션에 함수 선언 추가
     bool sendRoadLine(const RoadLineData &lineData);
     bool sendMultipleRoadLines(const QList<RoadLineData> &roadLines);
+    bool sendPerpendicularLine(const PerpendicularLineData &lineData);
+
+
 
 signals:
     void connected();
@@ -96,6 +109,7 @@ signals:
 
     // signals 섹션에 시그널 추가
     void roadLineConfirmed(bool success, const QString &message);
+    void perpendicularLineConfirmed(bool success, const QString &message);
 
 private slots:
     void onConnected();
@@ -145,6 +159,7 @@ private:
 
     // private 섹션에 함수 선언 추가
     void handleRoadLineResponse(const QJsonObject &jsonObj);
+    void handlePerpendicularLineResponse(const QJsonObject &jsonObj);
     void setupSslConfiguration();
 };
 

@@ -195,8 +195,8 @@ bool TcpCommunicator::sendRoadLine(const RoadLineData &lineData)
 
     QJsonObject data;
     data["matrixNum"] = lineData.matrixNum;
-    data["x1"] = lineData.x1;
-    data["x2"] = lineData.x2;
+    data["x"] = lineData.x1;
+    data["y"] = lineData.x2;
 
     message["data"] = data;
 
@@ -206,6 +206,37 @@ bool TcpCommunicator::sendRoadLine(const RoadLineData &lineData)
                  << "x1:" << lineData.x1 << "x2:" << lineData.x2;
     } else {
         qDebug() << "[TCP] Failed to send road line.";
+    }
+
+    return success;
+}
+
+// sendPerpendicularLine 함수 추가 (sendMultipleRoadLines 함수 다음에)
+bool TcpCommunicator::sendPerpendicularLine(const PerpendicularLineData &lineData)
+{
+    if (!isConnectedToServer()) {
+        qDebug() << "[TCP] 연결이 없어 수직선 전송 실패";
+        emit errorOccurred("서버에 연결되지 않음");
+        return false;
+    }
+
+    // 서버 양식에 맞춘 JSON 메시지 생성 (y = ax + b 형태)
+    QJsonObject message;
+    message["request_id"] = 6;  // 서버에서 정의한 수직선 request_id
+
+    QJsonObject data;
+    data["index"] = lineData.index;
+    data["a"] = lineData.a;  // y = ax + b에서 a값 (기울기)
+    data["b"] = lineData.b;  // y = ax + b에서 b값 (y절편)
+
+    message["data"] = data;
+
+    bool success = sendJsonMessage(message);
+    if (success) {
+        qDebug() << "[TCP] 수직선 전송 성공 - index:" << lineData.index
+                 << "y = " << lineData.a << "x + " << lineData.b;
+    } else {
+        qDebug() << "[TCP] 수직선 전송 실패.";
     }
 
     return success;
@@ -809,6 +840,45 @@ void TcpCommunicator::handleRoadLineResponse(const QJsonObject &jsonObj)
         emit statusUpdated("Road line setup complete");
     } else {
         emit errorOccurred("Failed to set up road line: " + message);
+    }
+}
+
+
+// handlePerpendicularLineResponse 함수 추가 (handleRoadLineResponse 함수 다음에)
+void TcpCommunicator::handlePerpendicularLineResponse(const QJsonObject &jsonObj)
+{
+    // 서버에서 수직선 설정에 대한 응답 처리
+    bool success = true;  // 기본값
+    QString message = "수직선 설정 완료";
+
+    if (jsonObj.contains("success")) {
+        success = jsonObj["success"].toBool();
+    }
+
+    if (jsonObj.contains("message")) {
+        message = jsonObj["message"].toString();
+    }
+
+    // data 필드에서 추가 정보 추출
+    if (jsonObj.contains("data") && jsonObj["data"].isObject()) {
+        QJsonObject data = jsonObj["data"].toObject();
+        int index = data["index"].toInt();
+        double a = data["a"].toDouble();
+        double b = data["b"].toDouble();
+
+        qDebug() << "[TCP] 수직선 응답 - index:" << index
+                 << "y = " << a << "x + " << b << "성공:" << success;
+
+        message = QString("수직선 (index: %1, y = %2x + %3) 설정 %4")
+                      .arg(index).arg(a).arg(b).arg(success ? "성공" : "실패");
+    }
+
+    emit perpendicularLineConfirmed(success, message);
+
+    if (success) {
+        emit statusUpdated("수직선 설정 완료");
+    } else {
+        emit errorOccurred("수직선 설정 실패: " + message);
     }
 }
 

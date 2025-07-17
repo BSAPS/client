@@ -195,15 +195,18 @@ bool TcpCommunicator::sendRoadLine(const RoadLineData &lineData)
 
     QJsonObject data;
     data["matrixNum"] = lineData.matrixNum;
-    data["x"] = lineData.x1;
-    data["y"] = lineData.x2;
+    data["x1"] = lineData.x1;  // 시작점 x
+    data["y1"] = lineData.y1;  // 시작점 y
+    data["x2"] = lineData.x2;  // 끝점 x
+    data["y2"] = lineData.y2;  // 끝점 y
 
     message["data"] = data;
 
     bool success = sendJsonMessage(message);
     if (success) {
         qDebug() << "[TCP] Road line sent successfully - matrixNum:" << lineData.matrixNum
-                 << "x1:" << lineData.x1 << "x2:" << lineData.x2;
+                 << "start:(" << lineData.x1 << "," << lineData.y1 << ")"
+                 << "end:(" << lineData.x2 << "," << lineData.y2 << ")";
     } else {
         qDebug() << "[TCP] Failed to send road line.";
     }
@@ -825,13 +828,18 @@ void TcpCommunicator::handleRoadLineResponse(const QJsonObject &jsonObj)
         QJsonObject data = jsonObj["data"].toObject();
         int matrixNum = data["matrixNum"].toInt();
         int x1 = data["x1"].toInt();
+        int y1 = data["y1"].toInt();
         int x2 = data["x2"].toInt();
+        int y2 = data["y2"].toInt();
 
         qDebug() << "[TCP] Road line response - matrixNum:" << matrixNum
-                 << "x1:" << x1 << "x2:" << x2 << "Success:" << success;
+                 << "start:(" << x1 << "," << y1 << ")"
+                 << "end:(" << x2 << "," << y2 << ")"
+                 << "Success:" << success;
 
-        message = QString("Road line (Matrix: %1, x1:%2, x2:%3) setup %4")
-                      .arg(matrixNum).arg(x1).arg(x2).arg(success ? "succeeded" : "failed");
+        message = QString("Road line (Matrix: %1, start:(%2,%3), end:(%4,%5)) setup %6")
+                      .arg(matrixNum).arg(x1).arg(y1).arg(x2).arg(y2)
+                      .arg(success ? "succeeded" : "failed");
     }
 
     emit roadLineConfirmed(success, message);

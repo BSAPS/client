@@ -363,6 +363,9 @@ void VideoGraphicsView::mouseReleaseEvent(QMouseEvent *event)
 // LineDrawingDialog 구현
 LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     : QDialog(parent)
+    , m_mappingCountLabel(nullptr)
+    , m_clearMappingsButton(nullptr)
+    , m_sendMappingsButton(nullptr)
     , m_mainLayout(nullptr)
     , m_buttonLayout(nullptr)
     , m_videoView(nullptr)
@@ -373,6 +376,7 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     , m_closeButton(nullptr)
     , m_statusLabel(nullptr)
     , m_frameCountLabel(nullptr)
+    , m_sendPerpendicularButton(nullptr)
     , m_logTextEdit(nullptr)
     , m_logCountLabel(nullptr)
     , m_clearLogButton(nullptr)
@@ -386,10 +390,6 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     , m_currentCategory(LineCategory::ROAD_DEFINITION)
     , m_selectedRoadLineIndex(-1)
     , m_roadLineSelectionMode(false)
-    , m_mappingCountLabel(nullptr)
-    , m_clearMappingsButton(nullptr)
-    , m_sendMappingsButton(nullptr)
-    , m_sendPerpendicularButton(nullptr)
 {
     setWindowTitle("기준선 그리기");
     setModal(true);
@@ -903,8 +903,10 @@ void LineDrawingDialog::onSendCoordinatesClicked()
         if (line.category == LineCategory::ROAD_DEFINITION) {
             RoadLineData roadLineData;
             roadLineData.matrixNum = (roadLines.size() % 4) + 1;  // 1-4 순환
-            roadLineData.x1 = line.start.x();
-            roadLineData.x2 = line.end.x();
+            roadLineData.x1 = line.start.x();  // 시작점 x
+            roadLineData.y1 = line.start.y();  // 시작점 y
+            roadLineData.x2 = line.end.x();    // 끝점 x
+            roadLineData.y2 = line.end.y();    // 끝점 y
             roadLines.append(roadLineData);
         } else {
             DetectionLineData detectionLineData;
@@ -1192,13 +1194,21 @@ void LineDrawingDialog::clearCoordinateMappings()
 QList<RoadLineData> LineDrawingDialog::getCoordinateMappingsAsRoadLines() const
 {
     QList<RoadLineData> roadLines;
+    QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
 
     for (const auto &mapping : m_coordinateMatrixMappings) {
-        RoadLineData roadLineData;
-        roadLineData.matrixNum = mapping.matrixNum;
-        roadLineData.x1 = mapping.coordinate.x();
-        roadLineData.x2 = mapping.coordinate.x(); // 단일 좌표이므로 x1과 동일
-        roadLines.append(roadLineData);
+        if (mapping.lineIndex >= 0 && mapping.lineIndex < allLines.size()) {
+            const auto &line = allLines[mapping.lineIndex];
+            if (line.category == LineCategory::ROAD_DEFINITION) {
+                RoadLineData roadLineData;
+                roadLineData.matrixNum = mapping.matrixNum;
+                roadLineData.x1 = mapping.coordinate.x();
+                roadLineData.y1 = mapping.coordinate.y();
+                roadLineData.x2 = mapping.coordinate.x(); // 단일 좌표이므로 x1과 동일
+                roadLineData.y2 = mapping.coordinate.y(); // 단일 좌표이므로 y1과 동일
+                roadLines.append(roadLineData);
+            }
+        }
     }
 
     return roadLines;

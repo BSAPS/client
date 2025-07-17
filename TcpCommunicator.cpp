@@ -194,9 +194,11 @@ bool TcpCommunicator::sendRoadLine(const RoadLineData &lineData)
     message["request_id"] = 5;  // request_id for road line defined by server
 
     QJsonObject data;
-    data["matrixNum"] = lineData.matrixNum;
+    data["index"] = lineData.index;
+    data["matrixNum1"] = lineData.matrixNum1;
     data["x1"] = lineData.x1;  // 시작점 x
     data["y1"] = lineData.y1;  // 시작점 y
+    data["matrixNum2"] = lineData.matrixNum2;
     data["x2"] = lineData.x2;  // 끝점 x
     data["y2"] = lineData.y2;  // 끝점 y
 
@@ -204,9 +206,9 @@ bool TcpCommunicator::sendRoadLine(const RoadLineData &lineData)
 
     bool success = sendJsonMessage(message);
     if (success) {
-        qDebug() << "[TCP] Road line sent successfully - matrixNum:" << lineData.matrixNum
-                 << "start:(" << lineData.x1 << "," << lineData.y1 << ")"
-                 << "end:(" << lineData.x2 << "," << lineData.y2 << ")";
+        qDebug() << "[TCP] Road line sent successfully - index:" << lineData.index
+                 << "start:(" << lineData.x1 << "," << lineData.y1 << ") matrix:" << lineData.matrixNum1
+                 << "end:(" << lineData.x2 << "," << lineData.y2 << ") matrix:" << lineData.matrixNum2;
     } else {
         qDebug() << "[TCP] Failed to send road line.";
     }
@@ -320,9 +322,13 @@ bool TcpCommunicator::sendCategorizedLineCoordinates(const QList<CategorizedLine
             const auto &line = roadLines[i];
 
             RoadLineData roadLineData;
-            roadLineData.matrixNum = (i % 4) + 1;  // Cycle 1-4
+            roadLineData.index = i + 1;  // 1부터 시작하는 인덱스
+            roadLineData.matrixNum1 = (i % 4) + 1;  // 시작점 Matrix (1-4 순환)
             roadLineData.x1 = line.x1;
+            roadLineData.y1 = line.y1;
+            roadLineData.matrixNum2 = ((i + 1) % 4) + 1;  // 끝점 Matrix (다른 번호)
             roadLineData.x2 = line.x2;
+            roadLineData.y2 = line.y2;
 
             serverRoadLines.append(roadLineData);
         }
@@ -823,22 +829,25 @@ void TcpCommunicator::handleRoadLineResponse(const QJsonObject &jsonObj)
         message = jsonObj["message"].toString();
     }
 
-    // Extract additional information from the data field
+
     if (jsonObj.contains("data") && jsonObj["data"].isObject()) {
         QJsonObject data = jsonObj["data"].toObject();
-        int matrixNum = data["matrixNum"].toInt();
+        int index = data["index"].toInt();
+        int matrixNum1 = data["matrixNum1"].toInt();
         int x1 = data["x1"].toInt();
         int y1 = data["y1"].toInt();
+        int matrixNum2 = data["matrixNum2"].toInt();
         int x2 = data["x2"].toInt();
         int y2 = data["y2"].toInt();
 
-        qDebug() << "[TCP] Road line response - matrixNum:" << matrixNum
-                 << "start:(" << x1 << "," << y1 << ")"
-                 << "end:(" << x2 << "," << y2 << ")"
+        qDebug() << "[TCP] Road line response - index:" << index
+                 << "start:(" << x1 << "," << y1 << ") matrix:" << matrixNum1
+                 << "end:(" << x2 << "," << y2 << ") matrix:" << matrixNum2
                  << "Success:" << success;
 
-        message = QString("Road line (Matrix: %1, start:(%2,%3), end:(%4,%5)) setup %6")
-                      .arg(matrixNum).arg(x1).arg(y1).arg(x2).arg(y2)
+        message = QString("Road line #%1 (start:(%2,%3) Matrix:%4, end:(%5,%6) Matrix:%7) setup %8")
+                      .arg(index).arg(x1).arg(y1).arg(matrixNum1)
+                      .arg(x2).arg(y2).arg(matrixNum2)
                       .arg(success ? "succeeded" : "failed");
     }
 

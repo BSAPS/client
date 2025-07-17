@@ -111,7 +111,7 @@ public:
 signals:
     void lineCoordinatesReady(int x1, int y1, int x2, int y2);
     void categorizedLinesReady(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines);
-    void perpendicularLineGenerated(int detectionLineIndex, double a, double b);  // 새 시그널 추가
+    void perpendicularLineGenerated(int detectionLineIndex, double a, double b);
 
 private slots:
     void onStartDrawingClicked();
@@ -128,8 +128,6 @@ private slots:
     void onClearCategoryClicked();
     void updateCategoryInfo();
     void onCoordinateClicked(int lineIndex, const QPoint &coordinate, bool isStartPoint);
-    void onPerpendicularLineGenerated(int detectionLineIndex, double a, double b);
-    void onSendPerpendicularClicked();
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -154,7 +152,6 @@ private:
     QPushButton *m_closeButton;
     QLabel *m_statusLabel;
     QLabel *m_frameCountLabel;
-    QPushButton *m_sendPerpendicularButton;
 
     // 로그 관련 UI
     QTextEdit *m_logTextEdit;

@@ -59,10 +59,13 @@ struct PerpendicularLineData {
     double b;               // y = ax + b에서 b값 (y절편)
 };
 
-// 서버 양식에 맞춘 도로 기준선 데이터 구조체 추가
+// 서버 양식에 맞춘 도로 기준선 데이터 구조체 수정
 struct RoadLineData {
-    int matrixNum;          // 매트릭스 번호 (1-4)
-    int x1, y1, x2, y2;     // 시작점(x1,y1)과 끝점(x2,y2) 좌표
+    int index;              // 기준선 번호 (선 그을때마다 1씩 증가)
+    int matrixNum1;         // 시작점 매트릭스 번호
+    int x1, y1;             // 시작점 좌표
+    int matrixNum2;         // 끝점 매트릭스 번호
+    int x2, y2;             // 끝점 좌표
 };
 
 class TcpCommunicator : public QObject

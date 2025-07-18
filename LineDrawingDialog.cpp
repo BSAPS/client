@@ -52,22 +52,23 @@ void VideoGraphicsView::clearLines()
 {
     clearHighlight();
 
-    // 모든 선과 점 제거
-    for (auto lineItem : m_lineItems) {
-        m_scene->removeItem(lineItem);
-        delete lineItem;
+    // 비디오 아이템을 제외한 모든 그래픽 아이템 제거 (수직선 포함)
+    QList<QGraphicsItem*> allItems = m_scene->items();
+    for (QGraphicsItem* item : allItems) {
+        // 비디오 아이템은 제외
+        if (item != m_videoItem) {
+            m_scene->removeItem(item);
+            delete item;
+        }
     }
+
+    // 리스트들 초기화
     m_lineItems.clear();
-
-    for (auto pointItem : m_pointItems) {
-        m_scene->removeItem(pointItem);
-        delete pointItem;
-    }
     m_pointItems.clear();
-
     m_lines.clear();
     m_categorizedLines.clear();
-    qDebug() << "모든 선 지워짐";
+
+    qDebug() << "모든 선과 수직선이 지워짐";
 }
 
 QList<QPair<QPoint, QPoint>> VideoGraphicsView::getLines() const
@@ -78,7 +79,7 @@ QList<QPair<QPoint, QPoint>> VideoGraphicsView::getLines() const
 void VideoGraphicsView::setCurrentCategory(LineCategory category)
 {
     m_currentCategory = category;
-    qDebug() << "카테고리 변경:" << (category == LineCategory::ROAD_DEFINITION ? "도로 명시선" : "객체 탐지선");
+    qDebug() << "카테고리 변경:" << (category == LineCategory::ROAD_DEFINITION ? "도로 명시선" : "객체 감지선");
 }
 
 QList<CategorizedLine> VideoGraphicsView::getCategorizedLines() const
@@ -122,7 +123,7 @@ void VideoGraphicsView::redrawAllLines()
         if (catLine.category == LineCategory::ROAD_DEFINITION) {
             linePen = QPen(Qt::blue, 2, Qt::SolidLine);  // 도로선: 파란색
         } else {
-            linePen = QPen(Qt::red, 2, Qt::SolidLine);   // 탐지선: 빨간색
+            linePen = QPen(Qt::red, 2, Qt::SolidLine);   // 감지선: 빨간색
         }
 
         lineItem->setPen(linePen);
@@ -353,7 +354,7 @@ void VideoGraphicsView::mouseReleaseEvent(QMouseEvent *event)
 
         emit lineDrawn(m_startPoint, endPoint, m_currentCategory);
 
-        QString categoryName = (m_currentCategory == LineCategory::ROAD_DEFINITION) ? "도로 명시선" : "객체 탐지선";
+        QString categoryName = (m_currentCategory == LineCategory::ROAD_DEFINITION) ? "도로 명시선" : "객체 감지선";
         qDebug() << categoryName << "추가됨:" << m_startPoint << "→" << endPoint;
     } else {
         qDebug() << "선이 너무 짧아서 무시됨";
@@ -376,7 +377,6 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     , m_closeButton(nullptr)
     , m_statusLabel(nullptr)
     , m_frameCountLabel(nullptr)
-    , m_sendPerpendicularButton(nullptr)
     , m_logTextEdit(nullptr)
     , m_logCountLabel(nullptr)
     , m_clearLogButton(nullptr)
@@ -401,9 +401,6 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
 
     // 좌표별 클릭 연결
     connect(m_videoView, &VideoGraphicsView::coordinateClicked, this, &LineDrawingDialog::onCoordinateClicked);
-    // LineDrawingDialog 생성자에서 TCP 연결 추가 (기존 connect 문들 다음에)
-    // 수직선 확인 연결 추가
-    // connect(tcpCommunicator, &TcpCommunicator::perpendicularLineConfirmed, this, &LineDrawingDialog::onPerpendicularLineGenerated);
 }
 
 void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordinate, bool isStartPoint)
@@ -455,7 +452,7 @@ void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordin
                                          "• 도로선: #%1 %2\n"
                                          "• Matrix 번호: %3\n"
                                          "• 좌표: (%4,%5)\n\n"
-                                         "전송하려면 '매핑 전송' 버튼을 클릭하세요.")
+                                         "전송하려면 '좌표 전송' 버튼을 클릭하세요.")
                                      .arg(lineIndex + 1)
                                      .arg(pointType)
                                      .arg(matrixNum)
@@ -517,7 +514,7 @@ void LineDrawingDialog::setupUI()
     m_roadLineRadio->setStyleSheet("color: #0066cc; font-size: 12px; font-weight: bold;");
     m_roadLineRadio->setChecked(true);
 
-    m_detectionLineRadio = new QRadioButton("🎯 탐지선");
+    m_detectionLineRadio = new QRadioButton("🎯 감지선");
     m_detectionLineRadio->setStyleSheet("color: #cc0000; font-size: 12px; font-weight: bold;");
 
     m_categoryButtonGroup = new QButtonGroup(this);
@@ -547,7 +544,7 @@ void LineDrawingDialog::setupUI()
     m_roadLineCountLabel = new QLabel("도로선: 0개");
     m_roadLineCountLabel->setStyleSheet("color: #0066cc; font-size: 11px; padding: 2px 6px; background-color: rgba(0,102,204,0.1); border-radius: 3px;");
 
-    m_detectionLineCountLabel = new QLabel("탐지선: 0개");
+    m_detectionLineCountLabel = new QLabel("감지선: 0개");
     m_detectionLineCountLabel->setStyleSheet("color: #cc0000; font-size: 11px; padding: 2px 6px; background-color: rgba(204,0,0,0.1); border-radius: 3px;");
 
     statsLayout->addWidget(m_roadLineCountLabel);
@@ -668,38 +665,6 @@ void LineDrawingDialog::setupUI()
     connect(m_sendCoordinatesButton, &QPushButton::clicked, this, &LineDrawingDialog::onSendCoordinatesClicked);
     m_buttonLayout->addWidget(m_sendCoordinatesButton);
 
-    m_sendMappingsButton = new QPushButton("📤 매핑 전송");
-    m_sendMappingsButton->setStyleSheet("QPushButton { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #218838; }");
-    m_sendMappingsButton->setEnabled(false);
-    connect(m_sendMappingsButton, &QPushButton::clicked, [this]() {
-        QList<RoadLineData> roadLines = getCoordinateMappingsAsRoadLines();
-        QList<DetectionLineData> detectionLines; // 빈 리스트
-
-        if (!roadLines.isEmpty()) {
-            addLogMessage(QString("좌표-Matrix 매핑 %1개를 서버로 전송합니다.").arg(roadLines.size()), "INFO");
-
-            // 전송될 데이터 로그 출력
-            for (int i = 0; i < roadLines.size(); ++i) {
-                const auto &roadLine = roadLines[i];
-                const auto &mapping = m_coordinateMatrixMappings[i];
-                addLogMessage(QString("전송: %1 좌표(%2,%3) Matrix%4")
-                                  .arg(mapping.displayName)
-                                  .arg(roadLine.x1).arg(roadLine.x2)
-                                  .arg(roadLine.matrixNum), "COORD");
-            }
-
-            emit categorizedLinesReady(roadLines, detectionLines);
-            m_statusLabel->setText(QString("%1개의 좌표-Matrix 매핑이 서버로 전송되었습니다.").arg(roadLines.size()));
-        }
-    });
-    m_buttonLayout->addWidget(m_sendMappingsButton);
-
-    m_sendPerpendicularButton = new QPushButton("📐 수직선 전송");
-    m_sendPerpendicularButton->setStyleSheet("QPushButton { background-color: #17a2b8; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #138496; }");
-    m_sendPerpendicularButton->setEnabled(false);
-    connect(m_sendPerpendicularButton, &QPushButton::clicked, this, &LineDrawingDialog::onSendPerpendicularClicked);
-    m_buttonLayout->addWidget(m_sendPerpendicularButton);
-
     m_buttonLayout->addStretch();
 
     m_closeButton = new QPushButton("❌ 닫기");
@@ -717,7 +682,8 @@ void LineDrawingDialog::setupUI()
     // 초기 로그 메시지 수정
     addLogMessage("기준선 그리기 다이얼로그가 시작되었습니다.", "SYSTEM");
     addLogMessage("💡 도로선(파란색)의 시작점이나 끝점을 클릭하여 각 좌표별로 Dot Matrix 번호를 설정하세요.", "INFO");
-    addLogMessage("💡 설정된 매핑은 '매핑 전송' 버튼으로 일괄 전송할 수 있습니다.", "INFO");
+    addLogMessage("💡 감지선을 그리면 수직선이 자동으로 계산되고 전송됩니다.", "INFO");
+    addLogMessage("💡 '좌표 전송'은 매핑 정보를 우선 사용하고, 없으면 자동 할당합니다.", "INFO");
 
     qDebug() << "UI 설정 완료";
 }
@@ -799,8 +765,12 @@ void LineDrawingDialog::onClearLinesClicked()
     int lineCount = m_videoView->getLines().size();
     m_videoView->clearLines();
     m_drawnLines.clear();
-    m_statusLabel->setText("모든 선이 지워졌습니다");
-    addLogMessage(QString("%1개의 선이 지워졌습니다.").arg(lineCount), "ACTION");
+
+    // 매핑 정보도 함께 지우기
+    clearCoordinateMappings();
+
+    m_statusLabel->setText("모든 선과 매핑이 지워졌습니다");
+    addLogMessage(QString("%1개의 선과 매핑 정보가 지워졌습니다.").arg(lineCount), "ACTION");
     updateCategoryInfo();
     updateButtonStates();
 }
@@ -817,9 +787,9 @@ void LineDrawingDialog::onCategoryChanged()
         m_categoryInfoLabel->setStyleSheet("color: #0066cc; font-size: 11px; font-style: italic;");
         addLogMessage("도로 명시선 모드로 변경되었습니다.", "ACTION");
     } else {
-        m_categoryInfoLabel->setText("현재: 탐지선 (빨간색)");
+        m_categoryInfoLabel->setText("현재: 감지선 (빨간색)");
         m_categoryInfoLabel->setStyleSheet("color: #cc0000; font-size: 11px; font-style: italic;");
-        addLogMessage("객체 탐지선 모드로 변경되었습니다.", "ACTION");
+        addLogMessage("객체 감지선 모드로 변경되었습니다.", "ACTION");
     }
 }
 
@@ -829,28 +799,28 @@ void LineDrawingDialog::onClearCategoryClicked()
     int beforeCount = m_videoView->getCategoryLineCount(m_currentCategory);
     m_videoView->clearCategoryLines(m_currentCategory);
 
-    QString categoryName = (m_currentCategory == LineCategory::ROAD_DEFINITION) ? "도로 명시선" : "객체 탐지선";
+    QString categoryName = (m_currentCategory == LineCategory::ROAD_DEFINITION) ? "도로 명시선" : "객체 감지선";
     addLogMessage(QString("%1 %2개가 지워졌습니다.").arg(categoryName).arg(beforeCount), "ACTION");
 
     updateCategoryInfo();
     updateButtonStates();
 }
 
-// onLineDrawn 함수 수정 (탐지선이 그려졌을 때 수직선 자동 생성)
+// onLineDrawn 함수 수정 (감지선이 그려졌을 때 수직선 자동 생성)
 void LineDrawingDialog::onLineDrawn(const QPoint &start, const QPoint &end, LineCategory category)
 {
-    QString categoryName = (category == LineCategory::ROAD_DEFINITION) ? "도로 명시선" : "객체 탐지선";
+    QString categoryName = (category == LineCategory::ROAD_DEFINITION) ? "도로 명시선" : "객체 감지선";
     addLogMessage(QString("%1이 그려졌습니다: (%2,%3) → (%4,%5)")
                       .arg(categoryName)
                       .arg(start.x()).arg(start.y())
                       .arg(end.x()).arg(end.y()), "DRAW");
 
-    // 탐지선인 경우 수직선 자동 생성
+    // 감지선인 경우 수직선 자동 생성
     if (category == LineCategory::OBJECT_DETECTION) {
         QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
         int detectionLineIndex = 0;
 
-        // 현재 그려진 탐지선의 인덱스 찾기
+        // 현재 그려진 감지선의 인덱스 찾기
         for (int i = 0; i < allLines.size(); ++i) {
             if (allLines[i].category == LineCategory::OBJECT_DETECTION) {
                 detectionLineIndex++;
@@ -879,10 +849,10 @@ void LineDrawingDialog::updateCategoryInfo()
     int detectionCount = m_videoView->getCategoryLineCount(LineCategory::OBJECT_DETECTION);
 
     m_roadLineCountLabel->setText(QString("도로선: %1개").arg(roadCount));
-    m_detectionLineCountLabel->setText(QString("탐지선: %1개").arg(detectionCount));
+    m_detectionLineCountLabel->setText(QString("감지선: %1개").arg(detectionCount));
 }
 
-// onSendCoordinatesClicked 함수 수정
+// onSendCoordinatesClicked 함수 수정 - 매핑 정보 우선 사용
 void LineDrawingDialog::onSendCoordinatesClicked()
 {
     QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
@@ -893,73 +863,92 @@ void LineDrawingDialog::onSendCoordinatesClicked()
         return;
     }
 
-    // 카테고리별로 분류하고 서버 양식에 맞춰 변환
-    QList<RoadLineData> roadLines;
+    // 매핑 정보가 있는 도로선 우선 처리
+    QList<RoadLineData> roadLines = getCoordinateMappingsAsRoadLines();
     QList<DetectionLineData> detectionLines;
+
+    // 매핑 정보가 있는 도로선의 인덱스 저장
+    QSet<int> mappedLineIndices;
+    for (const auto &mapping : m_coordinateMatrixMappings) {
+        if (mapping.lineIndex < allLines.size() &&
+            allLines[mapping.lineIndex].category == LineCategory::ROAD_DEFINITION) {
+            mappedLineIndices.insert(mapping.lineIndex);
+        }
+    }
+
+    int autoIndex = roadLines.size() + 1; // 매핑된 선들 다음 인덱스부터 시작
 
     for (int i = 0; i < allLines.size(); ++i) {
         const auto &line = allLines[i];
 
         if (line.category == LineCategory::ROAD_DEFINITION) {
-            RoadLineData roadLineData;
-            roadLineData.matrixNum = (roadLines.size() % 4) + 1;  // 1-4 순환
-            roadLineData.x1 = line.start.x();  // 시작점 x
-            roadLineData.y1 = line.start.y();  // 시작점 y
-            roadLineData.x2 = line.end.x();    // 끝점 x
-            roadLineData.y2 = line.end.y();    // 끝점 y
-            roadLines.append(roadLineData);
+            // 매핑 정보가 없는 도로선만 자동 할당
+            if (!mappedLineIndices.contains(i)) {
+                RoadLineData roadLineData;
+                roadLineData.index = autoIndex++;
+                roadLineData.matrixNum1 = ((roadLines.size()) % 4) + 1;  // 자동 순환 할당
+                roadLineData.x1 = line.start.x();
+                roadLineData.y1 = line.start.y();
+                roadLineData.matrixNum2 = ((roadLines.size() + 1) % 4) + 1;  // 자동 순환 할당
+                roadLineData.x2 = line.end.x();
+                roadLineData.y2 = line.end.y();
+                roadLines.append(roadLineData);
+            }
         } else {
+            // 감지선 처리
             DetectionLineData detectionLineData;
-            detectionLineData.index = detectionLines.size() + 1;  // 1부터 시작하는 인덱스
+            detectionLineData.index = detectionLines.size() + 1;
             detectionLineData.x1 = line.start.x();
             detectionLineData.y1 = line.start.y();
             detectionLineData.x2 = line.end.x();
             detectionLineData.y2 = line.end.y();
-            detectionLineData.name = QString("detection_line_%1").arg(detectionLineData.index);
-            detectionLineData.mode = "BothDirections";  // 기본값: 양방향
-            detectionLineData.leftMatrixNum = 1;   // 기본값
-            detectionLineData.rightMatrixNum = 2;  // 기본값
+            detectionLineData.name = QString("DetectionLine%1").arg(detectionLineData.index);
+            detectionLineData.mode = "BothDirections";
+            detectionLineData.leftMatrixNum = 1;
+            detectionLineData.rightMatrixNum = 2;
             detectionLines.append(detectionLineData);
         }
     }
 
-    addLogMessage(QString("좌표 전송을 시작합니다. (도로선: %1개, 탐지선: %2개)")
-                      .arg(roadLines.size()).arg(detectionLines.size()), "INFO");
+    int mappedCount = getCoordinateMappingsAsRoadLines().size();
+    int autoCount = roadLines.size() - mappedCount;
+
+    addLogMessage(QString("좌표 전송을 시작합니다. (매핑된 도로선: %1개, 자동할당 도로선: %2개, 감지선: %3개)")
+                      .arg(mappedCount).arg(autoCount).arg(detectionLines.size()), "INFO");
 
     // 서버 양식에 맞춘 카테고리별 좌표 전송
     emit categorizedLinesReady(roadLines, detectionLines);
 
     // 로그에 전송될 좌표 정보 출력
     for (const auto &line : roadLines) {
-        addLogMessage(QString("도로 기준선 (매트릭스:%1): x1=%2, x2=%3")
-                          .arg(line.matrixNum)
-                          .arg(line.x1)
-                          .arg(line.x2), "COORD");
-    }
-
-    for (const auto &line : detectionLines) {
-        addLogMessage(QString("객체 탐지선 %1 (index:%2, name:%3, mode:%4): (%5,%6) → (%7,%8)")
-                          .arg(line.index)
-                          .arg(line.index)
-                          .arg(line.name)
-                          .arg(line.mode)
+        QString mappingType = (line.index <= mappedCount) ? "매핑" : "자동";
+        addLogMessage(QString("도로 기준선 #%1 (%2) (시작점 Matrix:%3, 끝점 Matrix:%4): (%5,%6) → (%7,%8)")
+                          .arg(line.index).arg(mappingType)
+                          .arg(line.matrixNum1).arg(line.matrixNum2)
                           .arg(line.x1).arg(line.y1)
                           .arg(line.x2).arg(line.y2), "COORD");
     }
 
+    for (const auto &line : detectionLines) {
+        addLogMessage(QString("객체 감지선 %1 (index:%2, name:%3, mode:%4): (%5,%6) → (%7,%8)")
+                          .arg(line.index).arg(line.index).arg(line.name).arg(line.mode)
+                          .arg(line.x1).arg(line.y1).arg(line.x2).arg(line.y2), "COORD");
+    }
+
     m_statusLabel->setText("좌표 전송 중... 서버 응답을 기다리는 중입니다.");
 
-    addLogMessage(QString("좌표 전송이 시작되었습니다. (도로: %1개, 탐지: %2개)")
+    addLogMessage(QString("좌표 전송이 시작되었습니다. (총 도로선: %1개, 감지선: %2개)")
                       .arg(roadLines.size()).arg(detectionLines.size()), "SUCCESS");
 
-    // 전송 완료 알림 (창은 닫지 않음)
+    // 전송 완료 알림
     QMessageBox::information(this, "전송 시작",
                              QString("기준선 좌표 전송을 시작했습니다.\n"
-                                     "• 도로 기준선: %1개 (request_id: 5)\n"
-                                     "• 객체 탐지선: %2개 (request_id: 2)\n")
-                                 .arg(roadLines.size()).arg(detectionLines.size()));
-
-    // 창을 닫지 않고 열어둠 - accept() 호출 제거
+                                     "• 매핑된 도로선: %1개\n"
+                                     "• 자동할당 도로선: %2개\n"
+                                     "• 객체 감지선: %3개 (자동 수직선 포함)\n"
+                                     "• 도로 기준선 총 %4개")
+                                 .arg(mappedCount).arg(autoCount)
+                                 .arg(detectionLines.size()).arg(roadLines.size()));
 }
 
 void LineDrawingDialog::onPlayerStateChanged(QMediaPlayer::PlaybackState state)
@@ -1044,15 +1033,12 @@ void LineDrawingDialog::updateButtonStates()
 {
     bool isStreaming = (m_mediaPlayer && m_mediaPlayer->playbackState() == QMediaPlayer::PlayingState);
     bool hasLines = !m_videoView->getLines().isEmpty();
-    bool hasDetectionLines = m_videoView->getCategoryLineCount(LineCategory::OBJECT_DETECTION) > 0;
 
     m_startDrawingButton->setEnabled(isStreaming && !m_isDrawingMode);
     m_stopDrawingButton->setEnabled(isStreaming && m_isDrawingMode);
     m_clearLinesButton->setEnabled(hasLines);
     m_sendCoordinatesButton->setEnabled(hasLines);
     m_clearMappingsButton->setEnabled(m_coordinateMatrixMappings.size() > 0);
-    m_sendMappingsButton->setEnabled(m_coordinateMatrixMappings.size() > 0);
-    m_sendPerpendicularButton->setEnabled(hasDetectionLines);
 }
 
 void LineDrawingDialog::addLogMessage(const QString &message, const QString &type)
@@ -1179,16 +1165,24 @@ void LineDrawingDialog::updateMappingInfo()
 
     // 버튼 상태 업데이트
     m_clearMappingsButton->setEnabled(mappingCount > 0);
-    m_sendMappingsButton->setEnabled(mappingCount > 0);
+
+    // 완전한 매핑 정보 확인 (각 도로선의 시작점과 끝점 모두 매핑되었는지)
+    QList<RoadLineData> completeRoadLines = getCoordinateMappingsAsRoadLines();
+    if (completeRoadLines.size() > 0) {
+        addLogMessage(QString("완전한 매핑: %1개 도로선").arg(completeRoadLines.size()), "SUCCESS");
+    }
 }
 
 void LineDrawingDialog::clearCoordinateMappings()
 {
     int count = m_coordinateMatrixMappings.size();
     m_coordinateMatrixMappings.clear();
+    m_videoView->clearHighlight();
+
+    addLogMessage(QString("%1개의 좌표 매핑이 지워졌습니다.").arg(count), "ACTION");
     updateMappingInfo();
-    addLogMessage(QString("%1개의 좌표-Matrix 매핑이 지워졌습니다.").arg(count), "ACTION");
-    m_statusLabel->setText("모든 좌표-Matrix 매핑이 지워졌습니다.");
+
+    QMessageBox::information(this, "매핑 지우기", QString("%1개의 좌표 매핑이 지워졌습니다.").arg(count));
 }
 
 QList<RoadLineData> LineDrawingDialog::getCoordinateMappingsAsRoadLines() const
@@ -1196,73 +1190,57 @@ QList<RoadLineData> LineDrawingDialog::getCoordinateMappingsAsRoadLines() const
     QList<RoadLineData> roadLines;
     QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
 
+    // 도로선별로 매핑 정보 그룹화 - const 문제 해결을 위해 값으로 저장
+    QMap<int, QPair<CoordinateMatrixMapping, CoordinateMatrixMapping>> lineMapping;
+    QMap<int, QPair<bool, bool>> hasMappingFlags; // 시작점, 끝점 매핑 여부
+
     for (const auto &mapping : m_coordinateMatrixMappings) {
-        if (mapping.lineIndex >= 0 && mapping.lineIndex < allLines.size()) {
-            const auto &line = allLines[mapping.lineIndex];
-            if (line.category == LineCategory::ROAD_DEFINITION) {
-                RoadLineData roadLineData;
-                roadLineData.matrixNum = mapping.matrixNum;
-                roadLineData.x1 = mapping.coordinate.x();
-                roadLineData.y1 = mapping.coordinate.y();
-                roadLineData.x2 = mapping.coordinate.x(); // 단일 좌표이므로 x1과 동일
-                roadLineData.y2 = mapping.coordinate.y(); // 단일 좌표이므로 y1과 동일
-                roadLines.append(roadLineData);
+        if (mapping.lineIndex < allLines.size() && allLines[mapping.lineIndex].category == LineCategory::ROAD_DEFINITION) {
+            if (!lineMapping.contains(mapping.lineIndex)) {
+                lineMapping[mapping.lineIndex] = QPair<CoordinateMatrixMapping, CoordinateMatrixMapping>();
+                hasMappingFlags[mapping.lineIndex] = QPair<bool, bool>(false, false);
             }
+
+            if (mapping.isStartPoint) {
+                lineMapping[mapping.lineIndex].first = mapping;
+                hasMappingFlags[mapping.lineIndex].first = true;
+            } else {
+                lineMapping[mapping.lineIndex].second = mapping;
+                hasMappingFlags[mapping.lineIndex].second = true;
+            }
+        }
+    }
+
+    // 완전한 매핑 정보가 있는 도로선만 RoadLineData로 변환
+    for (auto it = lineMapping.begin(); it != lineMapping.end(); ++it) {
+        int lineIdx = it.key();
+        auto mappingPair = it.value();
+        auto flagPair = hasMappingFlags[lineIdx];
+
+        if (flagPair.first && flagPair.second) { // 시작점과 끝점 모두 매핑됨
+            RoadLineData roadLineData;
+            roadLineData.index = roadLines.size() + 1; // 1부터 시작하  { // 시작점과 끝점 모두 매핑됨
+            roadLineData.matrixNum1 = mappingPair.first.matrixNum;
+            roadLineData.x1 = mappingPair.first.coordinate.x();
+            roadLineData.y1 = mappingPair.first.coordinate.y();
+            roadLineData.matrixNum2 = mappingPair.second.matrixNum;
+            roadLineData.x2 = mappingPair.second.coordinate.x();
+            roadLineData.y2 = mappingPair.second.coordinate.y();
+
+            roadLines.append(roadLineData);
         }
     }
 
     return roadLines;
 }
 
-// calculatePerpendicularLine 함수 구현 (파일 끝 부분에 추가)
-// calculatePerpendicularLine 함수를 y = ax + b 형태로 수정
-PerpendicularLineData LineDrawingDialog::calculatePerpendicularLine(const QPoint &start, const QPoint &end, int detectionLineIndex)
-{
-    PerpendicularLineData perpData;
-    perpData.index = detectionLineIndex;
-
-    // 원래 선의 벡터 계산
-    double dx = end.x() - start.x();
-    double dy = end.y() - start.y();
-
-    // 원래 선의 중점 계산
-    double midX = (start.x() + end.x()) / 2.0;
-    double midY = (start.y() + end.y()) / 2.0;
-
-    // 수직선의 기울기 계산
-    if (abs(dx) < 0.001) {
-        // 원래 선이 거의 수직인 경우 → 수직선은 수평선 (기울기 = 0)
-        perpData.a = 0.0;
-        perpData.b = midY;  // y = midY (수평선)
-    } else if (abs(dy) < 0.001) {
-        // 원래 선이 거의 수평인 경우 → 수직선은 수직선
-        // 수직선은 y = ax + b로 표현할 수 없으므로 매우 큰 기울기로 근사
-        perpData.a = 999999.0;  // 거의 무한대 기울기
-        perpData.b = midY - perpData.a * midX;
-    } else {
-        // 일반적인 경우
-        // 원래 선의 기울기: m1 = dy/dx
-        // 수직선의 기울기: m2 = -dx/dy (수직 조건)
-        perpData.a = -dx / dy;
-
-        // 수직선이 중점 (midX, midY)를 지나므로
-        // midY = a * midX + b
-        // b = midY - a * midX
-        perpData.b = midY - perpData.a * midX;
-    }
-
-    return perpData;
-}
-
-// generatePerpendicularLine 함수 구현 (calculatePerpendicularLine 함수 다음에)
-// generatePerpendicularLine 함수도 수정
 void LineDrawingDialog::generatePerpendicularLine(const CategorizedLine &detectionLine, int index)
 {
     // 수직선 데이터 계산
     PerpendicularLineData perpData = calculatePerpendicularLine(detectionLine.start, detectionLine.end, index);
 
     // 로그 메시지 추가
-    addLogMessage(QString("탐지선 #%1에 대한 수직선 생성됨: y = %2x + %3")
+    addLogMessage(QString("감지선 #%1에 대한 수직선 생성됨: y = %2x + %3")
                       .arg(index)
                       .arg(perpData.a, 0, 'f', 3)
                       .arg(perpData.b, 0, 'f', 3), "DRAW");
@@ -1303,46 +1281,54 @@ void LineDrawingDialog::generatePerpendicularLine(const CategorizedLine &detecti
     emit perpendicularLineGenerated(perpData.index, perpData.a, perpData.b);
 }
 
-// onPerpendicularLineGenerated 슬롯 구현 (generatePerpendicularLine 함수 다음에)
-// onPerpendicularLineGenerated 슬롯도 수정
-void LineDrawingDialog::onPerpendicularLineGenerated(int detectionLineIndex, double a, double b)
+PerpendicularLineData LineDrawingDialog::calculatePerpendicularLine(const QPoint &startPoint, const QPoint &endPoint, int index)
 {
-    addLogMessage(QString("수직선 #%1 서버 전송 준비: y = %2x + %3")
-                      .arg(detectionLineIndex)
-                      .arg(a, 0, 'f', 3)
-                      .arg(b, 0, 'f', 3), "SUCCESS");
+    // 감지선의 방향 벡터 계산
+    QPoint direction = endPoint - startPoint;
 
-    m_statusLabel->setText(QString("수직선 #%1 방정식: y = %2x + %3")
-                               .arg(detectionLineIndex)
-                               .arg(a, 0, 'f', 3)
-                               .arg(b, 0, 'f', 3));
-}
+    // 수직 벡터 계산 (90도 회전)
+    QPoint perpendicular(-direction.y(), direction.x());
 
-void LineDrawingDialog::onSendPerpendicularClicked()
-{
-    QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
-    int detectionLineCount = 0;
-
-    for (const auto &line : allLines) {
-        if (line.category == LineCategory::OBJECT_DETECTION) {
-            detectionLineCount++;
-
-            // 수직선 계산 및 전송
-            PerpendicularLineData perpData = calculatePerpendicularLine(line.start, line.end, detectionLineCount);
-
-            addLogMessage(QString("수직선 #%1 수동 전송: y = %2x + %3")
-                              .arg(detectionLineCount)
-                              .arg(perpData.a, 0, 'f', 3)
-                              .arg(perpData.b, 0, 'f', 3), "ACTION");
-
-            emit perpendicularLineGenerated(perpData.index, perpData.a, perpData.b);
-        }
+    // 수직선의 길이를 감지선 길이의 절반으로 설정
+    double length = sqrt(perpendicular.x() * perpendicular.x() + perpendicular.y() * perpendicular.y());
+    if (length > 0) {
+        double scale = (sqrt(direction.x() * direction.x() + direction.y() * direction.y()) * 0.5) / length;
+        perpendicular = QPoint(perpendicular.x() * scale, perpendicular.y() * scale);
     }
 
-    if (detectionLineCount == 0) {
-        addLogMessage("전송할 탐지선이 없습니다. 먼저 탐지선을 그려주세요.", "WARNING");
-        QMessageBox::information(this, "알림", "전송할 탐지선이 없습니다. 먼저 탐지선을 그려주세요.");
+    // 감지선의 중점 계산
+    QPoint midPoint = QPoint((startPoint.x() + endPoint.x()) / 2,
+                             (startPoint.y() + endPoint.y()) / 2);
+
+    // 수직선 방정식 계산 (y = ax + b 형태)
+    double a_result, b_result;
+
+    if (abs(direction.x()) < 0.001) {
+        // 원래 선이 거의 수직인 경우 → 수직선은 수평선 (기울기 = 0)
+        a_result = 0.0;
+        b_result = midPoint.y();  // y = midY (수평선)
+    } else if (abs(direction.y()) < 0.001) {
+        // 원래 선이 거의 수평인 경우 → 수직선은 수직선
+        // 수직선은 y = ax + b로 표현할 수 없으므로 매우 큰 기울기로 근사
+        a_result = 999999.0;  // 거의 무한대 기울기
+        b_result = midPoint.y() - a_result * midPoint.x();
     } else {
-        addLogMessage(QString("%1개의 수직선을 수동으로 전송했습니다.").arg(detectionLineCount), "SUCCESS");
+        // 일반적인 경우
+        // 원래 선의 기울기: m1 = dy/dx
+        // 수직선의 기울기: m2 = -dx/dy (수직 조건)
+        a_result = -(double)direction.x() / direction.y();
+
+        // 수직선이 중점 (midX, midY)를 지나므로
+        // midY = a * midX + b
+        // b = midY - a * midX
+        b_result = midPoint.y() - a_result * midPoint.x();
     }
+
+    // 수직선 정보 저장
+    PerpendicularLineData perpData;
+    perpData.index = index;
+    perpData.a = a_result;
+    perpData.b = b_result;
+
+    return perpData;
 }

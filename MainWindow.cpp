@@ -800,30 +800,23 @@ void MainWindow::onStatusUpdated(const QString &status)
 void MainWindow::sendCategorizedCoordinates(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines)
 {
     if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
-        // CategorizedLineData로 변환하여 기존 함수 호출
-        QList<CategorizedLineData> oldRoadLines;
-        QList<CategorizedLineData> oldDetectionLines;
-
-        for (const auto &road : roadLines) {
-            CategorizedLineData oldRoad;
-            oldRoad.x1 = road.x1;
-            oldRoad.y1 = 0;  // 도로선은 y 좌표 사용 안함
-            oldRoad.x2 = road.x2;
-            oldRoad.y2 = 0;
-            oldRoadLines.append(oldRoad);
+        // 새로운 RoadLineData 구조를 직접 사용
+        if (!roadLines.isEmpty()) {
+            bool roadSuccess = m_tcpCommunicator->sendMultipleRoadLines(roadLines);
+            if (roadSuccess) {
+                qDebug() << "도로선 전송 완료:" << roadLines.size() << "개";
+            }
         }
 
-        for (const auto &detection : detectionLines) {
-            CategorizedLineData oldDetection;
-            oldDetection.x1 = detection.x1;
-            oldDetection.y1 = detection.y1;
-            oldDetection.x2 = detection.x2;
-            oldDetection.y2 = detection.y2;
-            oldDetectionLines.append(oldDetection);
+        // 감지선 전송 (기존 방식 유지)
+        if (!detectionLines.isEmpty()) {
+            bool detectionSuccess = m_tcpCommunicator->sendMultipleDetectionLines(detectionLines);
+            if (detectionSuccess) {
+                qDebug() << "감지선 전송 완료:" << detectionLines.size() << "개";
+            }
         }
 
-        m_tcpCommunicator->sendCategorizedLineCoordinates(oldRoadLines, oldDetectionLines);
-        qDebug() << "카테고리별 좌표 전송 완료 - 도로선:" << roadLines.size() << "개, 탐지선:" << detectionLines.size() << "개";
+        qDebug() << "카테고리별 좌표 전송 완료 - 도로선:" << roadLines.size() << "개, 감지선:" << detectionLines.size() << "개";
     } else {
         qDebug() << "TCP 연결이 없어 좌표 전송 실패";
         QMessageBox::warning(this, "전송 실패", "서버에 연결되어 있지 않습니다.");

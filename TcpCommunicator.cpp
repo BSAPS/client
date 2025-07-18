@@ -348,7 +348,7 @@ bool TcpCommunicator::sendCategorizedLineCoordinates(const QList<CategorizedLine
             detectionLineData.y1 = line.y1;
             detectionLineData.x2 = line.x2;
             detectionLineData.y2 = line.y2;
-            detectionLineData.name = QString("detection_line_%1").arg(i + 1);
+            detectionLineData.name = QString("DetectionLine%1").arg(i + 1);
             detectionLineData.mode = "BothDirections";  // Default: both directions
             detectionLineData.leftMatrixNum = 1;   // Default value
             detectionLineData.rightMatrixNum = 2;  // Default value
@@ -689,7 +689,7 @@ QString TcpCommunicator::saveBase64Image(const QString &base64Data, const QStrin
     QString tempDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
     QString cleanTimestamp = timestamp;
     cleanTimestamp.replace(":", "_").replace("-", "_");
-    QString fileName = QString("cctv_image_%1.jpg").arg(cleanTimestamp);
+    QString fileName = QString("CCTVImage%1.jpg").arg(cleanTimestamp);
     QString filePath = QDir(tempDir).absoluteFilePath(fileName);
 
     // Save to file

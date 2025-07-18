@@ -45,7 +45,7 @@ struct CategorizedLine {
     LineCategory category;
 };
 
-// 좌표별 Matrix 매핑 정보 구조체 추가
+// 좌표별 Matrix 매핑 정보 구조체
 struct CoordinateMatrixMapping {
     int lineIndex;          // 선 인덱스
     QPoint coordinate;      // 좌표

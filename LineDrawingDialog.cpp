@@ -902,7 +902,7 @@ void LineDrawingDialog::onSendCoordinatesClicked()
             detectionLineData.y1 = line.start.y();
             detectionLineData.x2 = line.end.x();
             detectionLineData.y2 = line.end.y();
-            detectionLineData.name = QString("detection_line_%1").arg(detectionLineData.index);
+            detectionLineData.name = QString("DetectionLine%1").arg(detectionLineData.index);
             detectionLineData.mode = "BothDirections";
             detectionLineData.leftMatrixNum = 1;
             detectionLineData.rightMatrixNum = 2;

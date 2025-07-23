@@ -25,20 +25,38 @@ VideoGraphicsView::VideoGraphicsView(QWidget *parent)
     // 비디오 아이템 생성
     m_videoItem = new QGraphicsVideoItem();
     m_videoItem->setSize(QSizeF(960, 540));
+    m_videoItem->setZValue(-1000); // 비디오를 가장 뒤로 보내기
     m_scene->addItem(m_videoItem);
 
     // 뷰 설정
     setMinimumSize(960, 540);
-    setStyleSheet("background-color: black; border: 2px solid #ddd; border-radius: 8px;");
+    setMaximumSize(960, 540);
+    setStyleSheet("background-color: black; border-radius: 8px;");
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     // 씬 크기 설정
-    setMinimumSize(960, 540);
-    setMaximumSize(960, 540);
     m_scene->setSceneRect(0, 0, 960, 540);
 
+    // 뷰 변환 설정 - 1:1 매핑 보장
+    resetTransform();
+    setTransform(QTransform());
+
+    // 렌더링 힌트 설정
+    setRenderHint(QPainter::Antialiasing, true);
+    setRenderHint(QPainter::TextAntialiasing, true);
+
+    // 뷰포트 업데이트 모드 설정
+    setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+
+    // 캐싱 비활성화 (디버깅용)
+    setCacheMode(QGraphicsView::CacheNone);
+
     qDebug() << "VideoGraphicsView 생성됨";
+    qDebug() << "씬 크기:" << m_scene->sceneRect();
+    qDebug() << "뷰 크기:" << size();
+    qDebug() << "비디오 아이템 크기:" << m_videoItem->size();
+    qDebug() << "비디오 아이템 Z-Value:" << m_videoItem->zValue();
 }
 
 void VideoGraphicsView::setDrawingMode(bool enabled)
@@ -52,7 +70,7 @@ void VideoGraphicsView::clearLines()
 {
     clearHighlight();
 
-    // 비디오 아이템을 제외한 모든 그래픽 아이템 제거 (수직선 포함)
+    // 비디오 아이템을 제외한 모든 그래픽 아이템 제거
     QList<QGraphicsItem*> allItems = m_scene->items();
     for (QGraphicsItem* item : allItems) {
         // 비디오 아이템은 제외
@@ -68,7 +86,7 @@ void VideoGraphicsView::clearLines()
     m_lines.clear();
     m_categorizedLines.clear();
 
-    qDebug() << "모든 선과 수직선이 지워짐";
+    qDebug() << "모든 선이 지워짐";
 }
 
 QList<QPair<QPoint, QPoint>> VideoGraphicsView::getLines() const
@@ -112,39 +130,365 @@ int VideoGraphicsView::getCategoryLineCount(LineCategory category) const
     return count;
 }
 
-void VideoGraphicsView::redrawAllLines()
+void VideoGraphicsView::loadSavedRoadLines(const QList<RoadLineData> &roadLines)
 {
-    // 모든 선을 다시 그리기
-    for (const auto &catLine : m_categorizedLines) {
-        QGraphicsLineItem *lineItem = new QGraphicsLineItem(QLineF(catLine.start, catLine.end));
+    qDebug() << "=== loadSavedRoadLines 시작 ===";
+    qDebug() << "도로선:" << roadLines.size() << "개";
 
-        // 카테고리별 색상 설정
-        QPen linePen;
-        if (catLine.category == LineCategory::ROAD_DEFINITION) {
-            linePen = QPen(Qt::blue, 2, Qt::SolidLine);  // 도로선: 파란색
-        } else {
-            linePen = QPen(Qt::red, 2, Qt::SolidLine);   // 감지선: 빨간색
+    // 기존 도로선만 지우기 (비디오 아이템 제외)
+    QList<QGraphicsItem*> itemsToRemove;
+    QList<QGraphicsItem*> allItems = m_scene->items();
+    for (QGraphicsItem* item : allItems) {
+        if (item != m_videoItem) {
+            itemsToRemove.append(item);
+        }
+    }
+    for (QGraphicsItem* item : itemsToRemove) {
+        m_scene->removeItem(item);
+        delete item;
+    }
+    m_lineItems.clear();
+    m_pointItems.clear();
+    m_lines.clear();
+    m_categorizedLines.clear();
+
+    // 도로선 데이터 처리 - 원래 얇은 선으로
+    for (int i = 0; i < roadLines.size(); ++i) {
+        const auto &roadLine = roadLines[i];
+        qDebug() << QString("도로선 %1: index=%2, (%3,%4) → (%5,%6), matrix1=%7, matrix2=%8")
+                        .arg(i).arg(roadLine.index)
+                        .arg(roadLine.x1).arg(roadLine.y1).arg(roadLine.x2).arg(roadLine.y2)
+                        .arg(roadLine.matrixNum1).arg(roadLine.matrixNum2);
+
+        // 좌표 유효성 검사
+        if ((roadLine.x1 == 0 && roadLine.y1 == 0 && roadLine.x2 == 0 && roadLine.y2 == 0) ||
+            (roadLine.x1 == roadLine.x2 && roadLine.y1 == roadLine.y2)) {
+            qDebug() << "❌ 도로선" << i << "좌표가 유효하지 않음 - 건너뜀";
+            continue;
         }
 
+        int x1 = roadLine.x1;
+        int y1 = roadLine.y1;
+        int x2 = roadLine.x2;
+        int y2 = roadLine.y2;
+
+        CategorizedLine catLine;
+        catLine.start = QPoint(x1, y1);
+        catLine.end = QPoint(x2, y2);
+        catLine.category = LineCategory::ROAD_DEFINITION;
+        m_categorizedLines.append(catLine);
+        m_lines.append(qMakePair(catLine.start, catLine.end));
+
+        QGraphicsLineItem *lineItem = new QGraphicsLineItem(QLineF(catLine.start, catLine.end));
+        QPen linePen(Qt::blue, 2, Qt::SolidLine);
         lineItem->setPen(linePen);
+        lineItem->setZValue(1000);
         m_scene->addItem(lineItem);
         m_lineItems.append(lineItem);
 
-        // 시작점과 끝점에 점 추가
-        QColor pointColor = (catLine.category == LineCategory::ROAD_DEFINITION) ? Qt::blue : Qt::red;
+        QGraphicsEllipseItem *startPoint = new QGraphicsEllipseItem(x1 - 3, y1 - 3, 6, 6);
+        startPoint->setBrush(Qt::blue);
+        startPoint->setPen(QPen(Qt::white, 1));
+        startPoint->setZValue(1001);
+        m_scene->addItem(startPoint);
+        m_pointItems.append(startPoint);
 
+        QGraphicsEllipseItem *endPoint = new QGraphicsEllipseItem(x2 - 3, y2 - 3, 6, 6);
+        endPoint->setBrush(Qt::blue);
+        endPoint->setPen(QPen(Qt::white, 1));
+        endPoint->setZValue(1001);
+        m_scene->addItem(endPoint);
+        m_pointItems.append(endPoint);
+
+        qDebug() << QString("✅ 도로선 %1 그리기 완료: (%2,%3) → (%4,%5)")
+                        .arg(roadLine.index).arg(x1).arg(y1).arg(x2).arg(y2);
+    }
+    m_scene->update();
+    update();
+    viewport()->update();
+    repaint();
+    qDebug() << "=== loadSavedRoadLines 완료 ===";
+}
+
+// 감지선만 처리하는 함수
+void VideoGraphicsView::loadSavedDetectionLines(const QList<DetectionLineData> &detectionLines)
+{
+    qDebug() << "=== loadSavedDetectionLines 시작 ===";
+    qDebug() << "감지선:" << detectionLines.size() << "개";
+
+    // 감지선 데이터 처리 - 원래 얇은 선으로
+    for (int i = 0; i < detectionLines.size(); ++i) {
+        const auto &detectionLine = detectionLines[i];
+        qDebug() << QString("감지선 %1: index=%2, name=%3, (%4,%5) → (%6,%7), mode=%8")
+                        .arg(i).arg(detectionLine.index).arg(detectionLine.name)
+                        .arg(detectionLine.x1).arg(detectionLine.y1)
+                        .arg(detectionLine.x2).arg(detectionLine.y2)
+                        .arg(detectionLine.mode);
+
+        if ((detectionLine.x1 == 0 && detectionLine.y1 == 0 && detectionLine.x2 == 0 && detectionLine.y2 == 0) ||
+            (detectionLine.x1 == detectionLine.x2 && detectionLine.y1 == detectionLine.y2)) {
+            qDebug() << "❌ 감지선" << i << "좌표가 유효하지 않음 - 건너뜀";
+            continue;
+        }
+
+        int x1 = detectionLine.x1;
+        int y1 = detectionLine.y1;
+        int x2 = detectionLine.x2;
+        int y2 = detectionLine.y2;
+
+        CategorizedLine catLine;
+        catLine.start = QPoint(x1, y1);
+        catLine.end = QPoint(x2, y2);
+        catLine.category = LineCategory::OBJECT_DETECTION;
+        m_categorizedLines.append(catLine);
+        m_lines.append(qMakePair(catLine.start, catLine.end));
+
+        QGraphicsLineItem *lineItem = new QGraphicsLineItem(QLineF(catLine.start, catLine.end));
+        QPen linePen(Qt::red, 2, Qt::SolidLine);
+        lineItem->setPen(linePen);
+        lineItem->setZValue(1000);
+        m_scene->addItem(lineItem);
+        m_lineItems.append(lineItem);
+
+        QGraphicsEllipseItem *startPoint = new QGraphicsEllipseItem(x1 - 3, y1 - 3, 6, 6);
+        startPoint->setBrush(Qt::red);
+        startPoint->setPen(QPen(Qt::white, 1));
+        startPoint->setZValue(1001);
+        m_scene->addItem(startPoint);
+        m_pointItems.append(startPoint);
+
+        QGraphicsEllipseItem *endPoint = new QGraphicsEllipseItem(x2 - 3, y2 - 3, 6, 6);
+        endPoint->setBrush(Qt::red);
+        endPoint->setPen(QPen(Qt::white, 1));
+        endPoint->setZValue(1001);
+        m_scene->addItem(endPoint);
+        m_pointItems.append(endPoint);
+
+        qDebug() << QString("✅ 감지선 %1 그리기 완료: (%2,%3) → (%4,%5)")
+                        .arg(detectionLine.index).arg(x1).arg(y1).arg(x2).arg(y2);
+    }
+    m_scene->update();
+    update();
+    viewport()->update();
+    repaint();
+    qDebug() << "=== loadSavedDetectionLines 완료 ===";
+}
+
+// 저장된 선 데이터를 화면에 그리는 함수 - 원래 얇은 선 두께로 복원
+// void VideoGraphicsView::loadSavedLines(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines)
+// {
+//     qDebug() << "=== loadSavedLines 시작 ===";
+//     qDebug() << "도로선:" << roadLines.size() << "개, 감지선:" << detectionLines.size() << "개";
+
+//     // 서버 데이터가 비어있는지 먼저 확인
+//     if (roadLines.isEmpty() && detectionLines.isEmpty()) {
+//         qDebug() << "⚠️ 서버 데이터가 완전히 비어있음";
+//         return;
+//     }
+
+//     // 기존 선들 지우기 (비디오 아이템 제외)
+//     QList<QGraphicsItem*> itemsToRemove;
+//     QList<QGraphicsItem*> allItems = m_scene->items();
+//     for (QGraphicsItem* item : allItems) {
+//         if (item != m_videoItem) {
+//             itemsToRemove.append(item);
+//         }
+//     }
+
+//     for (QGraphicsItem* item : itemsToRemove) {
+//         m_scene->removeItem(item);
+//         delete item;
+//     }
+
+//     m_lineItems.clear();
+//     m_pointItems.clear();
+//     m_lines.clear();
+//     m_categorizedLines.clear();
+
+//     qDebug() << "=== 도로선 데이터 처리 ===";
+
+//     // 도로선 데이터 처리 - 원래 얇은 선으로
+//     for (int i = 0; i < roadLines.size(); ++i) {
+//         const auto &roadLine = roadLines[i];
+//         qDebug() << QString("도로선 %1: index=%2, (%3,%4) → (%5,%6), matrix1=%7, matrix2=%8")
+//                         .arg(i).arg(roadLine.index)
+//                         .arg(roadLine.x1).arg(roadLine.y1).arg(roadLine.x2).arg(roadLine.y2)
+//                         .arg(roadLine.matrixNum1).arg(roadLine.matrixNum2);
+
+//         // 좌표 유효성 검사
+//         if ((roadLine.x1 == 0 && roadLine.y1 == 0 && roadLine.x2 == 0 && roadLine.y2 == 0) ||
+//             (roadLine.x1 == roadLine.x2 && roadLine.y1 == roadLine.y2)) {
+//             qDebug() << "❌ 도로선" << i << "좌표가 유효하지 않음 - 건너뜀";
+//             continue;
+//         }
+
+//         // 서버에서 받은 좌표를 그대로 사용
+//         int x1 = roadLine.x1;
+//         int y1 = roadLine.y1;
+//         int x2 = roadLine.x2;
+//         int y2 = roadLine.y2;
+
+//         // 선 데이터 저장
+//         CategorizedLine catLine;
+//         catLine.start = QPoint(x1, y1);
+//         catLine.end = QPoint(x2, y2);
+//         catLine.category = LineCategory::ROAD_DEFINITION;
+//         m_categorizedLines.append(catLine);
+//         m_lines.append(qMakePair(catLine.start, catLine.end));
+
+//         // 선 그리기 - 원래 얇은 선으로 (2픽셀)
+//         QGraphicsLineItem *lineItem = new QGraphicsLineItem(QLineF(catLine.start, catLine.end));
+//         QPen linePen(Qt::blue, 2, Qt::SolidLine); // 원래 얇은 선
+//         lineItem->setPen(linePen);
+//         lineItem->setZValue(1000); // 비디오 위에 표시
+//         m_scene->addItem(lineItem);
+//         m_lineItems.append(lineItem);
+
+//         // 시작점과 끝점에 작은 원 표시 (원래 크기)
+//         QGraphicsEllipseItem *startPoint = new QGraphicsEllipseItem(x1 - 3, y1 - 3, 6, 6);
+//         startPoint->setBrush(Qt::blue);
+//         startPoint->setPen(QPen(Qt::white, 1));
+//         startPoint->setZValue(1001);
+//         m_scene->addItem(startPoint);
+//         m_pointItems.append(startPoint);
+
+//         QGraphicsEllipseItem *endPoint = new QGraphicsEllipseItem(x2 - 3, y2 - 3, 6, 6);
+//         endPoint->setBrush(Qt::blue);
+//         endPoint->setPen(QPen(Qt::white, 1));
+//         endPoint->setZValue(1001);
+//         m_scene->addItem(endPoint);
+//         m_pointItems.append(endPoint);
+
+//         qDebug() << QString("✅ 도로선 %1 그리기 완료: (%2,%3) → (%4,%5)")
+//                         .arg(roadLine.index).arg(x1).arg(y1).arg(x2).arg(y2);
+//     }
+
+//     qDebug() << "=== 감지선 데이터 처리 ===";
+
+//     // 감지선 데이터 처리 - 원래 얇은 선으로
+//     for (int i = 0; i < detectionLines.size(); ++i) {
+//         const auto &detectionLine = detectionLines[i];
+//         qDebug() << QString("감지선 %1: index=%2, name=%3, (%4,%5) → (%6,%7), mode=%8")
+//                         .arg(i).arg(detectionLine.index).arg(detectionLine.name)
+//                         .arg(detectionLine.x1).arg(detectionLine.y1)
+//                         .arg(detectionLine.x2).arg(detectionLine.y2)
+//                         .arg(detectionLine.mode);
+
+//         // 좌표 유효성 검사
+//         if ((detectionLine.x1 == 0 && detectionLine.y1 == 0 && detectionLine.x2 == 0 && detectionLine.y2 == 0) ||
+//             (detectionLine.x1 == detectionLine.x2 && detectionLine.y1 == detectionLine.y2)) {
+//             qDebug() << "❌ 감지선" << i << "좌표가 유효하지 않음 - 건너뜀";
+//             continue;
+//         }
+
+//         // 서버에서 받은 좌표를 그대로 사용
+//         int x1 = detectionLine.x1;
+//         int y1 = detectionLine.y1;
+//         int x2 = detectionLine.x2;
+//         int y2 = detectionLine.y2;
+
+//         // 선 데이터 저장
+//         CategorizedLine catLine;
+//         catLine.start = QPoint(x1, y1);
+//         catLine.end = QPoint(x2, y2);
+//         catLine.category = LineCategory::OBJECT_DETECTION;
+//         m_categorizedLines.append(catLine);
+//         m_lines.append(qMakePair(catLine.start, catLine.end));
+
+//         // 선 그리기 - 원래 얇은 선으로 (2픽셀)
+//         QGraphicsLineItem *lineItem = new QGraphicsLineItem(QLineF(catLine.start, catLine.end));
+//         QPen linePen(Qt::red, 2, Qt::SolidLine); // 원래 얇은 선
+//         lineItem->setPen(linePen);
+//         lineItem->setZValue(1000);
+//         m_scene->addItem(lineItem);
+//         m_lineItems.append(lineItem);
+
+//         // 시작점과 끝점에 작은 원 표시 (원래 크기)
+//         QGraphicsEllipseItem *startPoint = new QGraphicsEllipseItem(x1 - 3, y1 - 3, 6, 6);
+//         startPoint->setBrush(Qt::red);
+//         startPoint->setPen(QPen(Qt::white, 1));
+//         startPoint->setZValue(1001);
+//         m_scene->addItem(startPoint);
+//         m_pointItems.append(startPoint);
+
+//         QGraphicsEllipseItem *endPoint = new QGraphicsEllipseItem(x2 - 3, y2 - 3, 6, 6);
+//         endPoint->setBrush(Qt::red);
+//         endPoint->setPen(QPen(Qt::white, 1));
+//         endPoint->setZValue(1001);
+//         m_scene->addItem(endPoint);
+//         m_pointItems.append(endPoint);
+
+//         qDebug() << QString("✅ 감지선 %1 그리기 완료: (%2,%3) → (%4,%5)")
+//                         .arg(detectionLine.index).arg(x1).arg(y1).arg(x2).arg(y2);
+//     }
+
+//     // 강제 업데이트
+//     m_scene->update();
+//     update();
+//     viewport()->update();
+//     repaint();
+
+//     qDebug() << "=== 최종 상태 ===";
+//     qDebug() << "총 생성된 선:" << m_lineItems.size() << "개";
+//     qDebug() << "총 생성된 점:" << m_pointItems.size() << "개";
+//     qDebug() << "씬 아이템 총 개수:" << m_scene->items().size() << "개";
+//     qDebug() << "=== loadSavedLines 완료 ===";
+// }
+
+void VideoGraphicsView::redrawAllLines()
+{
+    qDebug() << "redrawAllLines 호출됨 - 그릴 선의 개수:" << m_categorizedLines.size();
+
+    // 모든 선을 다시 그리기 - 원래 얇은 선으로
+    for (int i = 0; i < m_categorizedLines.size(); ++i) {
+        const auto &catLine = m_categorizedLines[i];
+
+        // 선 그리기
+        QGraphicsLineItem *lineItem = new QGraphicsLineItem(QLineF(catLine.start, catLine.end));
+
+        // 카테고리별 색상 설정 - 원래 얇은 선
+        QPen linePen;
+        QColor pointColor;
+        if (catLine.category == LineCategory::ROAD_DEFINITION) {
+            linePen = QPen(Qt::blue, 2, Qt::SolidLine);  // 원래 얇은 선
+            pointColor = Qt::blue;
+        } else {
+            linePen = QPen(Qt::red, 2, Qt::SolidLine);   // 원래 얇은 선
+            pointColor = Qt::red;
+        }
+
+        lineItem->setPen(linePen);
+        lineItem->setZValue(1000); // 비디오 위에 표시
+        m_scene->addItem(lineItem);
+        m_lineItems.append(lineItem);
+
+        // 시작점과 끝점에 점 추가 (원래 작은 크기)
         QGraphicsEllipseItem *startPoint = new QGraphicsEllipseItem(catLine.start.x() - 3, catLine.start.y() - 3, 6, 6);
         startPoint->setBrush(pointColor);
-        startPoint->setPen(QPen(pointColor));
+        startPoint->setPen(QPen(Qt::white, 1));
+        startPoint->setZValue(1001);
         m_scene->addItem(startPoint);
         m_pointItems.append(startPoint);
 
         QGraphicsEllipseItem *endPoint = new QGraphicsEllipseItem(catLine.end.x() - 3, catLine.end.y() - 3, 6, 6);
         endPoint->setBrush(pointColor);
-        endPoint->setPen(QPen(pointColor));
+        endPoint->setPen(QPen(Qt::white, 1));
+        endPoint->setZValue(1001);
         m_scene->addItem(endPoint);
         m_pointItems.append(endPoint);
+
+        qDebug() << "선 그리기 완료:" << i << "번째 선," <<
+            (catLine.category == LineCategory::ROAD_DEFINITION ? "도로선" : "감지선") <<
+            catLine.start << "→" << catLine.end << "Z-Value:" << lineItem->zValue();
     }
+
+    // 강제 업데이트
+    m_scene->update();
+    update();
+    viewport()->update();
+    repaint();
+
+    qDebug() << "총" << m_lineItems.size() << "개의 선과" << m_pointItems.size() << "개의 점이 그려짐";
 }
 
 void VideoGraphicsView::mousePressEvent(QMouseEvent *event)
@@ -155,6 +499,7 @@ void VideoGraphicsView::mousePressEvent(QMouseEvent *event)
     }
 
     QPointF scenePos = mapToScene(event->pos());
+    qDebug() << "마우스 클릭 - 뷰 좌표:" << event->pos() << "씬 좌표:" << scenePos;
 
     // 그리기 모드가 아닐 때는 도로선의 좌표점 클릭 감지
     if (!m_drawingMode) {
@@ -162,18 +507,18 @@ void VideoGraphicsView::mousePressEvent(QMouseEvent *event)
         for (int i = 0; i < m_categorizedLines.size(); ++i) {
             const auto &catLine = m_categorizedLines[i];
             if (catLine.category == LineCategory::ROAD_DEFINITION) {
-                // 시작점 클릭 감지 (반경 15픽셀)
+                // 시작점 클릭 감지 (반경 10픽셀)
                 QPointF startPoint(catLine.start);
-                if (QLineF(scenePos, startPoint).length() <= 15.0) {
-                    highlightCoordinate(i, true); // 시작점 하이라이트
+                if (QLineF(scenePos, startPoint).length() <= 10.0) {
+                    highlightCoordinate(i, true);
                     emit coordinateClicked(i, catLine.start, true);
                     return;
                 }
 
-                // 끝점 클릭 감지 (반경 15픽셀)
+                // 끝점 클릭 감지 (반경 10픽셀)
                 QPointF endPoint(catLine.end);
-                if (QLineF(scenePos, endPoint).length() <= 15.0) {
-                    highlightCoordinate(i, false); // 끝점 하이라이트
+                if (QLineF(scenePos, endPoint).length() <= 10.0) {
+                    highlightCoordinate(i, false);
                     emit coordinateClicked(i, catLine.end, false);
                     return;
                 }
@@ -188,10 +533,11 @@ void VideoGraphicsView::mousePressEvent(QMouseEvent *event)
     m_currentPoint = m_startPoint;
     m_drawing = true;
 
-    // 임시 선 생성
+    // 임시 선 생성 (원래 얇은 선)
     m_currentLineItem = new QGraphicsLineItem(QLineF(scenePos, scenePos));
-    QPen pen(Qt::yellow, 2, Qt::DashLine);
+    QPen pen(Qt::yellow, 2, Qt::DashLine); // 원래 얇은 선
     m_currentLineItem->setPen(pen);
+    m_currentLineItem->setZValue(2000); // 최고 Z-Value
     m_scene->addItem(m_currentLineItem);
 
     qDebug() << "선 그리기 시작:" << m_startPoint;
@@ -216,7 +562,7 @@ QGraphicsLineItem* VideoGraphicsView::findClickedRoadLine(const QPointF &clickPo
                 QPointF closestPoint = line.p1() + t * lineVec;
                 qreal distance = QLineF(clickPos, closestPoint).length();
 
-                if (distance <= 10.0) {
+                if (distance <= 5.0) { // 원래 작은 감지 범위
                     return lineItem;
                 }
             }
@@ -232,11 +578,11 @@ void VideoGraphicsView::highlightRoadLine(int lineIndex)
     if (lineIndex >= 0 && lineIndex < m_categorizedLines.size()) {
         const auto &catLine = m_categorizedLines[lineIndex];
         if (catLine.category == LineCategory::ROAD_DEFINITION) {
-            // 하이라이트 선 생성
+            // 하이라이트 선 생성 (원래 두께)
             QGraphicsLineItem *highlightLine = new QGraphicsLineItem(QLineF(catLine.start, catLine.end));
-            QPen highlightPen(Qt::yellow, 4, Qt::SolidLine);
+            QPen highlightPen(Qt::yellow, 4, Qt::SolidLine); // 원래 하이라이트 두께
             highlightLine->setPen(highlightPen);
-            highlightLine->setZValue(10); // 다른 선들보다 위에 표시
+            highlightLine->setZValue(1500);
             m_scene->addItem(highlightLine);
 
             // 임시로 저장 (나중에 제거하기 위해)
@@ -254,14 +600,14 @@ void VideoGraphicsView::highlightCoordinate(int lineIndex, bool isStartPoint)
         if (catLine.category == LineCategory::ROAD_DEFINITION) {
             QPoint targetPoint = isStartPoint ? catLine.start : catLine.end;
 
-            // 하이라이트 원 생성 (더 크게)
+            // 하이라이트 원 생성 (원래 크기)
             QGraphicsEllipseItem *highlightCircle = new QGraphicsEllipseItem(
                 targetPoint.x() - 8, targetPoint.y() - 8, 16, 16);
-            QPen highlightPen(Qt::yellow, 3, Qt::SolidLine);
+            QPen highlightPen(Qt::yellow, 2, Qt::SolidLine);
             QBrush highlightBrush(Qt::yellow, Qt::SolidPattern);
             highlightCircle->setPen(highlightPen);
             highlightCircle->setBrush(highlightBrush);
-            highlightCircle->setZValue(10); // 다른 요소들보다 위에 표시
+            highlightCircle->setZValue(1500);
             m_scene->addItem(highlightCircle);
 
             // 임시로 저장 (나중에 제거하기 위해)
@@ -322,23 +668,26 @@ void VideoGraphicsView::mouseReleaseEvent(QMouseEvent *event)
         // 카테고리별 색상 설정
         QColor lineColor = (m_currentCategory == LineCategory::ROAD_DEFINITION) ? Qt::blue : Qt::red;
 
-        // 실제 선 추가
+        // 실제 선 추가 (원래 얇은 선)
         QGraphicsLineItem *lineItem = new QGraphicsLineItem(QLineF(m_startPoint, endPoint));
-        QPen linePen(lineColor, 2, Qt::SolidLine);
+        QPen linePen(lineColor, 2, Qt::SolidLine); // 원래 얇은 선
         lineItem->setPen(linePen);
+        lineItem->setZValue(1000);
         m_scene->addItem(lineItem);
         m_lineItems.append(lineItem);
 
-        // 시작점과 끝점에 점 추가
+        // 시작점과 끝점에 점 추가 (원래 작은 크기)
         QGraphicsEllipseItem *startPoint = new QGraphicsEllipseItem(m_startPoint.x() - 3, m_startPoint.y() - 3, 6, 6);
         startPoint->setBrush(lineColor);
-        startPoint->setPen(QPen(lineColor));
+        startPoint->setPen(QPen(Qt::white, 1));
+        startPoint->setZValue(1001);
         m_scene->addItem(startPoint);
         m_pointItems.append(startPoint);
 
         QGraphicsEllipseItem *endPointItem = new QGraphicsEllipseItem(endPoint.x() - 3, endPoint.y() - 3, 6, 6);
         endPointItem->setBrush(lineColor);
-        endPointItem->setPen(QPen(lineColor));
+        endPointItem->setPen(QPen(Qt::white, 1));
+        endPointItem->setZValue(1001);
         m_scene->addItem(endPointItem);
         m_pointItems.append(endPointItem);
 
@@ -355,7 +704,7 @@ void VideoGraphicsView::mouseReleaseEvent(QMouseEvent *event)
         emit lineDrawn(m_startPoint, endPoint, m_currentCategory);
 
         QString categoryName = (m_currentCategory == LineCategory::ROAD_DEFINITION) ? "도로 명시선" : "객체 감지선";
-        qDebug() << categoryName << "추가됨:" << m_startPoint << "→" << endPoint;
+        qDebug() << categoryName << "추가됨:" << m_startPoint << "→" << endPoint << "Z-Value:" << lineItem->zValue();
     } else {
         qDebug() << "선이 너무 짧아서 무시됨";
     }
@@ -365,7 +714,6 @@ void VideoGraphicsView::mouseReleaseEvent(QMouseEvent *event)
 LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     : QDialog(parent)
     , m_mappingCountLabel(nullptr)
-    , m_clearMappingsButton(nullptr)
     , m_sendMappingsButton(nullptr)
     , m_mainLayout(nullptr)
     , m_buttonLayout(nullptr)
@@ -390,6 +738,9 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     , m_currentCategory(LineCategory::ROAD_DEFINITION)
     , m_selectedRoadLineIndex(-1)
     , m_roadLineSelectionMode(false)
+    , m_tcpCommunicator(nullptr)
+    , m_roadLinesLoaded(false)
+    , m_detectionLinesLoaded(false)
 {
     setWindowTitle("기준선 그리기");
     setModal(true);
@@ -397,10 +748,188 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
 
     setupUI();
     setupMediaPlayer();
-    startVideoStream();
 
     // 좌표별 클릭 연결
     connect(m_videoView, &VideoGraphicsView::coordinateClicked, this, &LineDrawingDialog::onCoordinateClicked);
+
+    // TCP 통신 설정 및 저장된 선 데이터 요청
+    setupTcpConnection();
+
+    // 비디오 스트림 시작
+    QTimer::singleShot(500, this, &LineDrawingDialog::startVideoStream);
+}
+
+void LineDrawingDialog::setupTcpConnection()
+{
+    // 부모 위젯에서 TcpCommunicator 인스턴스 가져오기
+    QWidget *currentParent = this->parentWidget();
+    while (currentParent && !m_tcpCommunicator) {
+        m_tcpCommunicator = currentParent->findChild<TcpCommunicator*>();
+        currentParent = currentParent->parentWidget();
+    }
+
+    if (m_tcpCommunicator) {
+        // 저장된 선 데이터 수신 시그널들 연결
+        connect(m_tcpCommunicator, &TcpCommunicator::savedRoadLinesReceived,
+                this, &LineDrawingDialog::onSavedRoadLinesReceived);
+        connect(m_tcpCommunicator, &TcpCommunicator::savedDetectionLinesReceived,
+                this, &LineDrawingDialog::onSavedDetectionLinesReceived);
+
+        qDebug() << "TCP 통신 설정 완료";
+    } else {
+        qDebug() << "TcpCommunicator를 찾을 수 없습니다.";
+        addLogMessage("서버 연결을 찾을 수 없어 저장된 선을 불러올 수 없습니다.", "WARNING");
+    }
+}
+
+void LineDrawingDialog::requestSavedLinesFromServer()
+{
+    if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
+        // 도로선과 감지선을 따로 요청
+        bool roadSuccess = m_tcpCommunicator->requestSavedRoadLines();
+        bool detectionSuccess = m_tcpCommunicator->requestSavedDetectionLines();
+
+        if (roadSuccess && detectionSuccess) {
+            addLogMessage("서버에 저장된 도로선과 감지선 데이터를 자동으로 요청했습니다.", "INFO");
+            m_statusLabel->setText("저장된 선 데이터를 불러오는 중...");
+        } else {
+            addLogMessage("저장된 선 데이터 요청에 실패했습니다.", "ERROR");
+        }
+    } else {
+        addLogMessage("서버에 연결되어 있지 않아 저장된 선을 불러올 수 없습니다.", "WARNING");
+        // 연결이 안 되어 있으면 재시도
+        QTimer::singleShot(2000, this, &LineDrawingDialog::requestSavedLinesFromServer);
+    }
+}
+
+void LineDrawingDialog::onSavedRoadLinesReceived(const QList<RoadLineData> &roadLines)
+{
+    addLogMessage("=== 도로선 데이터 수신 이벤트 발생 ===", "SYSTEM");
+    qDebug() << "=== onSavedRoadLinesReceived 호출됨 ===";
+    qDebug() << "수신된 도로선 개수:" << roadLines.size();
+
+    // 받은 데이터를 모두 출력
+    for (int i = 0; i < roadLines.size(); ++i) {
+        const auto &roadLine = roadLines[i];
+        qDebug() << QString("수신된 도로선 %1: index=%2, x1=%3, y1=%4, x2=%5, y2=%6, matrix1=%7, matrix2=%8")
+                        .arg(i).arg(roadLine.index)
+                        .arg(roadLine.x1).arg(roadLine.y1).arg(roadLine.x2).arg(roadLine.y2)
+                        .arg(roadLine.matrixNum1).arg(roadLine.matrixNum2);
+
+        addLogMessage(QString("🔍 도로선 #%1: (%2,%3)→(%4,%5) Matrix:%6,%7")
+                          .arg(roadLine.index)
+                          .arg(roadLine.x1).arg(roadLine.y1).arg(roadLine.x2).arg(roadLine.y2)
+                          .arg(roadLine.matrixNum1).arg(roadLine.matrixNum2), "COORD");
+    }
+
+    if (roadLines.isEmpty()) {
+        addLogMessage("⚠️ 서버에서 받은 도로선 데이터가 비어있습니다.", "WARNING");
+        m_roadLinesLoaded = true;
+        checkAndLoadAllLines();
+        return;
+    }
+
+    m_loadedRoadLines = roadLines;
+    m_roadLinesLoaded = true;
+
+    addLogMessage(QString("✅ 서버에서 도로선 데이터를 수신했습니다 - 총 %1개").arg(roadLines.size()), "SUCCESS");
+
+    // 도로선이 있는 경우 매핑 정보도 복원
+    if (!roadLines.isEmpty()) {
+        for (int i = 0; i < roadLines.size(); ++i) {
+            const auto &roadLine = roadLines[i];
+
+            // 시작점 매핑 정보 추가
+            addCoordinateMapping(i, QPoint(roadLine.x1, roadLine.y1), true, roadLine.matrixNum1);
+
+            // 끝점 매핑 정보 추가
+            addCoordinateMapping(i, QPoint(roadLine.x2, roadLine.y2), false, roadLine.matrixNum2);
+        }
+
+        updateMappingInfo();
+        addLogMessage(QString("🔧 도로선 매핑 정보 복원 완료 - %1개 선의 매핑 정보")
+                          .arg(roadLines.size()), "ACTION");
+    }
+
+    // 모든 선 데이터가 로드되었는지 확인
+    checkAndLoadAllLines();
+}
+
+void LineDrawingDialog::onSavedDetectionLinesReceived(const QList<DetectionLineData> &detectionLines)
+{
+    addLogMessage("=== 감지선 데이터 수신 이벤트 발생 ===", "SYSTEM");
+    qDebug() << "=== onSavedDetectionLinesReceived 호출됨 ===";
+    qDebug() << "수신된 감지선 개수:" << detectionLines.size();
+
+    // 받은 데이터를 모두 출력
+    for (int i = 0; i < detectionLines.size(); ++i) {
+        const auto &detectionLine = detectionLines[i];
+        qDebug() << QString("수신된 감지선 %1: index=%2, name=%3, x1=%4, y1=%5, x2=%6, y2=%7, mode=%8")
+                        .arg(i).arg(detectionLine.index).arg(detectionLine.name)
+                        .arg(detectionLine.x1).arg(detectionLine.y1)
+                        .arg(detectionLine.x2).arg(detectionLine.y2)
+                        .arg(detectionLine.mode);
+
+        addLogMessage(QString("🔍 감지선 #%1 (%2): (%3,%4)→(%5,%6) 모드:%7")
+                          .arg(detectionLine.index).arg(detectionLine.name)
+                          .arg(detectionLine.x1).arg(detectionLine.y1)
+                          .arg(detectionLine.x2).arg(detectionLine.y2)
+                          .arg(detectionLine.mode), "COORD");
+    }
+
+    if (detectionLines.isEmpty()) {
+        addLogMessage("⚠️ 서버에서 받은 감지선 데이터가 비어있습니다.", "WARNING");
+        m_detectionLinesLoaded = true;
+        checkAndLoadAllLines();
+        return;
+    }
+
+    m_loadedDetectionLines = detectionLines;
+    m_detectionLinesLoaded = true;
+
+    addLogMessage(QString("✅ 서버에서 감지선 데이터를 수신했습니다 - 총 %1개").arg(detectionLines.size()), "SUCCESS");
+
+    // 모든 선 데이터가 로드되었는지 확인
+    checkAndLoadAllLines();
+}
+
+void LineDrawingDialog::checkAndLoadAllLines()
+{
+    // 도로선과 감지선 모두 로드되었을 때 화면에 표시
+    if (m_roadLinesLoaded && m_detectionLinesLoaded) {
+        addLogMessage(QString("🔄 모든 선 데이터 로드 완료 - 화면에 그리기 시작 (도로선:%1개, 감지선:%2개)")
+                          .arg(m_loadedRoadLines.size()).arg(m_loadedDetectionLines.size()), "ACTION");
+
+        if (m_videoView) {
+            qDebug() << "모든 선 데이터 로드 완료, 화면에 그리기 시작";
+
+            // 즉시 선을 그리기
+            m_videoView->loadSavedDetectionLines(m_loadedDetectionLines);
+            m_videoView->loadSavedRoadLines(m_loadedRoadLines);
+            qDebug() << "비디오 뷰에 저장된 선 데이터 로드 완료";
+
+            addLogMessage("🎨 화면에 선 그리기 완료 - 얇은 선으로 표시됩니다", "SUCCESS");
+        }
+
+        // 상태 업데이트
+        m_statusLabel->setText(QString("저장된 선 데이터 로드 완료 - 도로선: %1개, 감지선: %2개")
+                                   .arg(m_loadedRoadLines.size()).arg(m_loadedDetectionLines.size()));
+
+        // UI 업데이트
+        updateCategoryInfo();
+        updateButtonStates();
+
+        addLogMessage(QString("✅ 모든 저장된 선 데이터가 화면에 표시되었습니다 - 총 %1개")
+                          .arg(m_loadedRoadLines.size() + m_loadedDetectionLines.size()), "SUCCESS");
+
+        // 상태 초기화
+        m_roadLinesLoaded = false;
+        m_detectionLinesLoaded = false;
+    } else {
+        addLogMessage(QString("⏳ 데이터 로드 대기 중... (도로선:%1, 감지선:%2)")
+                          .arg(m_roadLinesLoaded ? "완료" : "대기")
+                          .arg(m_detectionLinesLoaded ? "완료" : "대기"), "INFO");
+    }
 }
 
 void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordinate, bool isStartPoint)
@@ -425,14 +954,14 @@ void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordin
                                                    matrixOptions, 0, false, &ok);
 
     if (ok && !selectedMatrix.isEmpty()) {
-        // Matrix 번호 추출 수정
+        // Matrix 번호 추출
         int matrixNum = 1; // 기본값
         if (selectedMatrix.contains("1")) matrixNum = 1;
         else if (selectedMatrix.contains("2")) matrixNum = 2;
         else if (selectedMatrix.contains("3")) matrixNum = 3;
         else if (selectedMatrix.contains("4")) matrixNum = 4;
 
-        // 좌표-Matrix 매핑 저장 (즉시 전송하지 않음)
+        // 좌표-Matrix 매핑 저장
         addCoordinateMapping(lineIndex, coordinate, isStartPoint, matrixNum);
 
         addLogMessage(QString("도로선 #%1 %2 → Matrix %3 매핑 저장됨: (%4,%5)")
@@ -446,7 +975,7 @@ void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordin
 
         updateMappingInfo();
 
-        // 저장 완료 메시지 (전송하지 않음)
+        // 저장 완료 메시지
         QMessageBox::information(this, "매핑 저장됨",
                                  QString("좌표-Matrix 매핑이 저장되었습니다.\n\n"
                                          "• 도로선: #%1 %2\n"
@@ -481,7 +1010,7 @@ void LineDrawingDialog::setupUI()
 
     // 컴팩트한 헤더와 카테고리 선택 영역
     QWidget *headerWidget = new QWidget();
-    headerWidget->setFixedHeight(80);  // 고정 높이 설정
+    headerWidget->setFixedHeight(80);
     headerWidget->setStyleSheet("background-color: #f8f9fa; padding: 8px; border-radius: 6px; margin-bottom: 8px;");
     QVBoxLayout *headerLayout = new QVBoxLayout(headerWidget);
     headerLayout->setContentsMargins(10, 5, 10, 5);
@@ -494,7 +1023,7 @@ void LineDrawingDialog::setupUI()
     titleCategoryLayout->setSpacing(20);
 
     // 제목
-    QLabel *titleLabel = new QLabel("📏 기준선 그리기");
+    QLabel *titleLabel = new QLabel("기준선 그리기");
     titleLabel->setStyleSheet("color: #333; font-size: 16px; font-weight: bold;");
     titleCategoryLayout->addWidget(titleLabel);
 
@@ -505,16 +1034,16 @@ void LineDrawingDialog::setupUI()
     separator->setStyleSheet("color: #ccc;");
     titleCategoryLayout->addWidget(separator);
 
-    // 카테고리 선택 영역 (컴팩트하게)
+    // 카테고리 선택 영역
     QLabel *categoryLabel = new QLabel("선 종류:");
     categoryLabel->setStyleSheet("color: #666; font-size: 12px; font-weight: bold;");
     titleCategoryLayout->addWidget(categoryLabel);
 
-    m_roadLineRadio = new QRadioButton("🛣️ 도로선");
+    m_roadLineRadio = new QRadioButton("도로선");
     m_roadLineRadio->setStyleSheet("color: #0066cc; font-size: 12px; font-weight: bold;");
     m_roadLineRadio->setChecked(true);
 
-    m_detectionLineRadio = new QRadioButton("🎯 감지선");
+    m_detectionLineRadio = new QRadioButton("감지선");
     m_detectionLineRadio->setStyleSheet("color: #cc0000; font-size: 12px; font-weight: bold;");
 
     m_categoryButtonGroup = new QButtonGroup(this);
@@ -528,14 +1057,14 @@ void LineDrawingDialog::setupUI()
 
     titleCategoryLayout->addStretch();
 
-    // 현재 선택 정보 (작게)
+    // 현재 선택 정보
     m_categoryInfoLabel = new QLabel("현재: 도로선 (파란색)");
     m_categoryInfoLabel->setStyleSheet("color: #0066cc; font-size: 11px; font-style: italic;");
     titleCategoryLayout->addWidget(m_categoryInfoLabel);
 
     headerLayout->addWidget(titleCategoryWidget);
 
-    // 통계 정보 (한 줄로 컴팩트하게)
+    // 통계 정보
     QWidget *statsWidget = new QWidget();
     QHBoxLayout *statsLayout = new QHBoxLayout(statsWidget);
     statsLayout->setContentsMargins(0, 0, 0, 0);
@@ -550,7 +1079,7 @@ void LineDrawingDialog::setupUI()
     statsLayout->addWidget(m_roadLineCountLabel);
     statsLayout->addWidget(m_detectionLineCountLabel);
 
-    // 통계 정보 섹션에 매핑 정보 추가
+    // 매핑 정보 추가
     m_mappingCountLabel = new QLabel("매핑: 0개");
     m_mappingCountLabel->setStyleSheet("color: #28a745; font-size: 11px; padding: 2px 6px; background-color: rgba(40,167,69,0.1); border-radius: 3px;");
 
@@ -564,7 +1093,7 @@ void LineDrawingDialog::setupUI()
     // 메인 콘텐츠 영역 (비디오 + 로그)
     QHBoxLayout *contentLayout = new QHBoxLayout();
 
-    // 왼쪽: 비디오 영역 (QGraphicsView 사용)
+    // 왼쪽: 비디오 영역
     m_videoView = new VideoGraphicsView(this);
     connect(m_videoView, &VideoGraphicsView::lineDrawn, this, &LineDrawingDialog::onLineDrawn);
     contentLayout->addWidget(m_videoView, 2);
@@ -573,14 +1102,14 @@ void LineDrawingDialog::setupUI()
     QWidget *logContainer = new QWidget();
     logContainer->setMinimumWidth(350);
     logContainer->setMaximumWidth(400);
-    logContainer->setStyleSheet("background-color: #f8f9fa; border: 2px solid #ddd; border-radius: 8px;");
+    logContainer->setStyleSheet("background-color: #d2d8df; border-radius: 8px;");
 
     QVBoxLayout *logLayout = new QVBoxLayout(logContainer);
     logLayout->setContentsMargins(10, 10, 10, 10);
     logLayout->setSpacing(8);
 
     // 로그 헤더
-    QLabel *logHeaderLabel = new QLabel("📋 작업 로그");
+    QLabel *logHeaderLabel = new QLabel("작업 로그");
     logHeaderLabel->setStyleSheet("color: #333; font-size: 16px; font-weight: bold; padding: 5px;");
     logLayout->addWidget(logHeaderLabel);
 
@@ -595,7 +1124,6 @@ void LineDrawingDialog::setupUI()
     m_logTextEdit->setStyleSheet(
         "QTextEdit { "
         "background-color: white; "
-        "border: 1px solid #ccc; "
         "border-radius: 5px; "
         "padding: 8px; "
         "font-family: 'Consolas', 'Monaco', monospace; "
@@ -605,7 +1133,7 @@ void LineDrawingDialog::setupUI()
     logLayout->addWidget(m_logTextEdit);
 
     // 로그 지우기 버튼
-    m_clearLogButton = new QPushButton("🗑️ 로그 지우기");
+    m_clearLogButton = new QPushButton("로그 지우기");
     m_clearLogButton->setStyleSheet(
         "QPushButton { "
         "background-color: #6c757d; "
@@ -617,7 +1145,7 @@ void LineDrawingDialog::setupUI()
         "} "
         "QPushButton:hover { "
         "background-color: #5a6268; "
-        "}"
+        "} "
         );
     connect(m_clearLogButton, &QPushButton::clicked, this, &LineDrawingDialog::onClearLogClicked);
     logLayout->addWidget(m_clearLogButton);
@@ -638,37 +1166,47 @@ void LineDrawingDialog::setupUI()
     // 버튼 영역
     m_buttonLayout = new QHBoxLayout();
 
-    m_startDrawingButton = new QPushButton("🖊️ 그리기 시작");
-    m_startDrawingButton->setStyleSheet("QPushButton { background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #45a049; }");
+    QPushButton *loadSavedLinesButton = new QPushButton("저장된 선 불러오기");
+    loadSavedLinesButton->setStyleSheet("QPushButton { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+                                        "QPushButton:hover { background-color: #218838; }"
+                                        "QPushButton:disabled { background-color: #b3aca5; }");
+    connect(loadSavedLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onLoadSavedLinesClicked);
+    m_buttonLayout->addWidget(loadSavedLinesButton);
+
+    m_startDrawingButton = new QPushButton("그리기 시작");
+    m_startDrawingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+                                        "QPushButton:hover { background-color: #f89b6c; }"
+                                        "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_startDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStartDrawingClicked);
     m_buttonLayout->addWidget(m_startDrawingButton);
 
-    m_stopDrawingButton = new QPushButton("⏹️ 그리기 중지");
-    m_stopDrawingButton->setStyleSheet("QPushButton { background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #da190b; }");
+    m_stopDrawingButton = new QPushButton("그리기 중지");
+    m_stopDrawingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+                                       "QPushButton:hover { background-color: #f89b6c; }"
+                                       "QPushButton:disabled { background-color: #b3aca5; }");
     m_stopDrawingButton->setEnabled(false);
     connect(m_stopDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStopDrawingClicked);
     m_buttonLayout->addWidget(m_stopDrawingButton);
 
-    m_clearLinesButton = new QPushButton("🗑️ 선 지우기");
-    m_clearLinesButton->setStyleSheet("QPushButton { background-color: #ff9800; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #e68900; }");
+    m_clearLinesButton = new QPushButton("선 지우기");
+    m_clearLinesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+                                      "QPushButton:hover { background-color: #f89b6c; }"
+                                      "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_clearLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onClearLinesClicked);
     m_buttonLayout->addWidget(m_clearLinesButton);
 
-    m_clearMappingsButton = new QPushButton("🗑️ 매핑 지우기");
-    m_clearMappingsButton->setStyleSheet("QPushButton { background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #c82333; }");
-    m_clearMappingsButton->setEnabled(false);
-    connect(m_clearMappingsButton, &QPushButton::clicked, this, &LineDrawingDialog::clearCoordinateMappings);
-    m_buttonLayout->addWidget(m_clearMappingsButton);
-
-    m_sendCoordinatesButton = new QPushButton("📤 좌표 전송");
-    m_sendCoordinatesButton->setStyleSheet("QPushButton { background-color: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #1976D2; }");
+    m_sendCoordinatesButton = new QPushButton("좌표 전송");
+    m_sendCoordinatesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+                                           "QPushButton:hover { background-color: #f89b6c; }"
+                                           "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_sendCoordinatesButton, &QPushButton::clicked, this, &LineDrawingDialog::onSendCoordinatesClicked);
     m_buttonLayout->addWidget(m_sendCoordinatesButton);
 
     m_buttonLayout->addStretch();
 
-    m_closeButton = new QPushButton("❌ 닫기");
-    m_closeButton->setStyleSheet("QPushButton { background-color: #9E9E9E; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #757575; }");
+    m_closeButton = new QPushButton("닫기");
+    m_closeButton->setStyleSheet("QPushButton { background-color: #9E9E9E; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+                                 "QPushButton:hover { background-color: #757575; }");
     connect(m_closeButton, &QPushButton::clicked, this, &QDialog::reject);
     m_buttonLayout->addWidget(m_closeButton);
 
@@ -679,11 +1217,11 @@ void LineDrawingDialog::setupUI()
     connect(m_frameTimer, &QTimer::timeout, this, &LineDrawingDialog::updateFrameCount);
     m_frameTimer->start(1000);
 
-    // 초기 로그 메시지 수정
+    // 초기 로그 메시지
     addLogMessage("기준선 그리기 다이얼로그가 시작되었습니다.", "SYSTEM");
+    addLogMessage("💡 '저장된 선 불러오기' 버튼을 클릭하여 서버에서 선 데이터를 가져오세요.", "INFO");
     addLogMessage("💡 도로선(파란색)의 시작점이나 끝점을 클릭하여 각 좌표별로 Dot Matrix 번호를 설정하세요.", "INFO");
     addLogMessage("💡 감지선을 그리면 수직선이 자동으로 계산되고 전송됩니다.", "INFO");
-    addLogMessage("💡 '좌표 전송'은 매핑 정보를 우선 사용하고, 없으면 자동 할당합니다.", "INFO");
 
     qDebug() << "UI 설정 완료";
 }
@@ -806,7 +1344,6 @@ void LineDrawingDialog::onClearCategoryClicked()
     updateButtonStates();
 }
 
-// onLineDrawn 함수 수정 (감지선이 그려졌을 때 수직선 자동 생성)
 void LineDrawingDialog::onLineDrawn(const QPoint &start, const QPoint &end, LineCategory category)
 {
     QString categoryName = (category == LineCategory::ROAD_DEFINITION) ? "도로 명시선" : "객체 감지선";
@@ -852,7 +1389,6 @@ void LineDrawingDialog::updateCategoryInfo()
     m_detectionLineCountLabel->setText(QString("감지선: %1개").arg(detectionCount));
 }
 
-// onSendCoordinatesClicked 함수 수정 - 매핑 정보 우선 사용
 void LineDrawingDialog::onSendCoordinatesClicked()
 {
     QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
@@ -913,7 +1449,7 @@ void LineDrawingDialog::onSendCoordinatesClicked()
     int mappedCount = getCoordinateMappingsAsRoadLines().size();
     int autoCount = roadLines.size() - mappedCount;
 
-    addLogMessage(QString("좌표 전송을 시작합니다. (매핑된 도로선: %1개, 자동할당 도로선: %2개, 감지선: %3개)")
+    addLogMessage(QString("좌표 및 매핑 정보를 전송합니다. (매핑된 도로선: %1개, 자동할당 도로선: %2개, 감지선: %3개)")
                       .arg(mappedCount).arg(autoCount).arg(detectionLines.size()), "INFO");
 
     // 서버 양식에 맞춘 카테고리별 좌표 전송
@@ -930,162 +1466,103 @@ void LineDrawingDialog::onSendCoordinatesClicked()
     }
 
     for (const auto &line : detectionLines) {
-        addLogMessage(QString("객체 감지선 %1 (index:%2, name:%3, mode:%4): (%5,%6) → (%7,%8)")
-                          .arg(line.index).arg(line.index).arg(line.name).arg(line.mode)
-                          .arg(line.x1).arg(line.y1).arg(line.x2).arg(line.y2), "COORD");
+        addLogMessage(QString("객체 감지선 #%1 (%2, %3): (%4,%5) → (%6,%7)")
+                          .arg(line.index).arg(line.name).arg(line.mode)
+                          .arg(line.x1).arg(line.y1)
+                          .arg(line.x2).arg(line.y2), "COORD");
     }
 
-    m_statusLabel->setText("좌표 전송 중... 서버 응답을 기다리는 중입니다.");
+    m_statusLabel->setText(QString("좌표 전송 완료 - 도로선: %1개, 감지선: %2개")
+                               .arg(roadLines.size()).arg(detectionLines.size()));
+}
 
-    addLogMessage(QString("좌표 전송이 시작되었습니다. (총 도로선: %1개, 감지선: %2개)")
-                      .arg(roadLines.size()).arg(detectionLines.size()), "SUCCESS");
-
-    // 전송 완료 알림
-    QMessageBox::information(this, "전송 시작",
-                             QString("기준선 좌표 전송을 시작했습니다.\n"
-                                     "• 매핑된 도로선: %1개\n"
-                                     "• 자동할당 도로선: %2개\n"
-                                     "• 객체 감지선: %3개 (자동 수직선 포함)\n"
-                                     "• 도로 기준선 총 %4개")
-                                 .arg(mappedCount).arg(autoCount)
-                                 .arg(detectionLines.size()).arg(roadLines.size()));
+void LineDrawingDialog::onClearLogClicked()
+{
+    clearLog();
 }
 
 void LineDrawingDialog::onPlayerStateChanged(QMediaPlayer::PlaybackState state)
 {
-    qDebug() << "플레이어 상태 변경:" << state;
-
     switch (state) {
     case QMediaPlayer::PlayingState:
         m_statusLabel->setText("비디오 스트림 재생 중");
-        addLogMessage("비디오 스트림 재생이 시작되었습니다.", "STREAM");
+        addLogMessage("비디오 스트림이 성공적으로 연결되었습니다.", "SUCCESS");
         break;
     case QMediaPlayer::PausedState:
         m_statusLabel->setText("비디오 스트림 일시정지");
-        addLogMessage("비디오 스트림이 일시정지되었습니다.", "STREAM");
         break;
     case QMediaPlayer::StoppedState:
         m_statusLabel->setText("비디오 스트림 중지됨");
-        addLogMessage("비디오 스트림이 중지되었습니다.", "STREAM");
         break;
     }
-    updateButtonStates();
 }
 
 void LineDrawingDialog::onPlayerError(QMediaPlayer::Error error, const QString &errorString)
 {
+    QString errorMsg = QString("비디오 스트림 오류: %1").arg(errorString);
+    m_statusLabel->setText(errorMsg);
+    addLogMessage(errorMsg, "ERROR");
     qDebug() << "미디어 플레이어 오류:" << error << errorString;
-
-    m_statusLabel->setText(QString("오류: %1").arg(errorString));
-    addLogMessage(QString("스트림 오류: %1").arg(errorString), "ERROR");
-    QMessageBox::critical(this, "비디오 스트림 오류",
-                          QString("비디오 스트림을 재생하는 중 오류가 발생했습니다:\n%1").arg(errorString));
 }
 
 void LineDrawingDialog::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
 {
-    qDebug() << "미디어 상태 변경:" << status;
-
     switch (status) {
-    case QMediaPlayer::NoMedia:
-        m_statusLabel->setText("미디어 없음");
-        break;
     case QMediaPlayer::LoadingMedia:
         m_statusLabel->setText("미디어 로딩 중...");
-        addLogMessage("미디어를 로딩하고 있습니다...", "STREAM");
         break;
     case QMediaPlayer::LoadedMedia:
-        m_statusLabel->setText("미디어 로드됨");
-        addLogMessage("미디어 로드가 완료되었습니다.", "STREAM");
-        break;
-    case QMediaPlayer::StalledMedia:
-        m_statusLabel->setText("미디어 버퍼링 중...");
-        addLogMessage("미디어 버퍼링 중입니다...", "STREAM");
+        m_statusLabel->setText("미디어 로드 완료");
         break;
     case QMediaPlayer::BufferingMedia:
-        m_statusLabel->setText("미디어 버퍼링 중...");
+        m_statusLabel->setText("버퍼링 중...");
         break;
     case QMediaPlayer::BufferedMedia:
-        m_statusLabel->setText("미디어 재생 준비 완료");
-        addLogMessage("미디어 재생 준비가 완료되었습니다.", "STREAM");
+        m_statusLabel->setText("버퍼링 완료");
         break;
     case QMediaPlayer::EndOfMedia:
-        m_statusLabel->setText("미디어 재생 종료");
-        addLogMessage("미디어 재생이 종료되었습니다.", "STREAM");
+        m_statusLabel->setText("스트림 종료");
         break;
     case QMediaPlayer::InvalidMedia:
-        m_statusLabel->setText("잘못된 미디어");
-        addLogMessage("잘못된 미디어입니다. URL을 확인해주세요.", "ERROR");
-        QMessageBox::warning(this, "잘못된 미디어", "비디오 스트림을 재생할 수 없습니다. URL을 확인해주세요.");
+        m_statusLabel->setText("유효하지 않은 미디어");
+        addLogMessage("유효하지 않은 RTSP 스트림입니다.", "ERROR");
+        break;
+    default:
         break;
     }
 }
 
 void LineDrawingDialog::updateFrameCount()
 {
-    if (m_mediaPlayer && m_mediaPlayer->playbackState() == QMediaPlayer::PlayingState) {
-        m_frameCount++;
-        m_frameCountLabel->setText(QString("프레임: %1").arg(m_frameCount));
-    }
-}
-
-void LineDrawingDialog::updateButtonStates()
-{
-    bool isStreaming = (m_mediaPlayer && m_mediaPlayer->playbackState() == QMediaPlayer::PlayingState);
-    bool hasLines = !m_videoView->getLines().isEmpty();
-
-    m_startDrawingButton->setEnabled(isStreaming && !m_isDrawingMode);
-    m_stopDrawingButton->setEnabled(isStreaming && m_isDrawingMode);
-    m_clearLinesButton->setEnabled(hasLines);
-    m_sendCoordinatesButton->setEnabled(hasLines);
-    m_clearMappingsButton->setEnabled(m_coordinateMatrixMappings.size() > 0);
+    m_frameCount++;
+    m_frameCountLabel->setText(QString("프레임: %1").arg(m_frameCount));
 }
 
 void LineDrawingDialog::addLogMessage(const QString &message, const QString &type)
 {
-    QString timestamp = QTime::currentTime().toString("hh:mm:ss");
-    QString colorCode;
-    QString prefix;
+    QString timestamp = QTime::currentTime().toString("[hh:mm:ss]");
+    QString coloredMessage;
 
-    // 로그 타입별 색상과 접두사 설정
+    // 타입별 색상 및 아이콘 설정
     if (type == "ERROR") {
-        colorCode = "#dc3545";
-        prefix = "❌";
-    } else if (type == "WARNING") {
-        colorCode = "#ffc107";
-        prefix = "⚠️";
+        coloredMessage = QString("<span style='color: #dc3545; font-weight: bold;'>🚫 %1 %2</span>").arg(timestamp, message);
     } else if (type == "SUCCESS") {
-        colorCode = "#28a745";
-        prefix = "✅";
+        coloredMessage = QString("<span style='color: #28a745; font-weight: bold;'>✅ %1 %2</span>").arg(timestamp, message);
+    } else if (type == "WARNING") {
+        coloredMessage = QString("<span style='color: #ffc107; font-weight: bold;'>⚠️ %1 %2</span>").arg(timestamp, message);
     } else if (type == "ACTION") {
-        colorCode = "#007bff";
-        prefix = "🔧";
+        coloredMessage = QString("<span style='color: #007bff; font-weight: bold;'>🔧 %1 %2</span>").arg(timestamp, message);
     } else if (type == "DRAW") {
-        colorCode = "#6f42c1";
-        prefix = "✏️";
+        coloredMessage = QString("<span style='color: #6f42c1; font-weight: bold;'>✏️ %1 %2</span>").arg(timestamp, message);
     } else if (type == "COORD") {
-        colorCode = "#fd7e14";
-        prefix = "📍";
-    } else if (type == "STREAM") {
-        colorCode = "#20c997";
-        prefix = "📺";
+        coloredMessage = QString("<span style='color: #fd7e14; font-weight: bold;'>📍 %1 %2</span>").arg(timestamp, message);
     } else if (type == "SYSTEM") {
-        colorCode = "#6c757d";
-        prefix = "⚙️";
+        coloredMessage = QString("<span style='color: #6c757d; font-weight: bold;'>⚙️ %1 %2</span>").arg(timestamp, message);
     } else {
-        colorCode = "#333333";
-        prefix = "ℹ️";
+        coloredMessage = QString("<span style='color: #495057;'>ℹ️ %1 %2</span>").arg(timestamp, message);
     }
 
-    QString formattedMessage = QString(
-                                   "<span style='color: %1;'><b>[%2]</b> %3 <span style='color: #666;'>%4</span> - %5</span>")
-                                   .arg(colorCode)
-                                   .arg(timestamp)
-                                   .arg(prefix)
-                                   .arg(type)
-                                   .arg(message);
-
-    m_logTextEdit->append(formattedMessage);
+    m_logTextEdit->append(coloredMessage);
 
     // 자동 스크롤
     QTextCursor cursor = m_logTextEdit->textCursor();
@@ -1093,18 +1570,8 @@ void LineDrawingDialog::addLogMessage(const QString &message, const QString &typ
     m_logTextEdit->setTextCursor(cursor);
 
     // 로그 카운트 업데이트
-    static int logCount = 0;
-    logCount++;
+    int logCount = m_logTextEdit->document()->blockCount();
     m_logCountLabel->setText(QString("로그: %1개").arg(logCount));
-
-    // 최대 1000줄 제한
-    QTextDocument *doc = m_logTextEdit->document();
-    if (doc->blockCount() > 1000) {
-        QTextCursor cursor(doc);
-        cursor.movePosition(QTextCursor::Start);
-        cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, doc->blockCount() - 1000);
-        cursor.removeSelectedText();
-    }
 }
 
 void LineDrawingDialog::clearLog()
@@ -1114,9 +1581,11 @@ void LineDrawingDialog::clearLog()
     addLogMessage("로그가 지워졌습니다.", "SYSTEM");
 }
 
-void LineDrawingDialog::onClearLogClicked()
+void LineDrawingDialog::updateButtonStates()
 {
-    clearLog();
+    bool hasLines = !m_videoView->getLines().isEmpty();
+    m_clearLinesButton->setEnabled(hasLines);
+    m_sendCoordinatesButton->setEnabled(hasLines);
 }
 
 void LineDrawingDialog::resizeEvent(QResizeEvent *event)
@@ -1124,211 +1593,200 @@ void LineDrawingDialog::resizeEvent(QResizeEvent *event)
     QDialog::resizeEvent(event);
 }
 
+// 좌표별 Matrix 매핑 관련 함수들
 void LineDrawingDialog::addCoordinateMapping(int lineIndex, const QPoint &coordinate, bool isStartPoint, int matrixNum)
 {
-    // 기존 매핑이 있는지 확인 (같은 좌표에 대한 중복 방지)
-    for (int i = 0; i < m_coordinateMatrixMappings.size(); ++i) {
-        const auto &mapping = m_coordinateMatrixMappings[i];
-        if (mapping.lineIndex == lineIndex &&
-            mapping.coordinate == coordinate &&
-            mapping.isStartPoint == isStartPoint) {
-            // 기존 매핑 업데이트
-            m_coordinateMatrixMappings[i].matrixNum = matrixNum;
-            m_coordinateMatrixMappings[i].displayName = QString("선#%1 %2 → Matrix%3")
-                                                            .arg(lineIndex + 1)
-                                                            .arg(isStartPoint ? "시작점" : "끝점")
-                                                            .arg(matrixNum);
-            addLogMessage(QString("기존 매핑이 업데이트되었습니다: %1").arg(m_coordinateMatrixMappings[i].displayName), "INFO");
-            return;
+    // 기존 매핑 제거 (같은 선의 같은 점에 대해)
+    for (int i = m_coordinateMatrixMappings.size() - 1; i >= 0; --i) {
+        if (m_coordinateMatrixMappings[i].lineIndex == lineIndex &&
+            m_coordinateMatrixMappings[i].isStartPoint == isStartPoint) {
+            m_coordinateMatrixMappings.removeAt(i);
         }
     }
 
     // 새 매핑 추가
-    CoordinateMatrixMapping newMapping;
-    newMapping.lineIndex = lineIndex;
-    newMapping.coordinate = coordinate;
-    newMapping.isStartPoint = isStartPoint;
-    newMapping.matrixNum = matrixNum;
-    newMapping.displayName = QString("선#%1 %2 → Matrix%3")
-                                 .arg(lineIndex + 1)
-                                 .arg(isStartPoint ? "시작점" : "끝점")
-                                 .arg(matrixNum);
+    CoordinateMatrixMapping mapping;
+    mapping.lineIndex = lineIndex;
+    mapping.coordinate = coordinate;
+    mapping.isStartPoint = isStartPoint;
+    mapping.matrixNum = matrixNum;
+    mapping.displayName = QString("도로선 #%1 %2").arg(lineIndex + 1).arg(isStartPoint ? "시작점" : "끝점");
 
-    m_coordinateMatrixMappings.append(newMapping);
-    addLogMessage(QString("새 매핑이 추가되었습니다: %1").arg(newMapping.displayName), "INFO");
-}
-
-void LineDrawingDialog::updateMappingInfo()
-{
-    int mappingCount = m_coordinateMatrixMappings.size();
-    m_mappingCountLabel->setText(QString("매핑: %1개").arg(mappingCount));
-
-    // 버튼 상태 업데이트
-    m_clearMappingsButton->setEnabled(mappingCount > 0);
-
-    // 완전한 매핑 정보 확인 (각 도로선의 시작점과 끝점 모두 매핑되었는지)
-    QList<RoadLineData> completeRoadLines = getCoordinateMappingsAsRoadLines();
-    if (completeRoadLines.size() > 0) {
-        addLogMessage(QString("완전한 매핑: %1개 도로선").arg(completeRoadLines.size()), "SUCCESS");
-    }
+    m_coordinateMatrixMappings.append(mapping);
 }
 
 void LineDrawingDialog::clearCoordinateMappings()
 {
-    int count = m_coordinateMatrixMappings.size();
     m_coordinateMatrixMappings.clear();
-    m_videoView->clearHighlight();
-
-    addLogMessage(QString("%1개의 좌표 매핑이 지워졌습니다.").arg(count), "ACTION");
     updateMappingInfo();
+}
 
-    QMessageBox::information(this, "매핑 지우기", QString("%1개의 좌표 매핑이 지워졌습니다.").arg(count));
+void LineDrawingDialog::updateMappingInfo()
+{
+    m_mappingCountLabel->setText(QString("매핑: %1개").arg(m_coordinateMatrixMappings.size()));
 }
 
 QList<RoadLineData> LineDrawingDialog::getCoordinateMappingsAsRoadLines() const
 {
     QList<RoadLineData> roadLines;
-    QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
+    QMap<int, RoadLineData> lineDataMap;
 
-    // 도로선별로 매핑 정보 그룹화 - const 문제 해결을 위해 값으로 저장
-    QMap<int, QPair<CoordinateMatrixMapping, CoordinateMatrixMapping>> lineMapping;
-    QMap<int, QPair<bool, bool>> hasMappingFlags; // 시작점, 끝점 매핑 여부
-
+    // 매핑 정보를 기반으로 RoadLineData 생성
     for (const auto &mapping : m_coordinateMatrixMappings) {
-        if (mapping.lineIndex < allLines.size() && allLines[mapping.lineIndex].category == LineCategory::ROAD_DEFINITION) {
-            if (!lineMapping.contains(mapping.lineIndex)) {
-                lineMapping[mapping.lineIndex] = QPair<CoordinateMatrixMapping, CoordinateMatrixMapping>();
-                hasMappingFlags[mapping.lineIndex] = QPair<bool, bool>(false, false);
-            }
+        if (!lineDataMap.contains(mapping.lineIndex)) {
+            RoadLineData roadLine;
+            roadLine.index = mapping.lineIndex + 1;
+            lineDataMap[mapping.lineIndex] = roadLine;
+        }
 
-            if (mapping.isStartPoint) {
-                lineMapping[mapping.lineIndex].first = mapping;
-                hasMappingFlags[mapping.lineIndex].first = true;
-            } else {
-                lineMapping[mapping.lineIndex].second = mapping;
-                hasMappingFlags[mapping.lineIndex].second = true;
-            }
+        RoadLineData &roadLine = lineDataMap[mapping.lineIndex];
+
+        if (mapping.isStartPoint) {
+            roadLine.x1 = mapping.coordinate.x();
+            roadLine.y1 = mapping.coordinate.y();
+            roadLine.matrixNum1 = mapping.matrixNum;
+        } else {
+            roadLine.x2 = mapping.coordinate.x();
+            roadLine.y2 = mapping.coordinate.y();
+            roadLine.matrixNum2 = mapping.matrixNum;
         }
     }
 
-    // 완전한 매핑 정보가 있는 도로선만 RoadLineData로 변환
-    for (auto it = lineMapping.begin(); it != lineMapping.end(); ++it) {
-        int lineIdx = it.key();
-        auto mappingPair = it.value();
-        auto flagPair = hasMappingFlags[lineIdx];
-
-        if (flagPair.first && flagPair.second) { // 시작점과 끝점 모두 매핑됨
-            RoadLineData roadLineData;
-            roadLineData.index = roadLines.size() + 1; // 1부터 시작하  { // 시작점과 끝점 모두 매핑됨
-            roadLineData.matrixNum1 = mappingPair.first.matrixNum;
-            roadLineData.x1 = mappingPair.first.coordinate.x();
-            roadLineData.y1 = mappingPair.first.coordinate.y();
-            roadLineData.matrixNum2 = mappingPair.second.matrixNum;
-            roadLineData.x2 = mappingPair.second.coordinate.x();
-            roadLineData.y2 = mappingPair.second.coordinate.y();
-
-            roadLines.append(roadLineData);
+    // 완전한 매핑 정보를 가진 선들만 반환
+    for (auto it = lineDataMap.begin(); it != lineDataMap.end(); ++it) {
+        const RoadLineData &roadLine = it.value();
+        if (roadLine.x1 != 0 || roadLine.y1 != 0 || roadLine.x2 != 0 || roadLine.y2 != 0) {
+            RoadLineData completeRoadLine = roadLine;
+            if (completeRoadLine.matrixNum1 == 0) completeRoadLine.matrixNum1 = 1;
+            if (completeRoadLine.matrixNum2 == 0) completeRoadLine.matrixNum2 = 2;
+            roadLines.append(completeRoadLine);
         }
     }
+
+    // 인덱스 순으로 정렬
+    std::sort(roadLines.begin(), roadLines.end(), [](const RoadLineData &a, const RoadLineData &b) {
+        return a.index < b.index;
+    });
 
     return roadLines;
 }
 
-void LineDrawingDialog::generatePerpendicularLine(const CategorizedLine &detectionLine, int index)
+// 수직선 계산 및 생성 함수들
+PerpendicularLineData LineDrawingDialog::calculatePerpendicularLine(const QPoint &start, const QPoint &end, int detectionLineIndex)
 {
-    // 수직선 데이터 계산
-    PerpendicularLineData perpData = calculatePerpendicularLine(detectionLine.start, detectionLine.end, index);
+    PerpendicularLineData perpLine;
+    perpLine.index = detectionLineIndex;
 
-    // 로그 메시지 추가
-    addLogMessage(QString("감지선 #%1에 대한 수직선 생성됨: y = %2x + %3")
-                      .arg(index)
-                      .arg(perpData.a, 0, 'f', 3)
-                      .arg(perpData.b, 0, 'f', 3), "DRAW");
+    // 감지선의 기울기 계산
+    double dx = end.x() - start.x();
+    double dy = end.y() - start.y();
 
-    // 수직선을 화면에 시각적으로 표시
-    double midX = (detectionLine.start.x() + detectionLine.end.x()) / 2.0;
-    double midY = (detectionLine.start.y() + detectionLine.end.y()) / 2.0;
-
-    // 수직선 표시용 선분 계산 (화면 범위 내에서)
-    QPoint perpStart, perpEnd;
-
-    if (abs(perpData.a) > 1000) {
-        // 거의 수직선인 경우
-        perpStart = QPoint(midX, midY - 30);
-        perpEnd = QPoint(midX, midY + 30);
-    } else {
-        // 일반적인 경우: 중점 기준으로 좌우 30픽셀 범위에서 선분 그리기
-        double x1 = midX - 30;
-        double y1 = perpData.a * x1 + perpData.b;
-        double x2 = midX + 30;
-        double y2 = perpData.a * x2 + perpData.b;
-
-        perpStart = QPoint(x1, y1);
-        perpEnd = QPoint(x2, y2);
-    }
-
-    // 수직선을 노란색 점선으로 표시
-    QGraphicsLineItem *perpLineItem = new QGraphicsLineItem(QLineF(perpStart, perpEnd));
-    QPen perpPen(Qt::yellow, 2, Qt::DashLine);
-    perpLineItem->setPen(perpPen);
-    perpLineItem->setZValue(5); // 다른 선들보다 위에 표시
-    m_videoView->scene()->addItem(perpLineItem);
-
-    addLogMessage(QString("수직선이 화면에 표시되었습니다 (중점: %.1f, %.1f)")
-                      .arg(midX).arg(midY), "INFO");
-
-    // 서버로 수직선 데이터 전송을 위한 시그널 발생
-    emit perpendicularLineGenerated(perpData.index, perpData.a, perpData.b);
-}
-
-PerpendicularLineData LineDrawingDialog::calculatePerpendicularLine(const QPoint &startPoint, const QPoint &endPoint, int index)
-{
-    // 감지선의 방향 벡터 계산
-    QPoint direction = endPoint - startPoint;
-
-    // 수직 벡터 계산 (90도 회전)
-    QPoint perpendicular(-direction.y(), direction.x());
-
-    // 수직선의 길이를 감지선 길이의 절반으로 설정
-    double length = sqrt(perpendicular.x() * perpendicular.x() + perpendicular.y() * perpendicular.y());
-    if (length > 0) {
-        double scale = (sqrt(direction.x() * direction.x() + direction.y() * direction.y()) * 0.5) / length;
-        perpendicular = QPoint(perpendicular.x() * scale, perpendicular.y() * scale);
-    }
-
-    // 감지선의 중점 계산
-    QPoint midPoint = QPoint((startPoint.x() + endPoint.x()) / 2,
-                             (startPoint.y() + endPoint.y()) / 2);
-
-    // 수직선 방정식 계산 (y = ax + b 형태)
-    double a_result, b_result;
-
-    if (abs(direction.x()) < 0.001) {
-        // 원래 선이 거의 수직인 경우 → 수직선은 수평선 (기울기 = 0)
-        a_result = 0.0;
-        b_result = midPoint.y();  // y = midY (수평선)
-    } else if (abs(direction.y()) < 0.001) {
-        // 원래 선이 거의 수평인 경우 → 수직선은 수직선
-        // 수직선은 y = ax + b로 표현할 수 없으므로 매우 큰 기울기로 근사
-        a_result = 999999.0;  // 거의 무한대 기울기
-        b_result = midPoint.y() - a_result * midPoint.x();
+    if (qAbs(dx) < 0.001) {
+        // 수직선인 경우 (dx ≈ 0)
+        perpLine.a = 0;  // 수평선
+        perpLine.b = (start.y() + end.y()) / 2.0;  // 중점의 y좌표
     } else {
         // 일반적인 경우
-        // 원래 선의 기울기: m1 = dy/dx
-        // 수직선의 기울기: m2 = -dx/dy (수직 조건)
-        a_result = -(double)direction.x() / direction.y();
+        double slope = dy / dx;
+        double perpSlope = -1.0 / slope;  // 수직선의 기울기
 
-        // 수직선이 중점 (midX, midY)를 지나므로
-        // midY = a * midX + b
-        // b = midY - a * midX
-        b_result = midPoint.y() - a_result * midPoint.x();
+        // 감지선의 중점 계산
+        double midX = (start.x() + end.x()) / 2.0;
+        double midY = (start.y() + end.y()) / 2.0;
+
+        // y = ax + b에서 a와 b 계산
+        perpLine.a = perpSlope;
+        perpLine.b = midY - perpSlope * midX;
     }
 
-    // 수직선 정보 저장
-    PerpendicularLineData perpData;
-    perpData.index = index;
-    perpData.a = a_result;
-    perpData.b = b_result;
+    return perpLine;
+}
 
-    return perpData;
+void LineDrawingDialog::generatePerpendicularLine(const CategorizedLine &detectionLine, int index)
+{
+    PerpendicularLineData perpLine = calculatePerpendicularLine(detectionLine.start, detectionLine.end, index);
+
+    addLogMessage(QString("감지선 #%1에 대한 수직선 생성됨: y = %2x + %3")
+                      .arg(index)
+                      .arg(perpLine.a, 0, 'f', 4)
+                      .arg(perpLine.b, 0, 'f', 4), "SUCCESS");
+
+    // 수직선 정보를 시그널로 전송
+    emit perpendicularLineGenerated(perpLine.index, perpLine.a, perpLine.b);
+
+    // 수직선을 화면에 그리기
+    int screenWidth = 960;
+    int screenHeight = 540;
+
+    QPoint perpStart, perpEnd;
+
+    if (qAbs(perpLine.a) < 0.001) {
+        // 수평선인 경우
+        perpStart = QPoint(0, static_cast<int>(perpLine.b));
+        perpEnd = QPoint(screenWidth, static_cast<int>(perpLine.b));
+    } else {
+        // 일반적인 경우 - 화면 경계에서의 교점 계산
+        double y1 = perpLine.a * 0 + perpLine.b;  // x=0일 때
+        double y2 = perpLine.a * screenWidth + perpLine.b;  // x=screenWidth일 때
+
+        perpStart = QPoint(0, static_cast<int>(y1));
+        perpEnd = QPoint(screenWidth, static_cast<int>(y2));
+
+        // 화면 범위를 벗어나는 경우 조정
+        if (y1 < 0 || y1 > screenHeight) {
+            double x1 = (0 - perpLine.b) / perpLine.a;  // y=0일 때
+            perpStart = QPoint(static_cast<int>(x1), 0);
+        }
+        if (y2 < 0 || y2 > screenHeight) {
+            double x2 = (screenHeight - perpLine.b) / perpLine.a;  // y=screenHeight일 때
+            perpEnd = QPoint(static_cast<int>(x2), screenHeight);
+        }
+    }
+
+    // 수직선을 화면에 그리기 (점선으로)
+    QGraphicsLineItem *perpLineItem = new QGraphicsLineItem(QLineF(perpStart, perpEnd));
+    QPen perpPen(Qt::green, 2, Qt::DashLine); // 원래 얇은 선
+    perpLineItem->setPen(perpPen);
+    perpLineItem->setZValue(1200);
+    m_videoView->scene()->addItem(perpLineItem);
+
+    addLogMessage(QString("수직선이 화면에 표시되었습니다 (녹색 점선): (%1,%2) → (%3,%4)")
+                      .arg(perpStart.x()).arg(perpStart.y())
+                      .arg(perpEnd.x()).arg(perpEnd.y()), "INFO");
+}
+
+void LineDrawingDialog::onLoadSavedLinesClicked()
+{
+    if (!m_tcpCommunicator) {
+        addLogMessage("TCP 통신이 설정되지 않았습니다.", "ERROR");
+        QMessageBox::warning(this, "오류", "서버 연결이 설정되지 않았습니다.");
+        return;
+    }
+
+    if (!m_tcpCommunicator->isConnectedToServer()) {
+        addLogMessage("서버에 연결되어 있지 않습니다.", "ERROR");
+        QMessageBox::warning(this, "오류", "서버에 연결되어 있지 않습니다.");
+        return;
+    }
+    m_tcpCommunicator->setVideoView(m_videoView);
+
+    addLogMessage("🔄 수동으로 저장된 선 데이터를 요청합니다.", "ACTION");
+
+    // 상태 초기화
+    m_roadLinesLoaded = false;
+    m_detectionLinesLoaded = false;
+    m_loadedRoadLines.clear();
+    m_loadedDetectionLines.clear();
+
+    // 도로선과 감지선을 따로 요청
+    bool roadSuccess = m_tcpCommunicator->requestSavedRoadLines();
+    bool detectionSuccess = m_tcpCommunicator->requestSavedDetectionLines();
+
+    if (roadSuccess && detectionSuccess) {
+        addLogMessage("✅ 서버에 저장된 도로선과 감지선 데이터를 요청했습니다.", "SUCCESS");
+        m_statusLabel->setText("저장된 선 데이터를 불러오는 중...");
+    } else {
+        addLogMessage("❌ 저장된 선 데이터 요청에 실패했습니다.", "ERROR");
+        QMessageBox::warning(this, "오류", "저장된 선 데이터 요청에 실패했습니다.");
+    }
 }

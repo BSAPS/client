@@ -192,12 +192,14 @@ void MainWindow::setupLiveVideoTab()
     layout->setContentsMargins(5, 5, 5, 5);
     layout->addWidget(m_videoStreamWidget);
 
-    m_streamingButton = new QPushButton("▶️ Start Streaming");
-    m_streamingButton->setStyleSheet("QPushButton { background-color: #409cff; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #357abd; } QPushButton:disabled { background-color: #cccccc; }");
+    m_streamingButton = new QPushButton("Start Streaming");
+    m_streamingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+                                     "QPushButton:hover { background-color: #C8C8C8; } "
+                                     "QPushButton:disabled { background-color: #837F7D; }");
     connect(m_streamingButton, &QPushButton::clicked, this, &MainWindow::onStreamingButtonClicked);
     layout->addWidget(m_streamingButton);
 
-    m_tabWidget->addTab(m_liveVideoTab, "📹 Live Video Stream");
+    m_tabWidget->addTab(m_liveVideoTab, "Live Video Stream");
 }
 
 void MainWindow::setupCapturedImageTab()
@@ -281,7 +283,7 @@ void MainWindow::setupCapturedImageTab()
 
     controlLayout->addSpacing(20);
 
-    m_requestButton = new QPushButton("📷 이미지 요청");
+    m_requestButton = new QPushButton("이미지 요청");
     m_requestButton->setStyleSheet("QPushButton { background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #45a049; } QPushButton:disabled { background-color: #cccccc; }");
     connect(m_requestButton, &QPushButton::clicked, this, &MainWindow::onRequestImagesClicked);
     controlLayout->addWidget(m_requestButton);
@@ -313,7 +315,7 @@ void MainWindow::setupCapturedImageTab()
     m_imageScrollArea->setWidget(m_imageGridWidget);
     mainLayout->addWidget(m_imageScrollArea);
 
-    m_tabWidget->addTab(m_capturedImageTab, "📷 Captured Images");
+    m_tabWidget->addTab(m_capturedImageTab, "Captured Images");
 }
 
 void MainWindow::setupWarningButtons()
@@ -631,8 +633,9 @@ void MainWindow::onStreamingButtonClicked()
     if (m_videoStreamWidget) {
         if (m_videoStreamWidget->isStreaming()) {
             m_videoStreamWidget->stopStream();
-            m_streamingButton->setText("▶️ Start Streaming");
-            m_streamingButton->setStyleSheet("QPushButton { background-color: #409cff; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #357abd; }");
+            m_streamingButton->setText("Start Streaming");
+            m_streamingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+                                             "QPushButton:hover { background-color: #f37321; }");
         } else {
             if (m_rtspUrl.isEmpty()) {
                 QMessageBox::warning(this, "설정 오류", "먼저 네트워크 설정에서 RTSP URL을 설정해주세요.");
@@ -640,8 +643,9 @@ void MainWindow::onStreamingButtonClicked()
             }
 
             m_videoStreamWidget->startStream(m_rtspUrl);
-            m_streamingButton->setText("⏸️ Stop Streaming");
-            m_streamingButton->setStyleSheet("QPushButton { background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #c82333; }");
+            m_streamingButton->setText("Stop Streaming");
+            m_streamingButton->setStyleSheet("QPushButton { background-color: #A5A09E; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+                                             "QPushButton:hover { background-color: #A5A09E; }");
         }
     }
 }
@@ -772,8 +776,9 @@ void MainWindow::onStreamError(const QString &error)
     QMessageBox::warning(this, "스트림 오류", error);
 
     if (m_streamingButton) {
-        m_streamingButton->setText("▶️ Start Streaming");
-        m_streamingButton->setStyleSheet("QPushButton { background-color: #409cff; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #357abd; }");
+        m_streamingButton->setText("Start Streaming");
+        m_streamingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+                                         "QPushButton:hover { background-color: #f37321; }");
     }
 }
 

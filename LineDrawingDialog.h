@@ -26,10 +26,12 @@
 #include <QGraphicsVideoItem>
 #include <QGraphicsLineItem>
 #include <QGraphicsEllipseItem>
+#include <QGraphicsRectItem>
+#include <QGraphicsTextItem>
 #include <QRadioButton>
 #include <QButtonGroup>
 #include <QFrame>
-#include "TcpCommunicator.h"  // RoadLineData, DetectionLineData 구조체 사용을 위해 추가
+#include "TcpCommunicator.h"
 #include <QInputDialog>
 
 // 선 카테고리 열거형
@@ -70,6 +72,15 @@ public:
     void clearCategoryLines(LineCategory category);
     int getCategoryLineCount(LineCategory category) const;
     void clearHighlight();
+
+    // 저장된 선 데이터를 화면에 그리는 함수
+    void loadSavedDetectionLines(const QList<DetectionLineData> &detectionLines);
+    void loadSavedRoadLines(const QList<RoadLineData> &roadLines);
+    // void loadSavedLines(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines);
+    QGraphicsScene* scene() { return m_scene; }
+
+    // 즉시 테스트 선 그리기 함수
+    void drawImmediateTestLines();
 
 signals:
     void lineDrawn(const QPoint &start, const QPoint &end, LineCategory category);
@@ -128,6 +139,11 @@ private slots:
     void onClearCategoryClicked();
     void updateCategoryInfo();
     void onCoordinateClicked(int lineIndex, const QPoint &coordinate, bool isStartPoint);
+    void onLoadSavedLinesClicked();
+
+    // 저장된 선 데이터 수신 슬롯들
+    void onSavedRoadLinesReceived(const QList<RoadLineData> &roadLines);
+    void onSavedDetectionLinesReceived(const QList<DetectionLineData> &detectionLines);
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -136,12 +152,9 @@ private:
     // 좌표별 Matrix 매핑 저장
     QList<CoordinateMatrixMapping> m_coordinateMatrixMappings;
 
-    // UI 컴포넌트 추가
-    QLabel *m_mappingCountLabel;
-    QPushButton *m_clearMappingsButton;
-    QPushButton *m_sendMappingsButton;
-
     // UI 컴포넌트
+    QLabel *m_mappingCountLabel;
+    QPushButton *m_sendMappingsButton;
     QVBoxLayout *m_mainLayout;
     QHBoxLayout *m_buttonLayout;
     VideoGraphicsView *m_videoView;
@@ -186,6 +199,15 @@ private:
     int m_selectedRoadLineIndex;
     bool m_roadLineSelectionMode;
 
+    // TCP 통신 관련
+    TcpCommunicator *m_tcpCommunicator;
+
+    // 저장된 선 데이터 관리
+    QList<RoadLineData> m_loadedRoadLines;
+    QList<DetectionLineData> m_loadedDetectionLines;
+    bool m_roadLinesLoaded;
+    bool m_detectionLinesLoaded;
+
 private:
     void updateMappingInfo();
     void addCoordinateMapping(int lineIndex, const QPoint &coordinate, bool isStartPoint, int matrixNum);
@@ -201,6 +223,11 @@ private:
     void addLogMessage(const QString &message, const QString &type = "INFO");
     void clearLog();
     void updateButtonStates();
+
+    // 저장된 선 데이터 로드 관련 함수들
+    void setupTcpConnection();
+    void requestSavedLinesFromServer();
+    void checkAndLoadAllLines();
 };
 
 #endif // LINEDRAWINGDIALOG_H

@@ -10,6 +10,8 @@
 #include <QSslError>
 #include <QSslConfiguration>
 
+#include "LineDrawingDialog.h"
+
 TcpCommunicator::TcpCommunicator(QObject *parent)
     : QObject(parent)
     , m_socket(nullptr)
@@ -22,6 +24,9 @@ TcpCommunicator::TcpCommunicator(QObject *parent)
     , m_reconnectAttempts(0)
     , m_maxReconnectAttempts(3)
     , m_reconnectDelayMs(5000)      // 5 seconds
+    , m_roadLinesReceived(false)
+    , m_detectionLinesReceived(false)
+    , m_videoView(nullptr)
 {
     m_socket = new QSslSocket(this);
     setupSslConfiguration();
@@ -144,6 +149,11 @@ bool TcpCommunicator::sendLineCoordinates(int x1, int y1, int x2, int y2)
     return success;
 }
 
+void TcpCommunicator::setVideoView(VideoGraphicsView* videoView)
+{
+    m_videoView = videoView;
+}
+
 bool TcpCommunicator::sendDetectionLine(const DetectionLineData &lineData)
 {
     if (!isConnectedToServer()) {
@@ -242,6 +252,52 @@ bool TcpCommunicator::sendPerpendicularLine(const PerpendicularLineData &lineDat
                  << "y = " << lineData.a << "x + " << lineData.b;
     } else {
         qDebug() << "[TCP] 수직선 전송 실패.";
+    }
+
+    return success;
+}
+
+// 저장된 도로선 데이터 요청 함수 (request_id: 7)
+bool TcpCommunicator::requestSavedRoadLines()
+{
+    if (!isConnectedToServer()) {
+        qDebug() << "[TCP] 연결이 없어 저장된 도로선 데이터 요청 실패";
+        emit errorOccurred("서버에 연결되지 않음");
+        return false;
+    }
+
+    // 서버에 저장된 도로선 데이터 요청 (request_id: 7)
+    QJsonObject message;
+    message["request_id"] = 7;  // 도로선 select all 요청
+
+    bool success = sendJsonMessage(message);
+    if (success) {
+        qDebug() << "[TCP] 저장된 도로선 데이터 요청 성공 (request_id: 7)";
+    } else {
+        qDebug() << "[TCP] 저장된 도로선 데이터 요청 실패";
+    }
+
+    return success;
+}
+
+// 저장된 감지선 데이터 요청 함수 (request_id: 3)
+bool TcpCommunicator::requestSavedDetectionLines()
+{
+    if (!isConnectedToServer()) {
+        qDebug() << "[TCP] 연결이 없어 저장된 감지선 데이터 요청 실패";
+        emit errorOccurred("서버에 연결되지 않음");
+        return false;
+    }
+
+    // 서버에 저장된 감지선 데이터 요청 (request_id: 3)
+    QJsonObject message;
+    message["request_id"] = 3;  // 감지선 select all 요청
+
+    bool success = sendJsonMessage(message);
+    if (success) {
+        qDebug() << "[TCP] 저장된 감지선 데이터 요청 전송 성공 (request_id: 3)";
+    } else {
+        qDebug() << "[TCP] 저장된 감지선 데이터 요청 전송 실패";
     }
 
     return success;
@@ -663,14 +719,88 @@ void TcpCommunicator::processJsonMessage(const QJsonObject &jsonObj)
     } else if (requestId == 5) {
         // Road line response
         handleRoadLineResponse(jsonObj);
+    } else if (requestId == 6) {
+        // Perpendicular line response
+        handlePerpendicularLineResponse(jsonObj);
+    } else if (requestId == 3) {
+        // 저장된 감지선 데이터 응답 처리 (request_id: 3)
+        handleSavedDetectionLinesResponse(jsonObj);
+    } else if (requestId == 7) {
+        // 저장된 도로선 데이터 응답 처리 (request_id: 7)
+        handleSavedRoadLinesResponse(jsonObj);
     } else if (requestId == 4) {
         // Categorized coordinates response (legacy)
         handleCategorizedCoordinatesResponse(jsonObj);
+    } else if (requestId == 12) {
+        handleDetectionLinesFromServer(jsonObj);
+    } else if (requestId == 16) {
+        handleRoadLinesFromServer(jsonObj);
     } else {
         qDebug() << "[TCP] Unknown request_id:" << requestId;
         qDebug() << "[TCP] Full JSON:" << QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
         // Process as a generic message
         emit messageReceived(QJsonDocument(jsonObj).toJson(QJsonDocument::Compact));
+    }
+}
+
+// request_id 12: 감지선 데이터 처리 핸들러
+void TcpCommunicator::handleDetectionLinesFromServer(const QJsonObject &jsonObj)
+{
+    qDebug() << "[TCP] handleDetectionLinesFromServer 호출됨 (request_id: 12)";
+    QList<DetectionLineData> detectionLines;
+
+    if (jsonObj.contains("data") && jsonObj["data"].isArray()) {
+        QJsonArray dataArray = jsonObj["data"].toArray();
+        for (int i = 0; i < dataArray.size(); ++i) {
+            QJsonObject detectionLineObj = dataArray[i].toObject();
+            DetectionLineData detectionLine;
+            detectionLine.index = detectionLineObj["index"].toInt();
+            detectionLine.x1 = detectionLineObj["x1"].toInt();
+            detectionLine.y1 = detectionLineObj["y1"].toInt();
+            detectionLine.x2 = detectionLineObj["x2"].toInt();
+            detectionLine.y2 = detectionLineObj["y2"].toInt();
+            detectionLine.name = detectionLineObj["name"].toString();
+            detectionLine.mode = detectionLineObj["mode"].toString();
+            // detectionLine.leftMatrixNum = detectionLineObj["leftMatrixNum"].toInt();
+            // detectionLine.rightMatrixNum = detectionLineObj["rightMatrixNum"].toInt();
+            detectionLines.append(detectionLine);
+        }
+    }
+
+    // VideoGraphicsView 인스턴스에 감지선 데이터 전달
+    if (m_videoView) {
+        m_videoView->loadSavedDetectionLines(detectionLines);
+    } else {
+        qDebug() << "[TCP] m_videoView가 nullptr입니다. 감지선 데이터를 전달할 수 없습니다.";
+    }
+}
+
+void TcpCommunicator::handleRoadLinesFromServer(const QJsonObject &jsonObj)
+{
+    qDebug() << "[TCP] handleRoadLinesFromServer 호출됨 (request_id: 16)";
+    QList<RoadLineData> roadLines;
+
+    if (jsonObj.contains("data") && jsonObj["data"].isArray()) {
+        QJsonArray dataArray = jsonObj["data"].toArray();
+        for (int i = 0; i < dataArray.size(); ++i) {
+            QJsonObject roadLineObj = dataArray[i].toObject();
+            RoadLineData roadLine;
+            roadLine.index = roadLineObj["index"].toInt();
+            roadLine.x1 = roadLineObj["x1"].toInt();
+            roadLine.y1 = roadLineObj["y1"].toInt();
+            roadLine.x2 = roadLineObj["x2"].toInt();
+            roadLine.y2 = roadLineObj["y2"].toInt();
+            roadLine.matrixNum1 = roadLineObj["matrixNum1"].toInt();
+            roadLine.matrixNum2 = roadLineObj["matrixNum2"].toInt();
+            roadLines.append(roadLine);
+        }
+    }
+
+    // VideoGraphicsView 인스턴스에 감지선 데이터 전달
+    if (m_videoView) {
+        m_videoView->loadSavedRoadLines(roadLines);
+    } else {
+        qDebug() << "[TCP] m_videoView가 nullptr입니다. 도로기준선 데이터를 전달할 수 없습니다.";
     }
 }
 
@@ -896,6 +1026,104 @@ void TcpCommunicator::handlePerpendicularLineResponse(const QJsonObject &jsonObj
         emit statusUpdated("수직선 설정 완료");
     } else {
         emit errorOccurred("수직선 설정 실패: " + message);
+    }
+}
+
+// 저장된 도로선 데이터 응답 처리 함수 (request_id: 7)
+void TcpCommunicator::handleSavedRoadLinesResponse(const QJsonObject &jsonObj)
+{
+    qDebug() << "[TCP] 저장된 도로선 데이터 응답 처리 중... (request_id: 7)";
+    qDebug() << "[TCP] Full JSON:" << QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
+
+    m_receivedRoadLines.clear();
+
+    if (jsonObj.contains("data") && jsonObj["data"].isArray()) {
+        QJsonArray dataArray = jsonObj["data"].toArray();
+
+        for (int i = 0; i < dataArray.size(); ++i) {
+            QJsonObject roadLineObj = dataArray[i].toObject();
+
+            RoadLineData roadLine;
+            roadLine.index = roadLineObj["index"].toInt();
+            roadLine.matrixNum1 = roadLineObj["matrixNum1"].toInt();
+            roadLine.x1 = roadLineObj["x1"].toInt();
+            roadLine.y1 = roadLineObj["y1"].toInt();
+            roadLine.matrixNum2 = roadLineObj["matrixNum2"].toInt();
+            roadLine.x2 = roadLineObj["x2"].toInt();
+            roadLine.y2 = roadLineObj["y2"].toInt();
+
+            m_receivedRoadLines.append(roadLine);
+
+            qDebug() << "[TCP] 도로선 로드됨 - index:" << roadLine.index
+                     << "start:(" << roadLine.x1 << "," << roadLine.y1 << ") matrix:" << roadLine.matrixNum1
+                     << "end:(" << roadLine.x2 << "," << roadLine.y2 << ") matrix:" << roadLine.matrixNum2;
+        }
+    }
+
+    qDebug() << "[TCP] 저장된 도로선 데이터 로드 완료 - 도로선:" << m_receivedRoadLines.size() << "개";
+
+    m_roadLinesReceived = true;
+    emit savedRoadLinesReceived(m_receivedRoadLines);
+
+    // 두 종류의 선이 모두 수신되었는지 확인
+    checkAndEmitAllLinesReceived();
+}
+
+// 저장된 감지선 데이터 응답 처리 함수 (request_id: 3)
+void TcpCommunicator::handleSavedDetectionLinesResponse(const QJsonObject &jsonObj)
+{
+    qDebug() << "[TCP] 저장된 감지선 데이터 응답 처리 중... (request_id: 3)";
+    qDebug() << "[TCP] Full JSON:" << QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
+
+    m_receivedDetectionLines.clear();
+
+    if (jsonObj.contains("data") && jsonObj["data"].isArray()) {
+        QJsonArray dataArray = jsonObj["data"].toArray();
+
+        for (int i = 0; i < dataArray.size(); ++i) {
+            QJsonObject detectionLineObj = dataArray[i].toObject();
+
+            DetectionLineData detectionLine;
+            detectionLine.index = detectionLineObj["index"].toInt();
+            detectionLine.x1 = detectionLineObj["x1"].toInt();
+            detectionLine.y1 = detectionLineObj["y1"].toInt();
+            detectionLine.x2 = detectionLineObj["x2"].toInt();
+            detectionLine.y2 = detectionLineObj["y2"].toInt();
+            detectionLine.name = detectionLineObj["name"].toString();
+            detectionLine.mode = detectionLineObj["mode"].toString();
+            // detectionLine.leftMatrixNum = detectionLineObj["leftMatrixNum"].toInt();
+            // detectionLine.rightMatrixNum = detectionLineObj["rightMatrixNum"].toInt();
+
+            m_receivedDetectionLines.append(detectionLine);
+
+            qDebug() << "[TCP] 감지선 로드됨 - index:" << detectionLine.index
+                     << "name:" << detectionLine.name << "mode:" << detectionLine.mode
+                     << "좌표:(" << detectionLine.x1 << "," << detectionLine.y1 << ") → ("
+                     << detectionLine.x2 << "," << detectionLine.y2 << ")";
+        }
+    }
+
+    qDebug() << "[TCP] 저장된 감지선 데이터 로드 완료 - 감지선:" << m_receivedDetectionLines.size() << "개";
+
+    m_detectionLinesReceived = true;
+    emit savedDetectionLinesReceived(m_receivedDetectionLines);
+
+    // 두 종류의 선이 모두 수신되었는지 확인
+    checkAndEmitAllLinesReceived();
+}
+
+// 모든 선 데이터가 수신되었는지 확인하고 통합 시그널 발생
+void TcpCommunicator::checkAndEmitAllLinesReceived()
+{
+    // 현재는 각각 따로 처리하므로 이 함수는 필요시 확장 가능
+    if (m_roadLinesReceived && m_detectionLinesReceived) {
+        qDebug() << "[TCP] 모든 저장된 선 데이터 수신 완료";
+        emit statusUpdated(QString("저장된 선 데이터 로드 완료 - 도로선: %1개, 감지선: %2개")
+                               .arg(m_receivedRoadLines.size()).arg(m_receivedDetectionLines.size()));
+
+        // 상태 초기화
+        m_roadLinesReceived = false;
+        m_detectionLinesReceived = false;
     }
 }
 

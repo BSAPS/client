@@ -12,9 +12,7 @@
 #include <QSslSocket>
 #include <QSslError>
 
-
-
-
+class VideoGraphicsView;
 
 // 메시지 타입 열거형
 enum class MessageType {
@@ -59,9 +57,9 @@ struct PerpendicularLineData {
     double b;               // y = ax + b에서 b값 (y절편)
 };
 
-// 서버 양식에 맞춘 도로 기준선 데이터 구조체 수정
+// 서버 양식에 맞춘 도로 기준선 데이터 구조체
 struct RoadLineData {
-    int index;              // 기준선 번호 (선 그을때마다 1씩 증가)
+    int index;              // 기준선 번호
     int matrixNum1;         // 시작점 매트릭스 번호
     int x1, y1;             // 시작점 좌표
     int matrixNum2;         // 끝점 매트릭스 번호
@@ -92,12 +90,16 @@ public:
     void setConnectionTimeout(int timeoutMs);
     void setReconnectEnabled(bool enabled);
 
-    // TcpCommunicator 클래스의 public 섹션에 함수 선언 추가
+    void setVideoView(VideoGraphicsView* videoView);
+
+    // 도로선 및 감지선 전송
     bool sendRoadLine(const RoadLineData &lineData);
     bool sendMultipleRoadLines(const QList<RoadLineData> &roadLines);
     bool sendPerpendicularLine(const PerpendicularLineData &lineData);
 
-
+    // 저장된 선 데이터 요청 함수들
+    bool requestSavedRoadLines();      // 도로선 요청 (request_id: 7)
+    bool requestSavedDetectionLines(); // 감지선 요청 (request_id: 3)
 
 signals:
     void connected();
@@ -110,9 +112,13 @@ signals:
     void categorizedCoordinatesConfirmed(bool success, const QString &message, int roadLinesProcessed, int detectionLinesProcessed);
     void statusUpdated(const QString &status);
 
-    // signals 섹션에 시그널 추가
+    // 도로선 및 수직선 관련 시그널
     void roadLineConfirmed(bool success, const QString &message);
     void perpendicularLineConfirmed(bool success, const QString &message);
+
+    // 저장된 선 데이터 수신 시그널들
+    void savedRoadLinesReceived(const QList<RoadLineData> &roadLines);
+    void savedDetectionLinesReceived(const QList<DetectionLineData> &detectionLines);
 
 private slots:
     void onConnected();
@@ -135,7 +141,7 @@ private:
     void handleStatusUpdate(const QJsonObject &jsonObj);
     void handleErrorResponse(const QJsonObject &jsonObj);
 
-    // Base64 이미지 처리 함수 추가
+    // Base64 이미지 처리
     QString saveBase64Image(const QString &base64Data, const QString &timestamp);
 
     // 유틸리티 함수
@@ -153,6 +159,8 @@ private:
     bool m_isConnected;
     QString m_receivedData;
 
+    VideoGraphicsView *m_videoView;
+
     // 설정
     int m_connectionTimeoutMs;
     bool m_reconnectEnabled;
@@ -160,10 +168,25 @@ private:
     int m_maxReconnectAttempts;
     int m_reconnectDelayMs;
 
-    // private 섹션에 함수 선언 추가
+    // 응답 처리 함수들
     void handleRoadLineResponse(const QJsonObject &jsonObj);
     void handlePerpendicularLineResponse(const QJsonObject &jsonObj);
     void setupSslConfiguration();
+
+    // 저장된 선 데이터 응답 처리 함수들
+    void handleSavedRoadLinesResponse(const QJsonObject &jsonObj);
+    void handleSavedDetectionLinesResponse(const QJsonObject &jsonObj);
+
+    void handleDetectionLinesFromServer(const QJsonObject &jsonObj);
+    void handleRoadLinesFromServer(const QJsonObject &jsonObj);
+
+    // 저장된 선 데이터 관리
+    QList<RoadLineData> m_receivedRoadLines;
+    QList<DetectionLineData> m_receivedDetectionLines;
+    bool m_roadLinesReceived;
+    bool m_detectionLinesReceived;
+
+    void checkAndEmitAllLinesReceived();
 };
 
 #endif // TCPCOMMUNICATOR_H

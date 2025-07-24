@@ -202,6 +202,10 @@ void VideoGraphicsView::loadSavedRoadLines(const QList<RoadLineData> &roadLines)
 
         qDebug() << QString("✅ 도로선 %1 그리기 완료: (%2,%3) → (%4,%5)")
                         .arg(roadLine.index).arg(x1).arg(y1).arg(x2).arg(y2);
+
+        QPoint startPointQP(x1,y1);
+        QPoint endPointQP(x2,y2);
+        emit lineDrawn(startPointQP, endPointQP, LineCategory::ROAD_DEFINITION);
     }
     m_scene->update();
     update();
@@ -266,6 +270,10 @@ void VideoGraphicsView::loadSavedDetectionLines(const QList<DetectionLineData> &
 
         qDebug() << QString("✅ 감지선 %1 그리기 완료: (%2,%3) → (%4,%5)")
                         .arg(detectionLine.index).arg(x1).arg(y1).arg(x2).arg(y2);
+
+        QPoint startPointQP(x1,y1);
+        QPoint endPointQP(x2,y2);
+        emit lineDrawn(startPointQP, endPointQP, LineCategory::OBJECT_DETECTION);
     }
     m_scene->update();
     update();
@@ -1192,6 +1200,7 @@ void LineDrawingDialog::setupUI()
     m_clearLinesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
                                       "QPushButton:hover { background-color: #f89b6c; }"
                                       "QPushButton:disabled { background-color: #b3aca5; }");
+    m_clearLinesButton->setEnabled(false);
     connect(m_clearLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onClearLinesClicked);
     m_buttonLayout->addWidget(m_clearLinesButton);
 
@@ -1199,6 +1208,7 @@ void LineDrawingDialog::setupUI()
     m_sendCoordinatesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
                                            "QPushButton:hover { background-color: #f89b6c; }"
                                            "QPushButton:disabled { background-color: #b3aca5; }");
+    m_sendCoordinatesButton->setEnabled(false);
     connect(m_sendCoordinatesButton, &QPushButton::clicked, this, &LineDrawingDialog::onSendCoordinatesClicked);
     m_buttonLayout->addWidget(m_sendCoordinatesButton);
 
@@ -1355,28 +1365,28 @@ void LineDrawingDialog::onLineDrawn(const QPoint &start, const QPoint &end, Line
                       .arg(end.x()).arg(end.y()), "DRAW");
 
     // 감지선인 경우 수직선 자동 생성
-    if (category == LineCategory::OBJECT_DETECTION) {
-        QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
-        int detectionLineIndex = 0;
+    // if (category == LineCategory::OBJECT_DETECTION) {
+    //     QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
+    //     int detectionLineIndex = 0;
 
-        // 현재 그려진 감지선의 인덱스 찾기
-        for (int i = 0; i < allLines.size(); ++i) {
-            if (allLines[i].category == LineCategory::OBJECT_DETECTION) {
-                detectionLineIndex++;
-                if (allLines[i].start == start && allLines[i].end == end) {
-                    break;
-                }
-            }
-        }
+    //     // 현재 그려진 감지선의 인덱스 찾기
+    //     for (int i = 0; i < allLines.size(); ++i) {
+    //         if (allLines[i].category == LineCategory::OBJECT_DETECTION) {
+    //             detectionLineIndex++;
+    //             if (allLines[i].start == start && allLines[i].end == end) {
+    //                 break;
+    //             }
+    //         }
+    //     }
 
-        // 수직선 생성
-        CategorizedLine detectionLine;
-        detectionLine.start = start;
-        detectionLine.end = end;
-        detectionLine.category = category;
+    //     // 수직선 생성
+    //     CategorizedLine detectionLine;
+    //     detectionLine.start = start;
+    //     detectionLine.end = end;
+    //     detectionLine.category = category;
 
-        generatePerpendicularLine(detectionLine, detectionLineIndex);
-    }
+    //     generatePerpendicularLine(detectionLine, detectionLineIndex);
+    // }
 
     updateCategoryInfo();
     updateButtonStates();
@@ -1783,6 +1793,14 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
     // 도로선과 감지선을 따로 요청
     bool roadSuccess = m_tcpCommunicator->requestSavedRoadLines();
     bool detectionSuccess = m_tcpCommunicator->requestSavedDetectionLines();
+
+    // 상단의 함수들이 완료되고 update 함수가 수행될 수 있도록 delay 0.5초
+    QEventLoop loop;
+    QTimer::singleShot(500, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    updateCategoryInfo();
+    updateButtonStates();
 
     if (roadSuccess && detectionSuccess) {
         addLogMessage("✅ 서버에 저장된 도로선과 감지선 데이터를 요청했습니다.", "SUCCESS");

@@ -7,6 +7,7 @@ TEMPLATE = app
 
 # 소스 파일
 SOURCES += \
+    LoginWindow.cpp \
     main.cpp \
     MainWindow.cpp \
     VideoStreamWidget.cpp \
@@ -17,6 +18,7 @@ SOURCES += \
 
 # 헤더 파일
 HEADERS += \
+    LoginWindow.h \
     MainWindow.h \
     VideoStreamWidget.h \
     TcpCommunicator.h \
@@ -37,3 +39,6 @@ UI_DIR = build/ui
 
 # 컴파일러 플래그
 QMAKE_CXXFLAGS += -Wno-unused-parameter
+
+FORMS += \
+    LoginWindow.ui

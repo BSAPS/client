@@ -97,9 +97,11 @@ public:
     bool sendMultipleRoadLines(const QList<RoadLineData> &roadLines);
     bool sendPerpendicularLine(const PerpendicularLineData &lineData);
 
+
     // 저장된 선 데이터 요청 함수들
     bool requestSavedRoadLines();      // 도로선 요청 (request_id: 7)
     bool requestSavedDetectionLines(); // 감지선 요청 (request_id: 3)
+    bool requestDeleteLines(); // 선 삭제 (request_id: 4)
 
 signals:
     void connected();

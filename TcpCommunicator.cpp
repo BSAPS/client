@@ -303,6 +303,28 @@ bool TcpCommunicator::requestSavedDetectionLines()
     return success;
 }
 
+bool TcpCommunicator::requestDeleteLines()
+{
+    if (!isConnectedToServer()) {
+        qDebug() << "[TCP] 연결이 없어 저장된 선 데이터 삭제 실패";
+        emit errorOccurred("서버에 연결되지 않음");
+        return false;
+    }
+
+    // 서버에 저장된 감지선 데이터 요청 (request_id: 4)
+    QJsonObject message;
+    message["request_id"] = 4;  // 감지선, 기준선, 수직선 delete all 요청
+
+    bool success = sendJsonMessage(message);
+    if (success) {
+        qDebug() << "[TCP] 저장된 선 데이터 삭제 전송 성공 (request_id: 4)";
+    } else {
+        qDebug() << "[TCP] 저장된 선 데이터 삭제 전송 실패";
+    }
+
+    return success;
+}
+
 bool TcpCommunicator::sendMultipleRoadLines(const QList<RoadLineData> &roadLines)
 {
     if (!isConnectedToServer()) {

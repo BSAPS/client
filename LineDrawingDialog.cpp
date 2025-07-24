@@ -1300,6 +1300,8 @@ void LineDrawingDialog::onStopDrawingClicked()
 
 void LineDrawingDialog::onClearLinesClicked()
 {
+    m_tcpCommunicator->requestDeleteLines();
+
     int lineCount = m_videoView->getLines().size();
     m_videoView->clearLines();
     m_drawnLines.clear();

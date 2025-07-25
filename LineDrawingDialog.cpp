@@ -1258,6 +1258,7 @@ void LineDrawingDialog::onSendCoordinatesClicked()
         if (mapping.lineIndex < allLines.size() &&
             allLines[mapping.lineIndex].category == LineCategory::ROAD_DEFINITION) {
             mappedLineIndices.insert(mapping.lineIndex);
+            qDebug() << "매핑 정보가 있는 인덱스 : " << mapping.lineIndex << "\n";
         }
     }
 
@@ -1639,7 +1640,9 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
     QTimer::singleShot(500, &loop, &QEventLoop::quit);
     loop.exec();
 
+
     updateCategoryInfo();
+    updateMappingInfo();
     updateButtonStates();
 
     if (roadSuccess && detectionSuccess) {

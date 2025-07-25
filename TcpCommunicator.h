@@ -2,17 +2,21 @@
 #define TCPCOMMUNICATOR_H
 
 #include <QObject>
-#include <QTcpSocket>
+// #include <QTcpSocket>
 #include <QTimer>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QDateTime>
 #include <QThread>
+
 #include <QSslSocket>
 #include <QSslError>
+#include <QSslConfiguration>
 
+// Forward declarations
 class VideoGraphicsView;
+
 
 // 메시지 타입 열거형
 enum class MessageType {
@@ -33,15 +37,7 @@ struct ImageData {
     QString direction;
 };
 
-// 카테고리별 선 데이터 구조체 (기존 방식용)
-struct CategorizedLineData {
-    int x1;
-    int y1;
-    int x2;
-    int y2;
-};
-
-// 서버 양식에 맞춘 객체 탐지선 데이터 구조체
+// 객체 탐지선 데이터 구조체
 struct DetectionLineData {
     int index;              // 선 인덱스
     int x1, y1, x2, y2;     // 좌표
@@ -51,19 +47,28 @@ struct DetectionLineData {
     int rightMatrixNum;     // 오른쪽 매트릭스 번호
 };
 
+// 수직선 데이터 구조체
 struct PerpendicularLineData {
     int index;              // 원본 감지선 번호
     double a;               // y = ax + b에서 a값 (기울기)
     double b;               // y = ax + b에서 b값 (y절편)
 };
 
-// 서버 양식에 맞춘 도로 기준선 데이터 구조체
+// 서버 양식에 맞춘 도로 기준선 데이터 구조체 수정
 struct RoadLineData {
     int index;              // 기준선 번호
     int matrixNum1;         // 시작점 매트릭스 번호
     int x1, y1;             // 시작점 좌표
     int matrixNum2;         // 끝점 매트릭스 번호
     int x2, y2;             // 끝점 좌표
+};
+
+// 카테고리별 선 데이터 구조체 (기존 방식용)
+struct CategorizedLineData {
+    int x1;
+    int y1;
+    int x2;
+    int y2;
 };
 
 class TcpCommunicator : public QObject
@@ -75,33 +80,34 @@ public:
     ~TcpCommunicator();
 
     // 연결 관리
-    void connectToServer(const QString &host, int port);
+    void connectToServer(const QString &host, quint16 port);
     void disconnectFromServer();
     bool isConnectedToServer() const;
 
     // 메시지 전송
+    bool sendJsonMessage(const QJsonObject &message);
+    bool sendMessage(const QString &message);
+
+    // 데이터 전송 메서드들
     bool sendLineCoordinates(int x1, int y1, int x2, int y2);
     bool sendDetectionLine(const DetectionLineData &lineData);
     bool sendMultipleDetectionLines(const QList<DetectionLineData> &detectionLines);
     bool sendCategorizedLineCoordinates(const QList<CategorizedLineData> &roadLines, const QList<CategorizedLineData> &detectionLines);
+
+    bool sendRoadLine(const RoadLineData &lineData);
+    bool sendMultipleRoadLines(const QList<RoadLineData> &roadLines);
+    bool sendPerpendicularLine(const PerpendicularLineData &lineData);
     void requestImageData(const QString &date = QString(), int hour = -1);
+
+    // 저장된 선 데이터 요청
+    bool requestSavedRoadLines();
+    bool requestSavedDetectionLines();
+    bool requestDeleteLines();
 
     // 설정
     void setConnectionTimeout(int timeoutMs);
     void setReconnectEnabled(bool enabled);
-
     void setVideoView(VideoGraphicsView* videoView);
-
-    // 도로선 및 감지선 전송
-    bool sendRoadLine(const RoadLineData &lineData);
-    bool sendMultipleRoadLines(const QList<RoadLineData> &roadLines);
-    bool sendPerpendicularLine(const PerpendicularLineData &lineData);
-
-
-    // 저장된 선 데이터 요청 함수들
-    bool requestSavedRoadLines();      // 도로선 요청 (request_id: 7)
-    bool requestSavedDetectionLines(); // 감지선 요청 (request_id: 3)
-    bool requestDeleteLines(); // 선 삭제 (request_id: 4)
 
 signals:
     void connected();
@@ -111,30 +117,36 @@ signals:
     void imagesReceived(const QList<ImageData> &images);
     void coordinatesConfirmed(bool success, const QString &message);
     void detectionLineConfirmed(bool success, const QString &message);
-    void categorizedCoordinatesConfirmed(bool success, const QString &message, int roadLinesProcessed, int detectionLinesProcessed);
     void statusUpdated(const QString &status);
 
-    // 도로선 및 수직선 관련 시그널
+    // signals 섹션에 시그널 추가
     void roadLineConfirmed(bool success, const QString &message);
     void perpendicularLineConfirmed(bool success, const QString &message);
-
-    // 저장된 선 데이터 수신 시그널들
     void savedRoadLinesReceived(const QList<RoadLineData> &roadLines);
     void savedDetectionLinesReceived(const QList<DetectionLineData> &detectionLines);
+
+    void categorizedCoordinatesConfirmed(bool success, const QString &message, int roadLinesProcessed, int detectionLinesProcessed);
+
 
 private slots:
     void onConnected();
     void onDisconnected();
     void onReadyRead();
     void onError(QAbstractSocket::SocketError error);
+
     void onConnectionTimeout();
     void attemptReconnection();
     void onSslEncrypted();
     void onSslErrors(const QList<QSslError> &errors);
 
+    void onSocketConnected();
+    void onSocketDisconnected();
+    void onSocketReadyRead();
+    void onSocketError(QAbstractSocket::SocketError error);
+    void onReconnectTimer();
+
 private:
     // JSON 메시지 처리
-    bool sendJsonMessage(const QJsonObject &message);
     void processJsonMessage(const QJsonObject &jsonObj);
     void handleImagesResponse(const QJsonObject &jsonObj);
     void handleCoordinatesResponse(const QJsonObject &jsonObj);
@@ -143,7 +155,7 @@ private:
     void handleStatusUpdate(const QJsonObject &jsonObj);
     void handleErrorResponse(const QJsonObject &jsonObj);
 
-    // Base64 이미지 처리
+    // Base64 이미지 처리 함수 추가
     QString saveBase64Image(const QString &base64Data, const QString &timestamp);
 
     // 유틸리티 함수
@@ -151,15 +163,20 @@ private:
     QString messageTypeToString(MessageType type) const;
     MessageType stringToMessageType(const QString &typeStr) const;
     void logJsonMessage(const QJsonObject &jsonObj, bool outgoing) const;
+    void setupSocket();
+    void startReconnectTimer();
+    void stopReconnectTimer();
 
     // 네트워크 관련
-    QSslSocket* m_socket;
+    QSslSocket *m_socket;
     QTimer *m_connectionTimer;
     QTimer *m_reconnectTimer;
     QString m_host;
-    int m_port;
+    quint16 m_port;
     bool m_isConnected;
     QString m_receivedData;
+
+    bool m_autoReconnect;
 
     VideoGraphicsView *m_videoView;
 
@@ -170,7 +187,7 @@ private:
     int m_maxReconnectAttempts;
     int m_reconnectDelayMs;
 
-    // 응답 처리 함수들
+    // private 섹션에 함수 선언 추가
     void handleRoadLineResponse(const QJsonObject &jsonObj);
     void handlePerpendicularLineResponse(const QJsonObject &jsonObj);
     void setupSslConfiguration();

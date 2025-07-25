@@ -6,28 +6,31 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFileInfo>
-#include <QSslSocket>
-#include <QSslError>
-#include <QSslConfiguration>
 
 #include "LineDrawingDialog.h"
 
 TcpCommunicator::TcpCommunicator(QObject *parent)
     : QObject(parent)
-    , m_socket(nullptr)
+    , m_socket(new QSslSocket(this))
     , m_connectionTimer(nullptr)
-    , m_reconnectTimer(nullptr)
+    , m_reconnectTimer(new QTimer(this))
+    , m_host("")
     , m_port(0)
     , m_isConnected(false)
-    , m_connectionTimeoutMs(30000)  // 30 seconds
+    , m_receivedData("")
+    , m_videoView(nullptr)
+
+    , m_connectionTimeoutMs(10000)
     , m_reconnectEnabled(true)
     , m_reconnectAttempts(0)
-    , m_maxReconnectAttempts(3)
-    , m_reconnectDelayMs(5000)      // 5 seconds
+    , m_maxReconnectAttempts(5)
+    , m_reconnectDelayMs(3000)
+    , m_autoReconnect(true)
+
     , m_roadLinesReceived(false)
     , m_detectionLinesReceived(false)
-    , m_videoView(nullptr)
 {
+    qDebug() << "[TCP] TcpCommunicator 생성자 호출";
     m_socket = new QSslSocket(this);
     setupSslConfiguration();
 
@@ -35,12 +38,12 @@ TcpCommunicator::TcpCommunicator(QObject *parent)
     m_socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
     m_socket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
 
-    // Connect socket signals
-    connect(m_socket, &QTcpSocket::connected, this, &TcpCommunicator::onConnected);
-    connect(m_socket, &QTcpSocket::disconnected, this, &TcpCommunicator::onDisconnected);
-    connect(m_socket, &QTcpSocket::readyRead, this, &TcpCommunicator::onReadyRead);
-    connect(m_socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::errorOccurred),
-            this, &TcpCommunicator::onError);
+    // TCP 소켓 시그널 연결
+    connect(m_socket, &QSslSocket::connected, this, &TcpCommunicator::onConnected);
+    connect(m_socket, &QSslSocket::disconnected, this, &TcpCommunicator::onDisconnected);
+    connect(m_socket, &QSslSocket::readyRead, this, &TcpCommunicator::onReadyRead);
+    connect(m_socket, QOverload<QAbstractSocket::SocketError>::of(&QSslSocket::errorOccurred),
+            this, &TcpCommunicator::onSocketError);
 
     // Connect SSL signals
     connect(m_socket, &QSslSocket::encrypted, this, &TcpCommunicator::onSslEncrypted);
@@ -53,15 +56,34 @@ TcpCommunicator::TcpCommunicator(QObject *parent)
     m_connectionTimer->setInterval(m_connectionTimeoutMs);
     connect(m_connectionTimer, &QTimer::timeout, this, &TcpCommunicator::onConnectionTimeout);
 
-    // Reconnection timer
-    m_reconnectTimer = new QTimer(this);
+    // 재연결 타이머 설정
     m_reconnectTimer->setSingleShot(true);
-    connect(m_reconnectTimer, &QTimer::timeout, this, &TcpCommunicator::attemptReconnection);
+    m_reconnectTimer->setInterval(m_reconnectDelayMs);
+    connect(m_reconnectTimer, &QTimer::timeout, this, &TcpCommunicator::onReconnectTimer);
+
+    qDebug() << "[TCP] TcpCommunicator 초기화 완료";
 }
 
 TcpCommunicator::~TcpCommunicator()
 {
     disconnectFromServer();
+}
+
+void TcpCommunicator::disconnectFromServer()
+{
+    if (m_connectionTimer->isActive()) {
+        m_connectionTimer->stop();
+    }
+    if (m_reconnectTimer->isActive()) {
+        m_reconnectTimer->stop();
+    }
+
+    if (m_socket && m_socket->state() != QAbstractSocket::UnconnectedState) {
+        m_socket->disconnectFromHost();
+        if (m_socket->state() != QAbstractSocket::UnconnectedState) {
+            m_socket->waitForDisconnected(3000);
+        }
+    }
 }
 
 void TcpCommunicator::setupSslConfiguration() {
@@ -85,39 +107,85 @@ void TcpCommunicator::setupSslConfiguration() {
     m_socket->setPeerVerifyMode(QSslSocket::VerifyPeer);
 }
 
-void TcpCommunicator::connectToServer(const QString &host, int port)
+void TcpCommunicator::connectToServer(const QString &host, quint16 port)
 {
-    if (m_isConnected) {
-        disconnectFromServer();
-    }
+    qDebug() << "[TCP] connectToServer 호출 - 호스트:" << host << "포트:" << port;
+
     m_host = host;
     m_port = port;
-    m_reconnectAttempts = 0;
-    qDebug() << "[TCP] Attempting to connect to server:" << host << ":" << port;
-    m_connectionTimer->start();
-    m_socket->connectToHostEncrypted(host, static_cast<quint16>(port));
-}
 
-void TcpCommunicator::disconnectFromServer()
-{
-    if (m_connectionTimer->isActive()) {
-        m_connectionTimer->stop();
-    }
-    if (m_reconnectTimer->isActive()) {
-        m_reconnectTimer->stop();
-    }
-
-    if (m_socket && m_socket->state() != QAbstractSocket::UnconnectedState) {
+    // 이미 연결되어 있으면 연결 해제 후 재연결
+    if (m_socket->state() != QSslSocket::UnconnectedState) {
+        qDebug() << "[TCP] 기존 연결 해제 중... 현재 상태:" << m_socket->state();
         m_socket->disconnectFromHost();
-        if (m_socket->state() != QAbstractSocket::UnconnectedState) {
-            m_socket->waitForDisconnected(3000);
+        if (m_socket->state() != QSslSocket::UnconnectedState) {
+            m_socket->waitForDisconnected(1000);
         }
+    }
+
+    qDebug() << "[TCP] 서버 연결 시도:" << host << ":" << port;
+    m_socket->connectToHostEncrypted(m_host, static_cast<qint16>(m_port));
+
+    // 연결 타임아웃 설정 (10초)
+    if (!m_socket->waitForConnected(10000)) {
+        qDebug() << "[TCP] 연결 타임아웃 또는 실패:" << m_socket->errorString();
+        emit errorOccurred("연결 타임아웃: " + m_socket->errorString());
     }
 }
 
 bool TcpCommunicator::isConnectedToServer() const
 {
     return m_isConnected && m_socket && m_socket->state() == QAbstractSocket::ConnectedState;
+}
+
+bool TcpCommunicator::sendJsonMessage(const QJsonObject &message)
+{
+    if (!isConnectedToServer()) {
+        qDebug() << "[TCP] 메시지 전송 실패 - 서버에 연결되지 않음";
+        return false;
+    }
+
+    QJsonDocument doc(message);
+    QByteArray data = doc.toJson(QJsonDocument::Compact);
+
+    // qDebug() << "[TCP] JSON 메시지 전송 시도:" << data;
+
+    // 1. 데이터 길이(4바이트, 빅엔디안) 전송
+    quint32 dataLength = static_cast<quint32>(data.size());
+    QByteArray lengthBytes;
+    QDataStream lengthStream(&lengthBytes, QIODevice::WriteOnly);
+    lengthStream.setByteOrder(QDataStream::BigEndian);
+    lengthStream << dataLength;
+    
+    // 2. 길이 + 데이터 순서로 전송
+    qint64 bytesWritten = m_socket->write(lengthBytes);
+    if (bytesWritten != 4) {
+        qDebug() << "[TCP] 길이 정보 전송 실패:" << m_socket->errorString();
+        return false;
+    }
+    bytesWritten = m_socket->write(data);
+    bool flushed = m_socket->flush();
+
+    if (bytesWritten == -1) {
+        qDebug() << "[TCP] 메시지 전송 실패:" << m_socket->errorString();
+        return false;
+    }
+
+    qDebug() << "[TCP] 메시지 전송 성공 - 바이트:" << bytesWritten << "플러시:" << flushed;
+    return true;
+}
+
+bool TcpCommunicator::sendMessage(const QString &message)
+{
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8(), &error);
+
+    if (error.error != QJsonParseError::NoError) {
+        qDebug() << "[TCP] JSON 파싱 오류:" << error.errorString();
+        return false;
+    }
+
+    return sendJsonMessage(doc.object());
 }
 
 bool TcpCommunicator::sendLineCoordinates(int x1, int y1, int x2, int y2)
@@ -129,7 +197,6 @@ bool TcpCommunicator::sendLineCoordinates(int x1, int y1, int x2, int y2)
     }
 
     QJsonObject message = createBaseMessage("send_coordinates");
-
     QJsonObject coordinates;
     coordinates["x1"] = x1;
     coordinates["y1"] = y1;
@@ -162,9 +229,8 @@ bool TcpCommunicator::sendDetectionLine(const DetectionLineData &lineData)
         return false;
     }
 
-    // Create JSON message according to server format
     QJsonObject message;
-    message["request_id"] = 2;  // request_id for detection line defined by server
+    message["request_id"] = 2;
 
     QJsonObject data;
     data["index"] = lineData.index;
@@ -173,16 +239,13 @@ bool TcpCommunicator::sendDetectionLine(const DetectionLineData &lineData)
     data["y1"] = lineData.y1;
     data["y2"] = lineData.y2;
     data["name"] = lineData.name;
-    data["mode"] = lineData.mode;  // "Right", "Left", "BothDirections"
-    data["leftMatrixNum"] = lineData.leftMatrixNum;
-    data["rightMatrixNum"] = lineData.rightMatrixNum;
+    data["mode"] = lineData.mode;
 
     message["data"] = data;
 
     bool success = sendJsonMessage(message);
     if (success) {
-        qDebug() << "[TCP] Detection line sent successfully - index:" << lineData.index
-                 << "name:" << lineData.name << "mode:" << lineData.mode;
+        qDebug() << "[TCP] Detection line sent successfully - index:" << lineData.index;
     } else {
         qDebug() << "[TCP] Failed to send detection line.";
     }
@@ -190,7 +253,6 @@ bool TcpCommunicator::sendDetectionLine(const DetectionLineData &lineData)
     return success;
 }
 
-// Added sendRoadLine function (after sendDetectionLine function)
 bool TcpCommunicator::sendRoadLine(const RoadLineData &lineData)
 {
     if (!isConnectedToServer()) {
@@ -199,26 +261,23 @@ bool TcpCommunicator::sendRoadLine(const RoadLineData &lineData)
         return false;
     }
 
-    // Create JSON message according to server format
     QJsonObject message;
-    message["request_id"] = 5;  // request_id for road line defined by server
+    message["request_id"] = 5;
 
     QJsonObject data;
     data["index"] = lineData.index;
     data["matrixNum1"] = lineData.matrixNum1;
-    data["x1"] = lineData.x1;  // 시작점 x
-    data["y1"] = lineData.y1;  // 시작점 y
+    data["x1"] = lineData.x1;
+    data["y1"] = lineData.y1;
     data["matrixNum2"] = lineData.matrixNum2;
-    data["x2"] = lineData.x2;  // 끝점 x
-    data["y2"] = lineData.y2;  // 끝점 y
+    data["x2"] = lineData.x2;
+    data["y2"] = lineData.y2;
 
     message["data"] = data;
 
     bool success = sendJsonMessage(message);
     if (success) {
-        qDebug() << "[TCP] Road line sent successfully - index:" << lineData.index
-                 << "start:(" << lineData.x1 << "," << lineData.y1 << ") matrix:" << lineData.matrixNum1
-                 << "end:(" << lineData.x2 << "," << lineData.y2 << ") matrix:" << lineData.matrixNum2;
+        qDebug() << "[TCP] Road line sent successfully - index:" << lineData.index;
     } else {
         qDebug() << "[TCP] Failed to send road line.";
     }
@@ -226,7 +285,6 @@ bool TcpCommunicator::sendRoadLine(const RoadLineData &lineData)
     return success;
 }
 
-// sendPerpendicularLine 함수 추가 (sendMultipleRoadLines 함수 다음에)
 bool TcpCommunicator::sendPerpendicularLine(const PerpendicularLineData &lineData)
 {
     if (!isConnectedToServer()) {
@@ -235,21 +293,19 @@ bool TcpCommunicator::sendPerpendicularLine(const PerpendicularLineData &lineDat
         return false;
     }
 
-    // 서버 양식에 맞춘 JSON 메시지 생성 (y = ax + b 형태)
     QJsonObject message;
-    message["request_id"] = 6;  // 서버에서 정의한 수직선 request_id
+    message["request_id"] = 6;
 
     QJsonObject data;
     data["index"] = lineData.index;
-    data["a"] = lineData.a;  // y = ax + b에서 a값 (기울기)
-    data["b"] = lineData.b;  // y = ax + b에서 b값 (y절편)
+    data["a"] = lineData.a;
+    data["b"] = lineData.b;
 
     message["data"] = data;
 
     bool success = sendJsonMessage(message);
     if (success) {
-        qDebug() << "[TCP] 수직선 전송 성공 - index:" << lineData.index
-                 << "y = " << lineData.a << "x + " << lineData.b;
+        qDebug() << "[TCP] 수직선 전송 성공 - index:" << lineData.index;
     } else {
         qDebug() << "[TCP] 수직선 전송 실패.";
     }
@@ -342,8 +398,6 @@ bool TcpCommunicator::sendMultipleRoadLines(const QList<RoadLineData> &roadLines
         } else {
             allSuccess = false;
         }
-
-        // Short delay between each transmission (considering server processing time)
         QThread::msleep(100);
     }
 
@@ -370,8 +424,6 @@ bool TcpCommunicator::sendMultipleDetectionLines(const QList<DetectionLineData> 
         } else {
             allSuccess = false;
         }
-
-        // Short delay between each transmission (considering server processing time)
         QThread::msleep(50);
     }
 
@@ -459,9 +511,8 @@ void TcpCommunicator::requestImageData(const QString &date, int hour)
         return;
     }
 
-    // JSON format from client to server (request_id: 1)
     QJsonObject message;
-    message["request_id"] = 1;  // Client -> Server request ID
+    message["request_id"] = 1;
 
     QJsonObject data;
     QString requestDate = date.isEmpty() ? QDate::currentDate().toString("yyyy-MM-dd") : date;
@@ -486,57 +537,9 @@ void TcpCommunicator::requestImageData(const QString &date, int hour)
     }
 }
 
-bool TcpCommunicator::sendJsonMessage(const QJsonObject &message)
-{
-    if (!isConnectedToServer()) {
-        qDebug() << "[TCP] Message sending failed, not connected.";
-        return false;
-    }
-
-    QJsonDocument doc(message);
-    QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
-
-    // Log the JSON content to be sent
-    qDebug() << "[TCP] JSON data to send:" << QString::fromUtf8(jsonData);
-
-    // 1. Send the message length as 4 bytes first
-    quint32 messageLength = static_cast<quint32>(jsonData.size());
-    QByteArray lengthData;
-    QDataStream lengthStream(&lengthData, QIODevice::WriteOnly);
-    lengthStream.setByteOrder(QDataStream::BigEndian); // Network byte order
-    lengthStream << messageLength;
-
-    logJsonMessage(message, true);
-
-    // 2. Send length information
-    qint64 lengthWritten = m_socket->write(lengthData);
-    if (lengthWritten != 4) {
-        qDebug() << "[TCP] Failed to send length info - bytes written:" << lengthWritten;
-        return false;
-    }
-
-    // 3. Send the actual JSON data
-    qint64 dataWritten = m_socket->write(jsonData);
-    if (dataWritten != jsonData.size()) {
-        qDebug() << "[TCP] Failed to send JSON data - Expected:" << jsonData.size() << "Actual:" << dataWritten;
-        qDebug() << "[TCP] Socket error:" << m_socket->errorString();
-        return false;
-    }
-
-    // Wait until the data is actually sent
-    bool flushed = m_socket->flush();
-    if (!flushed) {
-        qDebug() << "[TCP] Data flush failed.";
-    }
-
-    qDebug() << "[TCP] Message sent successfully - Length:" << messageLength << "bytes, Flush:" << (flushed ? "Success" : "Fail");
-    return true;
-}
-
 void TcpCommunicator::setConnectionTimeout(int timeoutMs)
 {
     m_connectionTimeoutMs = timeoutMs;
-    m_connectionTimer->setInterval(timeoutMs);
 }
 
 void TcpCommunicator::setReconnectEnabled(bool enabled)
@@ -700,7 +703,7 @@ void TcpCommunicator::attemptReconnection()
     emit statusUpdated(QString("Reconnecting... (%1/%2)").arg(m_reconnectAttempts).arg(m_maxReconnectAttempts));
 
     m_connectionTimer->start();
-    m_socket->connectToHostEncrypted(m_host, static_cast<quint16>(m_port));
+    m_socket->connectToHostEncrypted(m_host, static_cast<qint16>(m_port));
 }
 
 void TcpCommunicator::onSslEncrypted() {
@@ -715,53 +718,148 @@ void TcpCommunicator::onSslErrors(const QList<QSslError> &errors) {
     // m_socket->ignoreSslErrors();
 }
 
-// Added handling for request_id 5 in processJsonMessage function
+void TcpCommunicator::onSocketConnected()
+{
+    qDebug() << "[TCP] 소켓 연결 성공";
+
+    m_isConnected = true;
+    m_reconnectAttempts = 0;
+    stopReconnectTimer();
+
+    emit connected();
+}
+
+void TcpCommunicator::onSocketDisconnected()
+{
+    qDebug() << "[TCP] 소켓 연결 해제";
+
+    m_isConnected = false;
+    emit disconnected();
+
+    // 자동 재연결 시도
+    if (m_autoReconnect && !m_host.isEmpty() && m_port > 0) {
+        startReconnectTimer();
+    }
+}
+
+void TcpCommunicator::onSocketReadyRead()
+{
+    while (m_socket->canReadLine()) {
+        QByteArray data = m_socket->readLine();
+        QString message = QString::fromUtf8(data).trimmed();
+
+        if (!message.isEmpty()) {
+            qDebug() << "[TCP] 메시지 수신:" << message;
+
+            QJsonParseError error;
+            QJsonDocument jsonDoc = QJsonDocument::fromJson(data, &error);
+
+            if (error.error == QJsonParseError::NoError && jsonDoc.isObject()) {
+                processJsonMessage(jsonDoc.object());
+            } else {
+                qDebug() << "[TCP] JSON 파싱 오류:" << error.errorString();
+                emit messageReceived(message);
+            }
+        }
+    }
+}
+
+void TcpCommunicator::onSocketError(QAbstractSocket::SocketError error)
+{
+    QString errorString = m_socket->errorString();
+    qDebug() << "[TCP] 소켓 오류:" << error << "-" << errorString;
+
+    m_isConnected = false;
+    emit errorOccurred(errorString);
+
+    // 자동 재연결 시도 (연결 오류인 경우)
+    if (m_autoReconnect && !m_host.isEmpty() && m_port > 0) {
+        startReconnectTimer();
+    }
+}
+
+void TcpCommunicator::onReconnectTimer()
+{
+    if (m_reconnectAttempts >= m_maxReconnectAttempts) {
+        qDebug() << "[TCP] Maximum reconnection attempts exceeded.";
+        emit errorOccurred("Exceeded maximum reconnection attempts.");
+        return;
+    }
+
+    m_reconnectAttempts++;
+    qDebug() << "[TCP] Reconnection attempt" << m_reconnectAttempts << "/" << m_maxReconnectAttempts;
+
+    emit statusUpdated(QString("Reconnecting... (%1/%2)").arg(m_reconnectAttempts).arg(m_maxReconnectAttempts));
+
+    m_connectionTimer->start();
+    m_socket->connectToHostEncrypted(m_host, static_cast<qint16>(m_port));
+}
+
+void TcpCommunicator::startReconnectTimer()
+{
+    if (!m_reconnectTimer->isActive() && m_reconnectAttempts < m_maxReconnectAttempts) {
+        qDebug() << "[TCP] 재연결 타이머 시작 (" << m_reconnectDelayMs << "ms 후)";
+        m_reconnectTimer->start();
+    }
+}
+
+void TcpCommunicator::stopReconnectTimer()
+{
+    if (m_reconnectTimer->isActive()) {
+        qDebug() << "[TCP] 재연결 타이머 중지";
+        m_reconnectTimer->stop();
+    }
+}
+
 void TcpCommunicator::processJsonMessage(const QJsonObject &jsonObj)
 {
     int requestId = jsonObj["request_id"].toInt();
 
-    qDebug() << "[TCP] Received request_id:" << requestId;
-    qDebug() << "[TCP] JSON keys:" << jsonObj.keys();
+    qDebug() << "[TCP] JSON 메시지 처리 - request_id:" << requestId;
 
-    // Process based on the server response's request_id
-    if (requestId == 10) {
-        // Server -> Client image response (request_id: 10)
-        qDebug() << "[TCP] Image response received (request_id: 10)";
+    // 로그인 관련 응답 처리 (request_id: 8-12)
+    // if (requestId >= 8 && requestId <= 12) {
+    //     // LoginWindow에서 처리하도록 원본 JSON 문자열 전달
+    //     QJsonDocument doc(jsonObj);
+    //     QString jsonString = doc.toJson(QJsonDocument::Compact);
+    //     emit messageReceived(jsonString);
+    //     return;
+    // }
 
-        // Check if data array exists
-        if (jsonObj.contains("data") && jsonObj["data"].isArray()) {
-            handleImagesResponse(jsonObj);
-        } else {
-            qDebug() << "[TCP] 'data' array not found in image response.";
-            emit errorOccurred("Server response format error: 'data' array is missing.");
-        }
-    } else if (requestId == 2) {
-        // Detection line response
+    // 기타 응답 처리
+    switch (requestId) {
+    case 10: // 이미지 요청 응답
+        handleImagesResponse(jsonObj);
+        break;
+    case 2: // 감지선 응답
         handleDetectionLineResponse(jsonObj);
-    } else if (requestId == 5) {
-        // Road line response
-        handleRoadLineResponse(jsonObj);
-    } else if (requestId == 6) {
-        // Perpendicular line response
-        handlePerpendicularLineResponse(jsonObj);
-    } else if (requestId == 3) {
-        // 저장된 감지선 데이터 응답 처리 (request_id: 3)
+        break;
+    case 3: // 저장된 감지선 데이터 응답
         handleSavedDetectionLinesResponse(jsonObj);
-    } else if (requestId == 7) {
-        // 저장된 도로선 데이터 응답 처리 (request_id: 7)
+        break;
+    case 4: // 선 삭제 응답
+        handleCoordinatesResponse(jsonObj);
+        break;
+    case 5: // 도로선 응답
+        handleRoadLineResponse(jsonObj);
+        break;
+    case 6: // 수직선 응답
+        handlePerpendicularLineResponse(jsonObj);
+        break;
+    case 7: // 저장된 도로선 데이터 응답
         handleSavedRoadLinesResponse(jsonObj);
-    } else if (requestId == 4) {
-        // Categorized coordinates response (legacy)
-        handleCategorizedCoordinatesResponse(jsonObj);
-    } else if (requestId == 12) {
+        break;
+    case 12:
         handleDetectionLinesFromServer(jsonObj);
-    } else if (requestId == 16) {
+        break;
+    case 16:
         handleRoadLinesFromServer(jsonObj);
-    } else {
-        qDebug() << "[TCP] Unknown request_id:" << requestId;
-        qDebug() << "[TCP] Full JSON:" << QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
-        // Process as a generic message
-        emit messageReceived(QJsonDocument(jsonObj).toJson(QJsonDocument::Compact));
+        break;
+    default:
+        qDebug() << "[TCP] 알 수 없는 request_id:" << requestId;
+        QJsonDocument doc(jsonObj);
+        emit messageReceived(doc.toJson(QJsonDocument::Compact));
+        break;
     }
 }
 
@@ -828,23 +926,19 @@ void TcpCommunicator::handleRoadLinesFromServer(const QJsonObject &jsonObj)
 
 QString TcpCommunicator::saveBase64Image(const QString &base64Data, const QString &timestamp)
 {
-    // Remove header from Base64 data (e.g., data:image/jpeg;base64,)
     QString cleanBase64 = base64Data;
     if (cleanBase64.contains(",")) {
         cleanBase64 = cleanBase64.split(",").last();
     }
 
-    // Decode Base64
     QByteArray imageData = QByteArray::fromBase64(cleanBase64.toUtf8());
 
-    // Create temporary file path
     QString tempDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
     QString cleanTimestamp = timestamp;
     cleanTimestamp.replace(":", "_").replace("-", "_");
     QString fileName = QString("CCTVImage%1.jpg").arg(cleanTimestamp);
     QString filePath = QDir(tempDir).absoluteFilePath(fileName);
 
-    // Save to file
     QFile file(filePath);
     if (file.open(QIODevice::WriteOnly)) {
         file.write(imageData);
@@ -860,7 +954,6 @@ QString TcpCommunicator::saveBase64Image(const QString &base64Data, const QStrin
 void TcpCommunicator::handleImagesResponse(const QJsonObject &jsonObj)
 {
     qDebug() << "[TCP] Processing image response...";
-    qDebug() << "[TCP] Full JSON:" << QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
 
     if (!jsonObj.contains("data")) {
         qDebug() << "[TCP] 'data' field not found in response.";
@@ -881,7 +974,6 @@ void TcpCommunicator::handleImagesResponse(const QJsonObject &jsonObj)
         }
 
         QJsonObject imageObj = value.toObject();
-        qDebug() << "[TCP] Image object[" << i << "] keys:" << imageObj.keys();
 
         if (!imageObj.contains("image") || !imageObj.contains("timestamp")) {
             qDebug() << "[TCP] Image object[" << i << "] is missing required fields.";
@@ -892,10 +984,6 @@ void TcpCommunicator::handleImagesResponse(const QJsonObject &jsonObj)
         QString base64Image = imageObj["image"].toString();
         imageData.timestamp = imageObj["timestamp"].toString();
 
-        qDebug() << "[TCP] Processing image - timestamp:" << imageData.timestamp;
-        qDebug() << "[TCP] Base64 data length:" << base64Image.length();
-
-        // Save Base64 image to a file
         imageData.imagePath = saveBase64Image(base64Image, imageData.timestamp);
         imageData.logText = QString("Detection time: %1").arg(imageData.timestamp);
         imageData.detectionType = "vehicle";
@@ -903,9 +991,6 @@ void TcpCommunicator::handleImagesResponse(const QJsonObject &jsonObj)
 
         if (!imageData.imagePath.isEmpty()) {
             images.append(imageData);
-            qDebug() << "[TCP] Image saved successfully:" << imageData.imagePath;
-        } else {
-            qDebug() << "[TCP] Failed to save image.";
         }
     }
 
@@ -931,8 +1016,7 @@ void TcpCommunicator::handleCoordinatesResponse(const QJsonObject &jsonObj)
 
 void TcpCommunicator::handleDetectionLineResponse(const QJsonObject &jsonObj)
 {
-    // Process response for detection line settings from the server
-    bool success = true;  // Default value
+    bool success = true;
     QString message = "Detection line setup complete";
 
     if (jsonObj.contains("success")) {
@@ -966,11 +1050,9 @@ void TcpCommunicator::handleDetectionLineResponse(const QJsonObject &jsonObj)
     }
 }
 
-// Added handleRoadLineResponse function (after handleDetectionLineResponse function)
 void TcpCommunicator::handleRoadLineResponse(const QJsonObject &jsonObj)
 {
-    // Process response for road line settings from the server
-    bool success = true;  // Default value
+    bool success = true;
     QString message = "Road line setup complete";
 
     if (jsonObj.contains("success")) {
@@ -980,7 +1062,6 @@ void TcpCommunicator::handleRoadLineResponse(const QJsonObject &jsonObj)
     if (jsonObj.contains("message")) {
         message = jsonObj["message"].toString();
     }
-
 
     if (jsonObj.contains("data") && jsonObj["data"].isObject()) {
         QJsonObject data = jsonObj["data"].toObject();
@@ -1012,12 +1093,9 @@ void TcpCommunicator::handleRoadLineResponse(const QJsonObject &jsonObj)
     }
 }
 
-
-// handlePerpendicularLineResponse 함수 추가 (handleRoadLineResponse 함수 다음에)
 void TcpCommunicator::handlePerpendicularLineResponse(const QJsonObject &jsonObj)
 {
-    // 서버에서 수직선 설정에 대한 응답 처리
-    bool success = true;  // 기본값
+    bool success = true;
     QString message = "수직선 설정 완료";
 
     if (jsonObj.contains("success")) {
@@ -1239,4 +1317,9 @@ void TcpCommunicator::logJsonMessage(const QJsonObject &jsonObj, bool outgoing) 
     QJsonDocument doc(jsonObj);
     qDebug() << "JSON Content:" << doc.toJson(QJsonDocument::Compact);
 #endif
+}
+
+void TcpCommunicator::setupSocket()
+{
+    // 소켓 설정이 필요한 경우 여기에 구현
 }

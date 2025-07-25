@@ -7,6 +7,8 @@ TEMPLATE = app
 
 # 소스 파일
 SOURCES += \
+    BBox.cpp \
+    bboxreceiver.cpp \
     main.cpp \
     MainWindow.cpp \
     VideoStreamWidget.cpp \
@@ -17,12 +19,14 @@ SOURCES += \
 
 # 헤더 파일
 HEADERS += \
+    BBox.h \
     MainWindow.h \
     VideoStreamWidget.h \
     TcpCommunicator.h \
     ImageViewerDialog.h \
     NetworkConfigDialog.h \
-    LineDrawingDialog.h
+    LineDrawingDialog.h \
+    bboxreceiver.h
 
 # 리소스 파일
 RESOURCES += resources.qrc

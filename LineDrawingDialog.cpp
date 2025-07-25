@@ -7,10 +7,14 @@
 #include <QTextDocument>
 #include <QGraphicsProxyWidget>
 #include <QInputDialog>
+#include <QDateTime>
+
+const int SYNC_THRESHOLD = 100; // 100ms
 
 // VideoGraphicsView 구현
 VideoGraphicsView::VideoGraphicsView(QWidget *parent)
     : QGraphicsView(parent)
+    , m_pixmapItem(nullptr)
     , m_scene(nullptr)
     , m_videoItem(nullptr)
     , m_drawingMode(false)
@@ -25,6 +29,7 @@ VideoGraphicsView::VideoGraphicsView(QWidget *parent)
     // 비디오 아이템 생성
     m_videoItem = new QGraphicsVideoItem();
     m_videoItem->setSize(QSizeF(960, 540));
+    m_videoItem->setZValue(0);  // 비디오는 가장 아래층
     m_scene->addItem(m_videoItem);
 
     // 뷰 설정
@@ -65,6 +70,8 @@ void VideoGraphicsView::clearLines()
     // 리스트들 초기화
     m_lineItems.clear();
     m_pointItems.clear();
+    m_bboxItems.clear();  // BBox 아이템들도 정리
+    m_bboxTextItems.clear();  // BBox 텍스트 아이템들도 정리
     m_lines.clear();
     m_categorizedLines.clear();
 
@@ -344,15 +351,15 @@ void VideoGraphicsView::mouseReleaseEvent(QMouseEvent *event)
 
         // 카테고리 정보와 함께 선 저장
         CategorizedLine catLine;
-        catLine.start = m_startPoint;
+        catLine.start = m_startPoint.toPoint();
         catLine.end = endPoint;
         catLine.category = m_currentCategory;
         m_categorizedLines.append(catLine);
 
         // 기존 호환성을 위한 선 정보도 저장
-        m_lines.append(qMakePair(m_startPoint, endPoint));
+        m_lines.append(qMakePair(m_startPoint.toPoint(), QPointF(endPoint).toPoint()));
 
-        emit lineDrawn(m_startPoint, endPoint, m_currentCategory);
+        emit lineDrawn(m_startPoint.toPoint(), endPoint, m_currentCategory);
 
         QString categoryName = (m_currentCategory == LineCategory::ROAD_DEFINITION) ? "도로 명시선" : "객체 감지선";
         qDebug() << categoryName << "추가됨:" << m_startPoint << "→" << endPoint;
@@ -361,15 +368,169 @@ void VideoGraphicsView::mouseReleaseEvent(QMouseEvent *event)
     }
 }
 
+void VideoGraphicsView::setBBoxes(const QList<BBox>& bboxes, qint64 timestamp)
+{
+    QMutexLocker locker(&m_mutex);
+    
+    // 기존 BBox 아이템들 제거
+    for (QGraphicsRectItem* item : m_bboxItems) {
+        if (m_scene && item) {
+            m_scene->removeItem(item);
+            delete item;
+        }
+    }
+    m_bboxItems.clear();
+    
+    // 기존 BBox 텍스트 아이템들 제거
+    for (QGraphicsTextItem* item : m_bboxTextItems) {
+        if (m_scene && item) {
+            m_scene->removeItem(item);
+            delete item;
+        }
+    }
+    m_bboxTextItems.clear();
+    
+    m_timestampedBBoxes[timestamp] = bboxes;
+    m_bboxes = bboxes;
+    m_currentTimestamp = timestamp;
+    
+    // 빈 리스트인 경우 (BBox OFF)
+    if (bboxes.isEmpty()) {
+        qDebug() << "[VideoGraphicsView] 🔄 BBox cleared - All visual elements removed";
+        if (m_scene) {
+            m_scene->update();
+        }
+        return;
+    }
+    
+    if (!m_scene) {
+        return;
+    }
+    
+    // 스케일링 비율: 원본 영상이 3840x2160 기준, 뷰는 960x540
+    const float scaleX = 960.0 / 3840.0;  
+    const float scaleY = 540.0 / 2160.0;
+    
+    // 새로운 BBox 아이템들 생성
+    int processedCount = 0;
+    
+    for (const BBox& box : m_bboxes) {
+        QString label = box.type.toLower();
+        
+        // 타입 체크 - 대소문자 무관
+        bool isHuman = label.contains("human", Qt::CaseInsensitive);
+        bool isVehicle = label.contains("vehicle", Qt::CaseInsensitive) || label.contains("vehical", Qt::CaseInsensitive);
+        
+        if (!isHuman && !isVehicle) {
+            continue;
+        }
+        
+        processedCount++;
+            
+        QRectF scaledRect(
+            box.rect.x() * scaleX,
+            box.rect.y() * scaleY,
+            box.rect.width() * scaleX,
+            box.rect.height() * scaleY
+        );
+        
+        // BBox 사각형 생성
+        QGraphicsRectItem* rectItem = new QGraphicsRectItem(scaledRect);
+        QPen bboxPen(Qt::red, 3, Qt::SolidLine);
+        rectItem->setPen(bboxPen);
+        rectItem->setBrush(QBrush(QColor(255, 0, 0, 60)));
+        rectItem->setZValue(150);
+        
+        m_scene->addItem(rectItem);
+        m_bboxItems.append(rectItem);
+        
+        // 텍스트 라벨 생성
+        QString labelText = QString("%1 (%2%)")
+                              .arg(box.type)
+                              .arg(box.confidence * 100.0, 0, 'f', 1);
+        
+        QGraphicsTextItem* textItem = new QGraphicsTextItem(labelText);
+        textItem->setDefaultTextColor(Qt::yellow);
+        QPointF textPos = scaledRect.topLeft() - QPointF(0, 20);
+        textItem->setPos(textPos);
+        textItem->setFont(QFont("Arial", 10, QFont::Bold));
+        textItem->setZValue(151);
+        
+        // 텍스트 배경
+        QGraphicsRectItem* textBg = new QGraphicsRectItem(textItem->boundingRect().adjusted(-2, -2, 2, 2));
+        textBg->setBrush(QBrush(QColor(0, 0, 0, 150)));
+        textBg->setPen(QPen(Qt::NoPen));
+        textBg->setZValue(150.5);
+        textBg->setPos(textPos);
+        
+        m_scene->addItem(textBg);
+        m_scene->addItem(textItem);
+        m_bboxTextItems.append(textItem);
+        m_bboxItems.append(textBg);
+    }
+    
+    // 5개 이상의 BBox가 처리되었을 때만 로그 출력 (성능 향상)
+    if (processedCount > 0) {
+        qDebug() << "[VideoGraphicsView] Updated" << processedCount << "BBoxes at timestamp" << timestamp;
+    }
+}
+
+void LineDrawingDialog::updateBBoxes(const QList<BBox>& bboxes, qint64 timestamp)
+{
+    if (bboxes.isEmpty()) {
+        qDebug() << "[LineDrawingDialog] 🔄 BBox OFF - Clearing all BBox displays";
+    }
+    
+    if (m_videoView)
+    {
+        m_videoView->setBBoxes(bboxes, timestamp);
+    }
+    
+    // 현재 타임스탬프 저장
+    m_currentTimestamp = timestamp;
+    
+    // 5초 이상 지난 데이터 정리 (메모리 누수 방지)
+    QList<qint64> timestampsToRemove;
+    for (auto it = m_timestampedBBoxes.begin(); it != m_timestampedBBoxes.end(); ++it) {
+        if (timestamp - it.key() > 5000) { // 5초
+            timestampsToRemove.append(it.key());
+        }
+    }
+    
+    for (qint64 ts : timestampsToRemove) {
+        m_timestampedBBoxes.remove(ts);
+    }
+    
+    // 메모리 사용량이 과도할 경우 강제 정리
+    if (m_timestampedBBoxes.size() > 100) {
+        // 가장 오래된 50개 제거
+        QList<qint64> allTimestamps = m_timestampedBBoxes.keys();
+        std::sort(allTimestamps.begin(), allTimestamps.end());
+        
+        for (int i = 0; i < 50 && i < allTimestamps.size(); ++i) {
+            m_timestampedBBoxes.remove(allTimestamps[i]);
+        }
+        
+        qDebug() << "[LineDrawingDialog] Memory cleanup: removed old BBox data, remaining:" << m_timestampedBBoxes.size();
+    }
+}
+
+void VideoGraphicsView::drawForeground(QPainter* painter, const QRectF& rect)
+{
+    Q_UNUSED(rect);
+    Q_UNUSED(painter);
+    
+    // drawForeground는 이제 사용하지 않음 - setBBoxes에서 QGraphicsItem으로 처리
+    // 성능 향상을 위해 빈 함수로 유지
+}
+
+
 // LineDrawingDialog 구현
 LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     : QDialog(parent)
-    , m_mappingCountLabel(nullptr)
-    , m_clearMappingsButton(nullptr)
-    , m_sendMappingsButton(nullptr)
+    , m_videoView(nullptr)
     , m_mainLayout(nullptr)
     , m_buttonLayout(nullptr)
-    , m_videoView(nullptr)
     , m_startDrawingButton(nullptr)
     , m_stopDrawingButton(nullptr)
     , m_clearLinesButton(nullptr)
@@ -380,16 +541,18 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     , m_logTextEdit(nullptr)
     , m_logCountLabel(nullptr)
     , m_clearLogButton(nullptr)
+    , m_mappingCountLabel(nullptr)
+    , m_clearMappingsButton(nullptr)
+    , m_sendMappingsButton(nullptr)
+    , m_rtspUrl(rtspUrl)
     , m_mediaPlayer(nullptr)
     , m_audioOutput(nullptr)
-    , m_rtspUrl(rtspUrl)
-    , m_drawnLines()
-    , m_isDrawingMode(false)
     , m_frameTimer(nullptr)
     , m_frameCount(0)
     , m_currentCategory(LineCategory::ROAD_DEFINITION)
     , m_selectedRoadLineIndex(-1)
     , m_roadLineSelectionMode(false)
+    , m_isDrawingMode(false)
 {
     setWindowTitle("기준선 그리기");
     setModal(true);
@@ -472,6 +635,46 @@ LineDrawingDialog::~LineDrawingDialog()
     }
     if (m_audioOutput) {
         delete m_audioOutput;
+    }
+}
+
+// updateBBoxes 함수는 timestamp 매개변수가 있는 버전으로 통합되었습니다.
+
+void LineDrawingDialog::paintEvent(QPaintEvent *event)
+{
+    QDialog::paintEvent(event);
+    
+    if (!m_bboxEnabled || m_currentBBoxes.isEmpty()) {
+        return;
+    }
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    
+    QMutexLocker locker(&m_bboxMutex);
+    
+    painter.setPen(QPen(Qt::red, 2));
+    QFont font = painter.font();
+    font.setPointSize(10);
+    painter.setFont(font);
+
+    for (const BBox &box : m_currentBBoxes) {
+        QString label = box.type.toLower();
+        
+        // Human, Vehicle 클래스만 그림
+        if (label != "human" && label != "vehical")  // 서버에서 오는 "Vehical" 타입에 맞춤
+            continue;
+
+        QRect scaledRect(
+            box.rect.x() * (960.0/3840.0),
+            box.rect.y() * (540.0/2160.0),
+            box.rect.width() * (960.0/3840.0),
+            box.rect.height() * (540.0/2160.0)
+            );
+
+        painter.drawRect(scaledRect);
+        painter.drawText(scaledRect.topLeft() - QPoint(0, 5),
+                        QString("%1 (%2%)").arg(box.type).arg(box.confidence * 100.0, 0, 'f', 1));
     }
 }
 
@@ -764,7 +967,7 @@ void LineDrawingDialog::onClearLinesClicked()
 {
     int lineCount = m_videoView->getLines().size();
     m_videoView->clearLines();
-    m_drawnLines.clear();
+    m_videoView->clearLines();
 
     // 매핑 정보도 함께 지우기
     clearCoordinateMappings();
@@ -778,7 +981,7 @@ void LineDrawingDialog::onClearLinesClicked()
 void LineDrawingDialog::onCategoryChanged()
 {
     int selectedId = m_categoryButtonGroup->checkedId();
-    m_currentCategory = (selectedId == 0) ? LineCategory::ROAD_DEFINITION : LineCategory::OBJECT_DETECTION;
+    m_currentCategory = (selectedId == 0) ? LineCategory::ROAD_DEFINITION : LineCategory::DETECTION_LINE;
 
     m_videoView->setCurrentCategory(m_currentCategory);
 
@@ -816,13 +1019,13 @@ void LineDrawingDialog::onLineDrawn(const QPoint &start, const QPoint &end, Line
                       .arg(end.x()).arg(end.y()), "DRAW");
 
     // 감지선인 경우 수직선 자동 생성
-    if (category == LineCategory::OBJECT_DETECTION) {
+    if (category == LineCategory::DETECTION_LINE) {
         QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
         int detectionLineIndex = 0;
 
         // 현재 그려진 감지선의 인덱스 찾기
         for (int i = 0; i < allLines.size(); ++i) {
-            if (allLines[i].category == LineCategory::OBJECT_DETECTION) {
+            if (allLines[i].category == LineCategory::DETECTION_LINE) {
                 detectionLineIndex++;
                 if (allLines[i].start == start && allLines[i].end == end) {
                     break;
@@ -846,7 +1049,7 @@ void LineDrawingDialog::onLineDrawn(const QPoint &start, const QPoint &end, Line
 void LineDrawingDialog::updateCategoryInfo()
 {
     int roadCount = m_videoView->getCategoryLineCount(LineCategory::ROAD_DEFINITION);
-    int detectionCount = m_videoView->getCategoryLineCount(LineCategory::OBJECT_DETECTION);
+    int detectionCount = m_videoView->getCategoryLineCount(LineCategory::DETECTION_LINE);
 
     m_roadLineCountLabel->setText(QString("도로선: %1개").arg(roadCount));
     m_detectionLineCountLabel->setText(QString("감지선: %1개").arg(detectionCount));
@@ -1026,6 +1229,20 @@ void LineDrawingDialog::updateFrameCount()
     if (m_mediaPlayer && m_mediaPlayer->playbackState() == QMediaPlayer::PlayingState) {
         m_frameCount++;
         m_frameCountLabel->setText(QString("프레임: %1").arg(m_frameCount));
+    }
+}
+
+void LineDrawingDialog::updateFrame(const QImage& frame)
+{
+    if (m_videoView) {
+        if (!m_videoView->m_pixmapItem) {
+            m_videoView->m_pixmapItem = new QGraphicsPixmapItem();
+            m_videoView->scene()->addItem(m_videoView->m_pixmapItem);
+        }
+        QPixmap pixmap = QPixmap::fromImage(frame);
+        m_videoView->m_pixmapItem->setPixmap(pixmap);
+        m_lastFrameTimestamp = QDateTime::currentMSecsSinceEpoch();
+        update();
     }
 }
 

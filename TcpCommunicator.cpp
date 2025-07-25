@@ -26,6 +26,9 @@ TcpCommunicator::TcpCommunicator(QObject *parent)
     m_socket = new QSslSocket(this);
     setupSslConfiguration();
 
+    // Create BBoxReceiver
+    m_bboxReceiver = new BBoxReceiver(m_socket, this);
+
     // Keep-Alive settings
     m_socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
     m_socket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
@@ -499,6 +502,8 @@ void TcpCommunicator::onDisconnected()
 
 void TcpCommunicator::onReadyRead()
 {
+    if (m_bboxRunning) return; // BBox 수신 중에는 이 함수를 실행하지 않음
+
     static QByteArray buffer;
     static quint32 expectedLength = 0;
     static bool lengthReceived = false;
@@ -990,3 +995,75 @@ void TcpCommunicator::logJsonMessage(const QJsonObject &jsonObj, bool outgoing) 
     qDebug() << "JSON Content:" << doc.toJson(QJsonDocument::Compact);
 #endif
 }
+
+
+
+// BBox 수신하여 ui 전달하는 함수
+
+QByteArray TcpCommunicator::readExactly(int n) {
+    QByteArray buffer;
+    while (buffer.size() < n) {
+        if (!m_socket->waitForReadyRead(500)) break;
+        buffer += m_socket->read(n - buffer.size());
+    }
+    return buffer;
+}
+
+void TcpCommunicator::startBboxReceiving() {
+    if (m_bboxRunning) return;
+    m_bboxRunning = true;
+
+    m_bboxThreadObj = new BBoxReceiver(m_socket);
+    m_bboxThread = new QThread(this);
+
+    m_bboxThreadObj->moveToThread(m_bboxThread);
+
+    connect(m_bboxThread, &QThread::started, m_bboxThreadObj, &BBoxReceiver::startReceiving);
+    connect(this, &TcpCommunicator::stopBboxSignal, m_bboxThreadObj, &BBoxReceiver::stopReceiving);
+    connect(m_bboxThreadObj, &BBoxReceiver::bboxesParsed, this, &TcpCommunicator::bboxesReceived);
+
+    m_bboxThread->start();
+}
+
+
+void TcpCommunicator::stopBboxReceiving() {
+    if (!m_bboxRunning) return;
+    m_bboxRunning = false;
+
+    emit stopBboxSignal();
+
+    if (m_bboxThread) {
+        m_bboxThread->quit();
+        m_bboxThread->wait();
+        m_bboxThread->deleteLater();
+        m_bboxThread = nullptr;
+    }
+
+    if (m_bboxThreadObj) {
+        m_bboxThreadObj->deleteLater();
+        m_bboxThreadObj = nullptr;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

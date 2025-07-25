@@ -7,6 +7,7 @@
 #include <QUrl>
 #include <QMessageBox>
 
+
 VideoStreamWidget::VideoStreamWidget(QWidget *parent)
     : QWidget(parent)
     , m_videoWidget(nullptr)
@@ -341,3 +342,86 @@ void VideoStreamWidget::showConnectionStatus(const QString &status, const QStrin
     m_statusLabel->setText(status);
     m_statusLabel->setStyleSheet(QString("color: %1; font-size: 12px; padding: 5px;").arg(color));
 }
+
+void VideoStreamWidget::setFrame(const QImage &frame)
+{
+    QMutexLocker locker(&m_mutex);
+    m_frame = frame.copy();
+    update();
+}
+
+void VideoStreamWidget::setBBoxes(const QList<BBox> &boxes) {
+    try {
+        QMutexLocker locker(&m_mutex);
+        m_currentBBoxes = boxes;
+        qDebug() << "[VideoStreamWidget] setBBoxes called with" << boxes.size() << "boxes";
+        update();
+    }
+    catch (const std::exception& e) {
+        qDebug() << "setBBoxes 에러:" << e.what();
+    }
+}
+
+// 간단한 버전에서는 processBuffers가 필요 없음
+void VideoStreamWidget::processBuffers()
+{
+    // Empty implementation
+}
+
+void VideoStreamWidget::setBboxEnabled(bool enabled)
+{
+    QMutexLocker locker(&m_mutex);
+    qDebug() << "[VideoStreamWidget] setBboxEnabled:" << enabled;
+    m_bboxEnabled = enabled;
+    m_currentBBoxes.clear();  // 상태 변경시 기존 bbox 클리어
+    locker.unlock();
+    qDebug() << "[VideoStreamWidget] Current bbox count:" << m_currentBBoxes.size();
+    update();  // 직접 update 호출
+}
+
+// 이제 안쓰이는 함수, setupUI에 connect한것도 같이 지워야 하는지?
+void VideoStreamWidget::paintEvent(QPaintEvent *event) {
+    QWidget::paintEvent(event);
+    
+    // 기본적인 프레임 그리기만 수행
+    QImage frameCopy;
+    {
+        QMutexLocker locker(&m_mutex);
+        if (!m_frame.isNull()) {
+            frameCopy = m_frame;
+        }
+    }
+    
+    if (!frameCopy.isNull()) {
+        QPainter painter(this);
+        painter.drawImage(rect(), frameCopy);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

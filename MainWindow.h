@@ -18,7 +18,9 @@
 #include <QCalendarWidget>
 #include <QDialog>
 #include <QMouseEvent>
+#include <QQueue>
 
+#include "BBox.h"
 #include "VideoStreamWidget.h"
 #include "TcpCommunicator.h"
 #include "ImageViewerDialog.h"
@@ -78,6 +80,9 @@ private slots:
     void onStreamError(const QString &error);
     void onCoordinatesConfirmed(bool success, const QString &message);
     void onStatusUpdated(const QString &status);
+
+    // BBox
+    void onToggleBboxClicked();
 
 private:
     void setupUI();
@@ -142,6 +147,10 @@ private:
     // 상태 관리
     QList<bool> m_warningStates;
     QDate m_selectedDate;
+
+    // BBox on/off 토글 버튼
+    QPushButton* m_toggleBboxButton = nullptr;
+    bool m_bboxEnabled = false;
 };
 
 #endif // MAINWINDOW_H

@@ -11,10 +11,12 @@
 #include <QThread>
 #include <QSslSocket>
 #include <QSslError>
+#include <QRect>
 
+#include "BBoxReceiver.h"
+#include "BBox.h"
 
-
-
+class BBoxReceiver;
 
 // 메시지 타입 열거형
 enum class MessageType {
@@ -68,6 +70,7 @@ struct RoadLineData {
     int x2, y2;             // 끝점 좌표
 };
 
+
 class TcpCommunicator : public QObject
 {
     Q_OBJECT
@@ -75,6 +78,14 @@ class TcpCommunicator : public QObject
 public:
     explicit TcpCommunicator(QObject *parent = nullptr);
     ~TcpCommunicator();
+
+    // BBox 그리기 위한 멤버 변수 및 함수 선언
+    std::atomic<bool> m_bboxRunning { false };
+
+    void startBboxReceiving();
+    void stopBboxReceiving();
+    QByteArray readExactly(int n);
+    //QList<BBox> parseBBoxes(const QJsonArray &dataArray);
 
     // 연결 관리
     void connectToServer(const QString &host, int port);
@@ -97,7 +108,8 @@ public:
     bool sendMultipleRoadLines(const QList<RoadLineData> &roadLines);
     bool sendPerpendicularLine(const PerpendicularLineData &lineData);
 
-
+    // MainWindow에서 BBox 좌표 참고해야해서 public으로 옮김
+    bool sendJsonMessage(const QJsonObject &message);
 
 signals:
     void connected();
@@ -114,6 +126,13 @@ signals:
     void roadLineConfirmed(bool success, const QString &message);
     void perpendicularLineConfirmed(bool success, const QString &message);
 
+    void bboxesReceived(const QList<BBox> &bboxes);
+    void stopBboxSignal();  // 수신 쓰레드 종료 요청용
+
+public:
+    BBoxReceiver* getBBoxReceiver() { return m_bboxReceiver; }
+
+
 private slots:
     void onConnected();
     void onDisconnected();
@@ -126,10 +145,12 @@ private slots:
 
 private:
     // JSON 메시지 처리
-    bool sendJsonMessage(const QJsonObject &message);
     void processJsonMessage(const QJsonObject &jsonObj);
     void handleImagesResponse(const QJsonObject &jsonObj);
     void handleCoordinatesResponse(const QJsonObject &jsonObj);
+    
+private:
+    BBoxReceiver* m_bboxReceiver = nullptr;
     void handleDetectionLineResponse(const QJsonObject &jsonObj);
     void handleCategorizedCoordinatesResponse(const QJsonObject &jsonObj);
     void handleStatusUpdate(const QJsonObject &jsonObj);
@@ -164,6 +185,11 @@ private:
     void handleRoadLineResponse(const QJsonObject &jsonObj);
     void handlePerpendicularLineResponse(const QJsonObject &jsonObj);
     void setupSslConfiguration();
+
+    BBoxReceiver* m_bboxThreadObj = nullptr;
+    QThread* m_bboxThread = nullptr;
+
+    QMetaObject::Connection m_bboxConnection;
 };
 
 #endif // TCPCOMMUNICATOR_H

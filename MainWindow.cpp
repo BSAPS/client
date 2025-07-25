@@ -60,8 +60,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_statusLabel(nullptr)
     , m_modeComboBox(nullptr)
     , m_networkButton(nullptr)
-    , m_rtspUrl("rtsp://192.168.0.81:8554/retransmit")
-    , m_tcpHost("192.168.0.81")
+    , m_rtspUrl("rtsp://192.168.0.34:8554/retransmit")
+    , m_tcpHost("192.168.0.34")
     , m_tcpPort(8080)
     , m_isConnected(false)
     , m_tcpCommunicator(nullptr)
@@ -71,6 +71,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_imageViewerDialog(nullptr)
     , m_networkDialog(nullptr)
     , m_lineDrawingDialog(nullptr)
+    , m_bboxEnabled(false)  // BBox 초기 상태 추가
 {
     // 경고 상태 초기화 (4개 모두 OFF)
     m_warningStates = {false, false, false, false};
@@ -138,6 +139,17 @@ void MainWindow::setupUI()
 
     headerLayout->addStretch();
 
+    // BBox 토글 버튼 추가
+    m_toggleBboxButton = new QPushButton("🔲 Show BBox");
+    m_toggleBboxButton->setStyleSheet("QPushButton { background-color: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; } QPushButton:hover { background-color: #218838; } QPushButton:disabled { background-color: #cccccc; }");
+    m_toggleBboxButton->setCheckable(true);
+    connect(m_toggleBboxButton, &QPushButton::clicked, this, &MainWindow::onToggleBboxClicked);
+    headerLayout->addWidget(m_toggleBboxButton);
+
+    // 버튼 사이 간격 (BBox <-> network)
+    headerLayout->addSpacing(10);
+
+    // 네트워크 설정 버튼
     m_networkButton = new QPushButton();
     m_networkButton->setIcon(QIcon(":/icons/NetworkConnect.png"));
     m_networkButton->setIconSize(QSize(24, 24));
@@ -369,6 +381,18 @@ void MainWindow::setupNetworkConnection()
     connect(m_requestTimeoutTimer, &QTimer::timeout, this, &MainWindow::onRequestTimeout);
 
     m_imageViewerDialog = new ImageViewerDialog(this);
+
+    connect(m_tcpCommunicator, &TcpCommunicator::bboxesReceived,
+            m_videoStreamWidget, &VideoStreamWidget::setBBoxes);
+    
+    // BBox 데이터를 MainWindow에서도 처리하여 LineDrawingDialog에 전달
+    connect(m_tcpCommunicator, &TcpCommunicator::bboxesReceived,
+            this, [this](const QList<BBox> &bboxes) {
+                if (m_lineDrawingDialog) {
+                    qint64 timestamp = QDateTime::currentMSecsSinceEpoch();
+                    m_lineDrawingDialog->updateBBoxes(bboxes, timestamp);
+                }
+            });
 }
 
 void MainWindow::applyStyles()
@@ -820,5 +844,43 @@ void MainWindow::sendCategorizedCoordinates(const QList<RoadLineData> &roadLines
     } else {
         qDebug() << "TCP 연결이 없어 좌표 전송 실패";
         QMessageBox::warning(this, "전송 실패", "서버에 연결되어 있지 않습니다.");
+    }
+}
+
+
+// BBox 구현
+void MainWindow::onToggleBboxClicked() {
+    if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer())
+        return;
+
+    if (!m_bboxEnabled) {
+        // BBox 표시 시작
+        QJsonObject req;
+        req["request_id"] = 20;
+        m_tcpCommunicator->sendJsonMessage(req);
+
+        m_tcpCommunicator->startBboxReceiving();
+
+        m_toggleBboxButton->setText("BBox OFF");
+        m_bboxEnabled = true;
+    } else {
+        // BBox 표시 중지
+        QJsonObject req;
+        req["request_id"] = 21;
+        m_tcpCommunicator->sendJsonMessage(req);
+
+        m_tcpCommunicator->stopBboxReceiving();
+
+        m_toggleBboxButton->setText("BBox ON");
+        m_bboxEnabled = false;
+
+        // 기존 BBox 제거 - VideoStreamWidget과 LineDrawingDialog 둘 다
+        if (m_videoStreamWidget)
+            m_videoStreamWidget->setBBoxes({});
+            
+        if (m_lineDrawingDialog) {
+            qint64 timestamp = QDateTime::currentMSecsSinceEpoch();
+            m_lineDrawingDialog->updateBBoxes({}, timestamp);
+        }
     }
 }

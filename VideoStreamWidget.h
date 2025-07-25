@@ -10,6 +10,15 @@
 #include <QMediaPlayer>
 #include <QVideoWidget>
 #include <QAudioOutput>
+#include <QMutex>
+#include <QPainter>
+#include <QQueue>
+#include <QDateTime>
+#include <QPair>
+#include <QImage>
+
+#include "TcpCommunicator.h"
+#include "BBox.h"
 
 class VideoStreamWidget : public QWidget
 {
@@ -24,12 +33,18 @@ public:
     bool isStreaming() const;
     void setStreamUrl(const QString &url);
 
+    // BBox 그리는 함수
+    void setFrame(const QImage &frame);
+    void setBBoxes(const QList<BBox> &bboxes);
+    void setBboxEnabled(bool enabled);
+
 signals:
     void clicked();
     void streamError(const QString &error);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
 
 private slots:
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
@@ -68,6 +83,25 @@ private:
     // 상수
     static const int MAX_RECONNECT_ATTEMPTS = 5;
     static const int CONNECTION_TIMEOUT_MS = 15000; // 15초
+
+    // BBox 좌표 리스트
+    // 프레임 및 BBox 버퍼
+    QQueue<QPair<QImage, qint64>> m_frameBuffer;
+    QQueue<TimestampedBBox> m_bboxBuffer;
+    QList<BBox> m_currentBBoxes;
+    QImage m_frame;
+    bool m_bboxEnabled = false;
+    QMutex m_mutex;
+    
+    // 버퍼 관련 상수
+    static const int MAX_BUFFER_SIZE = 30;  // 약 1초치 프레임
+    static const qint64 SYNC_THRESHOLD = 33;  // 33ms = 1프레임
+    
+    // 현재 타임스탬프
+    qint64 m_currentTimestamp;
+    
+private slots:
+    void processBuffers();
 };
 
 #endif // VIDEOSTREAMWIDGET_H

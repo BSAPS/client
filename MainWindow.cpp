@@ -72,8 +72,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_networkDialog(nullptr)
     , m_lineDrawingDialog(nullptr)
 {
-    // 경고 상태 초기화 (4개 모두 OFF)
-    m_warningStates = {false, false, false, false};
 
     // 선택된 날짜 초기화
     m_selectedDate = QDate::currentDate();
@@ -91,12 +89,6 @@ MainWindow::MainWindow(QWidget *parent)
     QScreen *screen = QGuiApplication::primaryScreen();
     QRect screenGeometry = screen->availableGeometry();
 
-    // 화면의 80%로 설정
-    //int maxWidth = screenGeometry.width() * 0.8;
-    //int maxHeight = screenGeometry.height() * 0.8;
-
-    //setMinimumSize(800, 600);
-    //resize(maxWidth, maxHeight);
 
     int fixedWidth = 1000;
     int fixedHeight = 670;

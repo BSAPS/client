@@ -691,6 +691,7 @@ void LineDrawingDialog::onSavedRoadLinesReceived(const QList<RoadLineData> &road
 
             // 끝점 매핑 정보 추가
             addCoordinateMapping(i, QPoint(roadLine.x2, roadLine.y2), false, roadLine.matrixNum2);
+            qDebug() << "로드시 시작점, 끝점 매핑정보 추가\n";
         }
 
         updateMappingInfo();

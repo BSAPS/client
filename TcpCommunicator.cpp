@@ -831,28 +831,12 @@ void TcpCommunicator::processJsonMessage(const QJsonObject &jsonObj)
     case 10: // 이미지 요청 응답
         handleImagesResponse(jsonObj);
         break;
-    case 2: // 감지선 응답
-        handleDetectionLineResponse(jsonObj);
-        break;
-    case 3: // 저장된 감지선 데이터 응답
-        handleSavedDetectionLinesResponse(jsonObj);
-        break;
-    case 4: // 선 삭제 응답
-        handleCoordinatesResponse(jsonObj);
-        break;
-    case 5: // 도로선 응답
-        handleRoadLineResponse(jsonObj);
-        break;
-    case 6: // 수직선 응답
-        handlePerpendicularLineResponse(jsonObj);
-        break;
-    case 7: // 저장된 도로선 데이터 응답
-        handleSavedRoadLinesResponse(jsonObj);
-        break;
     case 12:
+        handleSavedDetectionLinesResponse(jsonObj);
         handleDetectionLinesFromServer(jsonObj);
         break;
     case 16:
+        handleSavedRoadLinesResponse(jsonObj);
         handleRoadLinesFromServer(jsonObj);
         break;
     default:
@@ -1166,7 +1150,7 @@ void TcpCommunicator::handleSavedRoadLinesResponse(const QJsonObject &jsonObj)
     emit savedRoadLinesReceived(m_receivedRoadLines);
 
     // 두 종류의 선이 모두 수신되었는지 확인
-    checkAndEmitAllLinesReceived();
+    // checkAndEmitAllLinesReceived();
 }
 
 // 저장된 감지선 데이터 응답 처리 함수 (request_id: 3)
@@ -1209,23 +1193,23 @@ void TcpCommunicator::handleSavedDetectionLinesResponse(const QJsonObject &jsonO
     emit savedDetectionLinesReceived(m_receivedDetectionLines);
 
     // 두 종류의 선이 모두 수신되었는지 확인
-    checkAndEmitAllLinesReceived();
+    // checkAndEmitAllLinesReceived();
 }
 
 // 모든 선 데이터가 수신되었는지 확인하고 통합 시그널 발생
-void TcpCommunicator::checkAndEmitAllLinesReceived()
-{
-    // 현재는 각각 따로 처리하므로 이 함수는 필요시 확장 가능
-    if (m_roadLinesReceived && m_detectionLinesReceived) {
-        qDebug() << "[TCP] 모든 저장된 선 데이터 수신 완료";
-        emit statusUpdated(QString("저장된 선 데이터 로드 완료 - 도로선: %1개, 감지선: %2개")
-                               .arg(m_receivedRoadLines.size()).arg(m_receivedDetectionLines.size()));
+// void TcpCommunicator::checkAndEmitAllLinesReceived()
+// {
+//     // 현재는 각각 따로 처리하므로 이 함수는 필요시 확장 가능
+//     if (m_roadLinesReceived && m_detectionLinesReceived) {
+//         qDebug() << "[TCP] 모든 저장된 선 데이터 수신 완료";
+//         emit statusUpdated(QString("저장된 선 데이터 로드 완료 - 도로선: %1개, 감지선: %2개")
+//                                .arg(m_receivedRoadLines.size()).arg(m_receivedDetectionLines.size()));
 
-        // 상태 초기화
-        m_roadLinesReceived = false;
-        m_detectionLinesReceived = false;
-    }
-}
+//         // 상태 초기화
+//         m_roadLinesReceived = false;
+//         m_detectionLinesReceived = false;
+//     }
+// }
 
 void TcpCommunicator::handleCategorizedCoordinatesResponse(const QJsonObject &jsonObj)
 {

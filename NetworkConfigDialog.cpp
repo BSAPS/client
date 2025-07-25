@@ -74,10 +74,10 @@ void NetworkConfigDialog::setupUI()
     // 버튼 영역
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     buttonBox->setStyleSheet("QPushButton { padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; } "
-                            "QPushButton[text='OK'] { background-color: #4CAF50; color: white; } "
-                            "QPushButton[text='OK']:hover { background-color: #45a049; } "
-                            "QPushButton[text='Cancel'] { background-color: #f44336; color: white; } "
-                            "QPushButton[text='Cancel']:hover { background-color: #d32f2f; }");
+                            "QPushButton[text='OK'] { background-color: #F37321; color: white; } "
+                            "QPushButton[text='OK']:hover { background-color: #F37321; } "
+                            "QPushButton[text='Cancel'] { background-color: #837F7D; color: white; } "
+                            "QPushButton[text='Cancel']:hover { background-color: #837F7D; }");
     connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
     

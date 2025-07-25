@@ -1263,6 +1263,7 @@ void LineDrawingDialog::onSendCoordinatesClicked()
 
     int autoIndex = roadLines.size() + 1; // 매핑된 선들 다음 인덱스부터 시작
 
+    int matrixNumIndex = roadLines.size();
     for (int i = 0; i < allLines.size(); ++i) {
         const auto &line = allLines[i];
 
@@ -1271,10 +1272,12 @@ void LineDrawingDialog::onSendCoordinatesClicked()
             if (!mappedLineIndices.contains(i)) {
                 RoadLineData roadLineData;
                 roadLineData.index = autoIndex++;
-                roadLineData.matrixNum1 = ((roadLines.size()) % 4) + 1;  // 자동 순환 할당
+                roadLineData.matrixNum1 = matrixNumIndex % 4 + 1;  // 자동 순환 할당
+                matrixNumIndex++;
                 roadLineData.x1 = line.start.x();
                 roadLineData.y1 = line.start.y();
-                roadLineData.matrixNum2 = ((roadLines.size() + 1) % 4) + 1;  // 자동 순환 할당
+                roadLineData.matrixNum2 = matrixNumIndex % 4 + 1;  // 자동 순환 할당
+                matrixNumIndex++;
                 roadLineData.x2 = line.end.x();
                 roadLineData.y2 = line.end.y();
                 roadLines.append(roadLineData);

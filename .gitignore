@@ -28,3 +28,5 @@ next-env.d.ts
 
 # key
 ca-cert.crt
+
+CCTVMonitoring.pro.user*

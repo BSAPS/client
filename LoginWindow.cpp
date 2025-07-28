@@ -2,6 +2,7 @@
 #include "ui_LoginWindow.h"
 #include "MainWindow.h"
 #include "TcpCommunicator.h"
+#include "EnvConfig.h"
 #include <QApplication>
 #include <QMessageBox>
 #include <QDebug>
@@ -14,6 +15,10 @@
 #include <QByteArray>
 #include <QRegularExpression>
 
+// .env 파일에서 값 로드
+static QString m_tcpHost = EnvConfig::getValue("TCP_HOST", "192.168.0.81");
+static quint16 m_tcpPort = EnvConfig::getIntValue("TCP_PORT", 8080);
+
 LoginWindow::LoginWindow(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui_LoginWindow)
@@ -25,6 +30,9 @@ LoginWindow::LoginWindow(QWidget *parent)
     , m_connectionTimer(nullptr)
 {
     qDebug() << "[LoginWindow] 생성자 시작";
+
+    // .env 파일 로드
+    EnvConfig::loadFromFile();
 
     ui->setupUi(this);
 
@@ -132,7 +140,7 @@ void LoginWindow::checkConnectionStatus()
                 );
 
             // 재연결 시도
-            m_tcpCommunicator->connectToServer("192.168.0.81", 8080);
+            m_tcpCommunicator->connectToServer(m_tcpHost, m_tcpPort);
         }
     } else {
         qDebug() << "[LoginWindow] TcpCommunicator가 초기화되지 않음";
@@ -233,7 +241,7 @@ void LoginWindow::setupTcpCommunication()
 
     // 서버 연결 시도
     qDebug() << "[LoginWindow] 서버 연결 시도: 192.168.0.81:8080";
-    m_tcpCommunicator->connectToServer("192.168.0.81", 8080);
+    m_tcpCommunicator->connectToServer(m_tcpHost, m_tcpPort);
 
     // 연결 상태 업데이트
     m_connectionStatusLabel->setText("서버 연결 시도 중...");
@@ -327,6 +335,8 @@ void LoginWindow::onPasswordChanged()
 void LoginWindow::handleLogin()
 {
     qDebug() << "[LoginWindow] 로그인 버튼 클릭";
+    , m_tcpHost(m_tcpHost)
+    , m_tcpPort(m_tcpPort)
 
     QString id = ui->idLineEdit->text().trimmed();
     QString password = ui->pwLineEdit->text().trimmed();
@@ -341,7 +351,7 @@ void LoginWindow::handleLogin()
         QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.\n잠시 후 다시 시도해주세요.");
 
         // 재연결 시도
-        m_tcpCommunicator->connectToServer("192.168.0.81", 8080);
+        m_tcpCommunicator->connectToServer(m_tcpHost, m_tcpPort);
         return;
     }
 
@@ -400,7 +410,7 @@ void LoginWindow::handleSubmitSignUp()
         QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.\n잠시 후 다시 시도해주세요.");
 
         // 재연결 시도
-        m_tcpCommunicator->connectToServer("192.168.0.81", 8080);
+        m_tcpCommunicator->connectToServer(m_tcpHost, m_tcpPort);
         return;
     }
 

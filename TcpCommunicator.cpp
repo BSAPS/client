@@ -839,6 +839,9 @@ void TcpCommunicator::processJsonMessage(const QJsonObject &jsonObj)
         handleSavedRoadLinesResponse(jsonObj);
         handleRoadLinesFromServer(jsonObj);
         break;
+    case 200: // BBox 데이터 응답
+        handleBBoxResponse(jsonObj);
+        break;
     default:
         qDebug() << "[TCP] 알 수 없는 request_id:" << requestId;
         QJsonDocument doc(jsonObj);
@@ -1306,4 +1309,44 @@ void TcpCommunicator::logJsonMessage(const QJsonObject &jsonObj, bool outgoing) 
 void TcpCommunicator::setupSocket()
 {
     // 소켓 설정이 필요한 경우 여기에 구현
+}
+
+// BBox 데이터 처리 함수
+void TcpCommunicator::handleBBoxResponse(const QJsonObject &jsonObj)
+{
+    qDebug() << "[TCP] handleBBoxResponse 호출됨 (response_id: 200)";
+    
+    QList<BBox> bboxes;
+    qint64 timestamp = QDateTime::currentMSecsSinceEpoch();
+    
+    if (jsonObj.contains("bboxes") && jsonObj["bboxes"].isArray()) {
+        QJsonArray bboxArray = jsonObj["bboxes"].toArray();
+        
+        for (int i = 0; i < bboxArray.size(); ++i) {
+            QJsonObject bboxObj = bboxArray[i].toObject();
+            
+            BBox bbox;
+            bbox.object_id = bboxObj["id"].toInt();
+            bbox.type = bboxObj["type"].toString();
+            bbox.confidence = bboxObj["confidence"].toDouble();
+            bbox.rect = QRect(
+                bboxObj["x"].toInt(),
+                bboxObj["y"].toInt(),
+                bboxObj["width"].toInt(),
+                bboxObj["height"].toInt()
+            );
+            
+            bboxes.append(bbox);
+        }
+    }
+    
+    // 타임스탬프가 JSON에 포함되어 있다면 사용
+    if (jsonObj.contains("timestamp")) {
+        timestamp = jsonObj["timestamp"].toVariant().toLongLong();
+    }
+    
+    qDebug() << QString("[TCP] BBox 데이터 파싱 완료 - 총 %1개 객체").arg(bboxes.size());
+    
+    // BBox 데이터를 시그널로 전달
+    emit bboxesReceived(bboxes, timestamp);
 }

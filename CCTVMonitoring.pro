@@ -14,7 +14,8 @@ SOURCES += \
     TcpCommunicator.cpp \
     ImageViewerDialog.cpp \
     NetworkConfigDialog.cpp \
-    LineDrawingDialog.cpp
+    LineDrawingDialog.cpp \
+    EnvConfig.cpp
 
 # 헤더 파일
 HEADERS += \
@@ -24,7 +25,8 @@ HEADERS += \
     TcpCommunicator.h \
     ImageViewerDialog.h \
     NetworkConfigDialog.h \
-    LineDrawingDialog.h
+    LineDrawingDialog.h \
+    EnvConfig.h
 
 # 리소스 파일
 RESOURCES += resources.qrc

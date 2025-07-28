@@ -744,11 +744,8 @@ void LoginWindow::onTcpMessageReceived(const QString &message)
         break;
     case 23:
         qDebug() << "[LoginWindow] 2차 로그인 응답 처리";
+        handleOtpLoginResponse(jsonObj);
         break;
-    // case 10: // OTP 로그인 응답 (필요시)
-    //     qDebug() << "[LoginWindow] OTP 로그인 응답 처리";
-    //     handleOtpLoginResponse(jsonObj);
-    //     break;
     // case 11: // OTP 회원가입 응답 (필요시)
     //     qDebug() << "[LoginWindow] OTP 회원가입 응답 처리";
     //     handleOtpSignUpResponse(jsonObj);
@@ -801,8 +798,12 @@ void LoginWindow::handleSignUpResponse(const QJsonObject &response)
     QJsonArray recoveryCodes = response["recovery_codes"].toArray();
 
     if (success != 0) {
-        QMessageBox::information(this, "회원가입 성공", "회원가입이 완료되었습니다. QR 코드를 통해 OTP를 등록해주십시오.");
-        handleOtpSignupSwitch();
+        QMessageBox::information(this, "회원가입 성공", "회원가입이 완료되었습니다.");
+        if(otpURI != ""){
+            handleOtpSignupSwitch();
+        } else {
+            ui->stackedWidget->setCurrentIndex(0);
+        }
     } else {
         QMessageBox::warning(this, "회원가입 실패", message.isEmpty() ? "회원가입에 실패했습니다." : message);
     }
@@ -811,7 +812,9 @@ void LoginWindow::handleSignUpResponse(const QJsonObject &response)
     res["qr_code_svg"] = qrCodeSvg;
     res["recovery_codes"] = recoveryCodes;
     res["sign_up_success"] = 1;
-    handleQrCodeResponse(res);
+    if(otpURI != ""){
+        handleQrCodeResponse(res);
+    }
 
     qDebug() << "[LoginWindow] 회원가입 응답 - 성공:" << success << "메시지:" << message;
 
@@ -819,13 +822,13 @@ void LoginWindow::handleSignUpResponse(const QJsonObject &response)
 
 void LoginWindow::handleOtpLoginResponse(const QJsonObject &response)
 {
-    bool success = response["success"].toBool();
+    int success = response["final_login_success"].toInt();
     QString message = response["message"].toString();
 
     resetOtpLoginButton();
 
-    if (success) {
-        QMessageBox::information(this, "로그인 성공", "OTP 인증이 완료되었습니다.");
+    if (success == 1) {
+        QMessageBox::information(this, "로그인 성공", message);
         emit loginSuccessful();
         accept();
     } else {
@@ -845,7 +848,7 @@ void LoginWindow::handleOtpSignUpResponse(const QJsonObject &response)
         QMessageBox::information(this, "회원가입 성공", "OTP 회원가입이 완료되었습니다.");
         // 로그인 페이지로 돌아가기
         ui->stackedWidget->setCurrentIndex(0); // page_3 (로그인 페이지)
-        ui->OTPLoginWidget->setCurrentIndex(0); // LgoinPage
+        ui->OTPLoginWidget->setCurrentIndex(0); // LoginPage
         clearSignUpFields();
         clearLoginFields();
     } else {
@@ -914,7 +917,7 @@ void LoginWindow::handleQrCodeResponse(const QJsonObject &response)
         scrollArea->setWidget(recoveryEdit);
         scrollArea->show();
 
-        QMessageBox::information(this, "OTP 설정", "QR코드를 OTP 앱으로 스캔하고, 복구 코드를 안전하게 보관하세요.");
+        QMessageBox::information(this, "OTP 설정", "QR코드를 OTP 앱으로 스캔하고, 복구 코드를 안전하게 보관하세요. \n복구 코드는 계정당 5개 주어지며, 한 번 사용한 코드는 다시 사용할 수 없습니다.");
     } else {
         QMessageBox::warning(this, "QR 코드 생성 실패", "QR 코드 생성에 실패했습니다.");
         ui->OTPLoginWidget_3->setCurrentIndex(0); // SignUpPage로 복귀

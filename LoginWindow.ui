@@ -27,7 +27,7 @@ QDialog {
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page_3">
     <widget class="QLabel" name="BackgroundLabel">
@@ -43,7 +43,7 @@ QDialog {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>:/images/Background3.png</pixmap>
+      <pixmap resource="resources.qrc">:/images/Background3.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -239,12 +239,12 @@ QLabel {
          <rect>
           <x>40</x>
           <y>155</y>
-          <width>100</width>
+          <width>141</width>
           <height>20</height>
          </rect>
         </property>
         <property name="text">
-         <string>OTP 인증번호</string>
+         <string>OTP 인증번호 / 복구 번호</string>
         </property>
        </widget>
        <widget class="QLineEdit" name="idLineEdit_2">
@@ -255,6 +255,18 @@ QLabel {
           <width>251</width>
           <height>40</height>
          </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: #FFFFFF</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="maxLength">
+         <number>10</number>
+        </property>
+        <property name="placeholderText">
+         <string>공백 없이 입력해주세요</string>
         </property>
        </widget>
        <widget class="QPushButton" name="SubmitButton_2">
@@ -327,7 +339,7 @@ QPushButton {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>:/images/Background4.png</pixmap>
+      <pixmap resource="resources.qrc">:/images/Background4.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -343,7 +355,7 @@ QPushButton {
       </rect>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="SignUpPage">
       <widget class="QFrame" name="SignUp">
@@ -596,7 +608,7 @@ QPushButton {
 </string>
         </property>
         <property name="text">
-         <string>SUBMIT</string>
+         <string>확인</string>
         </property>
        </widget>
        <widget class="QFrame" name="frame">
@@ -637,6 +649,8 @@ QPushButton {
    </widget>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

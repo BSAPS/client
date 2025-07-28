@@ -73,6 +73,7 @@ LoginWindow::LoginWindow(QWidget *parent)
     codes.append("testcode3");
     codes.append("testcode4");
     codes.append("testcode5");
+    codes.append("testcode6");
     response["recovery_codes"] = codes;
     response["sign_up_success"] = 1;
     handleQrCodeResponse(response);
@@ -864,7 +865,7 @@ void LoginWindow::handleQrCodeResponse(const QJsonObject &response)
 
     if (signUpSuccess == 1 && !svgData.isEmpty()) {
         QSvgRenderer svgRenderer(svgData.toUtf8());
-        QPixmap pixmap(200, 200); // frame 크기와 동일
+        QPixmap pixmap(211, 201); // frame 크기와 동일
         pixmap.fill(Qt::transparent);
         QPainter painter(&pixmap);
         svgRenderer.render(&painter);
@@ -879,7 +880,7 @@ void LoginWindow::handleQrCodeResponse(const QJsonObject &response)
             QLabel *qrLabel = new QLabel(frame);
             qrLabel->setObjectName("qrCodeLabel");
             qrLabel->setPixmap(pixmap);
-            qrLabel->setGeometry(0, 0, 200, 200); // frame 내부 좌표
+            qrLabel->setGeometry(0, 0, 211, 201); // frame 내부 좌표
             qrLabel->setAlignment(Qt::AlignCenter);
             qrLabel->show();
         }
@@ -889,52 +890,30 @@ void LoginWindow::handleQrCodeResponse(const QJsonObject &response)
         for (const QJsonValue &v : recoveryCodesArray)
             codeList << v.toString();
 
-        // QR코드 라벨은 frame에만 생성/표시 (중복 방지)
-        if (frame) {
-            QLabel *oldLabel = frame->findChild<QLabel*>("qrCodeLabel");
-            if (oldLabel) delete oldLabel;
+        // 기존 QScrollArea 및 QLabel 제거 (중복 방지)
+        QScrollArea *oldScroll = ui->OTPSignUp->findChild<QScrollArea*>("recoveryScrollArea");
+        if (oldScroll) delete oldScroll;
 
-            QLabel *qrLabel = new QLabel(frame);
-            qrLabel->setObjectName("qrCodeLabel");
-            qrLabel->setPixmap(pixmap);
-            qrLabel->setGeometry(0, 0, 200, 200); // frame 내부 좌표
-            qrLabel->setAlignment(Qt::AlignCenter);
-            qrLabel->show();
-        }
+        QScrollArea *scrollArea = new QScrollArea(ui->OTPSignUp);
+        scrollArea->setObjectName("recoveryScrollArea");
+        scrollArea->setGeometry(60, 320, 211, 65); // 버튼과 겹치지 않게 높이 조정
+        scrollArea->setWidgetResizable(true);
+        scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-        // 복구코드 및 SUBMIT 버튼은 recoveryWidget에만 생성
-        QWidget *oldWidget = ui->OTPSignUp->findChild<QWidget*>("recoveryWidget");
-        if (oldWidget) delete oldWidget;
 
-        QWidget *recoveryWidget = new QWidget(ui->OTPSignUp);
-        recoveryWidget->setObjectName("recoveryWidget");
-        recoveryWidget->setGeometry(0, 220, ui->OTPSignUp->width(), 200); // QR코드 아래에 위치
-
-        QVBoxLayout *vbox = new QVBoxLayout(recoveryWidget);
-        vbox->setAlignment(Qt::AlignCenter);
-        vbox->setContentsMargins(0, 10, 0, 10);
-
-        // 복구코드 QTextEdit (읽기 전용, 드래그/복사 가능)
         QTextEdit *recoveryEdit = new QTextEdit;
         recoveryEdit->setObjectName("recoveryEdit");
-        recoveryEdit->setReadOnly(true);
-        recoveryEdit->setText("복구 코드:\n" + codeList.join("\n"));
+        recoveryEdit->setText(codeList.join("\n"));
         recoveryEdit->setStyleSheet("color: #333; font-size: 13px; background: #f5f5f5; border: 1px solid #ccc; border-radius: 6px; padding: 6px;");
-        recoveryEdit->setMinimumHeight(100);
-        recoveryEdit->setMaximumHeight(150);
-        vbox->addWidget(recoveryEdit, 0, Qt::AlignHCenter);
-
-        // 별도의 SUBMIT 버튼 생성 및 스타일 지정
-        QPushButton *submitBtn = new QPushButton("SUBMIT", recoveryWidget);
-        submitBtn->setObjectName("SubmitButton_6");
-        submitBtn->setStyleSheet("font-size: 15px; padding: 8px 24px; background-color: #f37321; color: white; border-radius: 6px; font-weight: bold;");
-        submitBtn->setMinimumWidth(120);
-        vbox->addWidget(submitBtn, 0, Qt::AlignHCenter);
-
-        // 시그널 연결 (기존 handleSubmitOtpSignUp 사용)
-        connect(submitBtn, &QPushButton::clicked, this, &LoginWindow::handleSubmitOtpSignUp);
-
-        recoveryWidget->show();
+        recoveryEdit->setAlignment(Qt::AlignLeft);
+        recoveryEdit->setReadOnly(true);
+        recoveryEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        recoveryEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        recoveryEdit->setMinimumHeight(65);
+        recoveryEdit->setMaximumHeight(65); // 스크롤바 완전 차단
+        scrollArea->setWidget(recoveryEdit);
+        scrollArea->show();
 
         QMessageBox::information(this, "OTP 설정", "QR코드를 OTP 앱으로 스캔하고, 복구 코드를 안전하게 보관하세요.");
     } else {

@@ -43,7 +43,7 @@ QDialog {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap resource="resources.qrc">:/images/Background3.png</pixmap>
+      <pixmap>:/images/Background3.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -327,7 +327,7 @@ QPushButton {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap resource="resources.qrc">:/images/Background4.png</pixmap>
+      <pixmap>:/images/Background4.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -604,8 +604,8 @@ QPushButton {
          <rect>
           <x>60</x>
           <y>110</y>
-          <width>200</width>
-          <height>200</height>
+          <width>211</width>
+          <height>201</height>
          </rect>
         </property>
         <property name="styleSheet">
@@ -637,8 +637,6 @@ QPushButton {
    </widget>
   </widget>
  </widget>
- <resources>
-  <include location="resources.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

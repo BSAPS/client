@@ -831,6 +831,7 @@ void LoginWindow::handleOtpSignUpResponse(const QJsonObject &response)
 {
     bool success = response["success"].toBool();
     QString message = response["message"].toString();
+    
 
     if (success) {
         QMessageBox::information(this, "회원가입 성공", "OTP 회원가입이 완료되었습니다.");

@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file alias="icons/NetworkConnect.png">icons/NetworkConnect.png</file>
-        <file>ca-cert.crt</file>
         <file>images/Background3.png</file>
         <file>images/Background4.png</file>
         <file>images/Login.png</file>
@@ -11,5 +10,6 @@
         <file>images/SignUp.png</file>
         <file>images/SIGNUP_.png</file>
         <file>images/SignUp_fin.png</file>
+        <file>ca-cert.crt</file>
     </qresource>
 </RCC>

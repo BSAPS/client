@@ -27,4 +27,8 @@ next-env.d.ts
 # key
 ca-cert.crt
 
+# settings
 CCTVMonitoring.pro.user*
+
+# env files
+.env*

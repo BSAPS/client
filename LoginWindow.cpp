@@ -335,8 +335,6 @@ void LoginWindow::onPasswordChanged()
 void LoginWindow::handleLogin()
 {
     qDebug() << "[LoginWindow] 로그인 버튼 클릭";
-    , m_tcpHost(m_tcpHost)
-    , m_tcpPort(m_tcpPort)
 
     QString id = ui->idLineEdit->text().trimmed();
     QString password = ui->pwLineEdit->text().trimmed();

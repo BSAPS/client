@@ -415,15 +415,7 @@ void LoginWindow::handleSubmitSignUp()
     // 비밀번호가 일치하면 오류 메시지 숨김
     m_passwordErrorLabel->hide();
 
-    if (useOtp) {
-        // OTP 회원가입 페이지로 전환
-        handleOtpSignupSwitch();
-        // 여기서 OTP QR 코드 생성 요청을 서버에 보낼 수 있음
-        generateOtpQrCode(id, password);
-    } else {
-        // 일반 회원가입 처리
-        sendSignUpRequest(id, password, false);
-    }
+    sendSignUpRequest(id, password, useOtp);
 }
 
 void LoginWindow::handleSubmitOtpLogin()
@@ -454,14 +446,13 @@ void LoginWindow::handleSubmitOtpLogin()
 
 void LoginWindow::handleSubmitOtpSignUp()
 {
-    qDebug() << "[LoginWindow] OTP Sign Up 제출";
+    qDebug() << "[LoginWindow] OTP 등록 완료 버튼 클릭. 로그인 페이지로 돌아감.";
 
-    QString otpCode = ui->lineEdit->text().trimmed();
-
-    if (otpCode.isEmpty()) {
-        QMessageBox::warning(this, "입력 오류", "OTP 코드를 입력해주세요.");
-        return;
-    }
+    // 로그인 페이지로 돌아가기
+    ui->stackedWidget->setCurrentIndex(0); // page_3 (로그인 페이지)
+    ui->OTPLoginWidget->setCurrentIndex(0); // LgoinPage
+    clearSignUpFields();
+    clearLoginFields();
 
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
@@ -470,7 +461,7 @@ void LoginWindow::handleSubmitOtpSignUp()
     }
 
     // OTP 회원가입 요청 전송
-    sendOtpSignUpRequest(otpCode);
+    // sendOtpSignUpRequest(otpCode);
 }
 
 void LoginWindow::sendLoginRequest(const QString &id, const QString &password)
@@ -526,6 +517,7 @@ void LoginWindow::sendSignUpRequest(const QString &id, const QString &password, 
     QJsonObject data;
     data["id"] = id;
     data["passwd"] = password;  // password -> passwd로 변경
+    data["use_otp"] = useOtp;
     signUpMessage["data"] = data;
 
     qDebug() << "[LoginWindow] 전송할 JSON:" << QJsonDocument(signUpMessage).toJson(QJsonDocument::Compact);
@@ -541,7 +533,7 @@ void LoginWindow::sendSignUpRequest(const QString &id, const QString &password, 
 
 void LoginWindow::sendOtpLoginRequest(const QString &otpCode)
 {
-    qDebug() << "[LoginWindow] OTP 로그인 요청 전송";
+    qDebug() << "[LoginWindow] OTP 2차 로그인 요청 전송";
 
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
@@ -550,11 +542,13 @@ void LoginWindow::sendOtpLoginRequest(const QString &otpCode)
         return;
     }
 
-    // OTP 로그인 요청 JSON 생성 (request_id: 1003)
+    // OTP 로그인 요청 JSON 생성 (request_id: 22)
     QJsonObject otpLoginMessage;
-    otpLoginMessage["request_id"] = 1003;
-    otpLoginMessage["id"] = m_currentUserId;
-    otpLoginMessage["otp_code"] = otpCode;
+    otpLoginMessage["request_id"] = 22;
+    QJsonObject dataMessage;
+    dataMessage["id"] = m_currentUserId;
+    dataMessage["input"] = otpCode;
+    otpLoginMessage.insert("data",dataMessage);
 
     // 서버로 전송
     bool success = m_tcpCommunicator->sendJsonMessage(otpLoginMessage);
@@ -563,61 +557,61 @@ void LoginWindow::sendOtpLoginRequest(const QString &otpCode)
         resetOtpLoginButton();
     }
 
-    qDebug() << "[LoginWindow] OTP 로그인 요청 전송 - ID:" << m_currentUserId;
+    qDebug() << "[LoginWindow] OTP 2차 로그인 요청 전송 성공 - ID:" << m_currentUserId;
 }
 
-void LoginWindow::sendOtpSignUpRequest(const QString &otpCode)
-{
-    qDebug() << "[LoginWindow] OTP 회원가입 요청 전송";
+// void LoginWindow::sendOtpSignUpRequest(const QString &otpCode)
+// {
+//     qDebug() << "[LoginWindow] OTP 회원가입 요청 전송";
 
-    // TCP 연결 확인
-    if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
-        QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
-        return;
-    }
+//     // TCP 연결 확인
+//     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
+//         QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
+//         return;
+//     }
 
-    // OTP 회원가입 완료 요청 JSON 생성 (request_id: 1004)
-    QJsonObject otpSignUpMessage;
-    otpSignUpMessage["request_id"] = 1004;
-    otpSignUpMessage["otp_code"] = otpCode;
+//     // OTP 회원가입 완료 요청 JSON 생성 (request_id: 1004)
+//     QJsonObject otpSignUpMessage;
+//     otpSignUpMessage["request_id"] = 1004;
+//     otpSignUpMessage["otp_code"] = otpCode;
 
-    // 서버로 전송
-    bool success = m_tcpCommunicator->sendJsonMessage(otpSignUpMessage);
-    if (!success) {
-        QMessageBox::warning(this, "전송 오류", "OTP 회원가입 정보 전송에 실패했습니다.");
-    }
+//     // 서버로 전송
+//     bool success = m_tcpCommunicator->sendJsonMessage(otpSignUpMessage);
+//     if (!success) {
+//         QMessageBox::warning(this, "전송 오류", "OTP 회원가입 정보 전송에 실패했습니다.");
+//     }
 
-    qDebug() << "[LoginWindow] OTP 회원가입 요청 전송";
-}
+//     qDebug() << "[LoginWindow] OTP 회원가입 요청 전송";
+// }
 
-void LoginWindow::generateOtpQrCode(const QString &id, const QString &password)
-{
-    qDebug() << "[LoginWindow] OTP QR 코드 생성 요청";
+// void LoginWindow::generateOtpQrCode(const QString &id, const QString &password)
+// {
+//     qDebug() << "[LoginWindow] OTP QR 코드 생성 요청";
 
-    // TCP 연결 확인
-    if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
-        QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
-        return;
-    }
+//     // TCP 연결 확인
+//     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
+//         QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
+//         return;
+//     }
 
-    // OTP QR 코드 생성 요청 JSON (request_id: 1005)
-    QJsonObject qrCodeMessage;
-    qrCodeMessage["request_id"] = 1005;
-    qrCodeMessage["id"] = id;
-    qrCodeMessage["passwd"] = password;  // password -> passwd로 변경
+//     // OTP QR 코드 생성 요청 JSON (request_id: 1005)
+//     QJsonObject qrCodeMessage;
+//     qrCodeMessage["request_id"] = 1005;
+//     qrCodeMessage["id"] = id;
+//     qrCodeMessage["passwd"] = password;  // password -> passwd로 변경
 
-    // 현재 회원가입 정보 저장
-    m_currentUserId = id;
-    m_currentPassword = password;
+//     // 현재 회원가입 정보 저장
+//     m_currentUserId = id;
+//     m_currentPassword = password;
 
-    // 서버로 전송
-    bool success = m_tcpCommunicator->sendJsonMessage(qrCodeMessage);
-    if (!success) {
-        QMessageBox::warning(this, "전송 오류", "OTP QR 코드 요청에 실패했습니다.");
-    }
+//     // 서버로 전송
+//     bool success = m_tcpCommunicator->sendJsonMessage(qrCodeMessage);
+//     if (!success) {
+//         QMessageBox::warning(this, "전송 오류", "OTP QR 코드 요청에 실패했습니다.");
+//     }
 
-    qDebug() << "[LoginWindow] OTP QR 코드 생성 요청 전송 - ID:" << id;
-}
+//     qDebug() << "[LoginWindow] OTP QR 코드 생성 요청 전송 - ID:" << id;
+// }
 
 void LoginWindow::resetLoginButton()
 {
@@ -741,18 +735,21 @@ void LoginWindow::onTcpMessageReceived(const QString &message)
         qDebug() << "[LoginWindow] 회원가입 응답 처리";
         handleSignUpResponse(jsonObj);
         break;
-    case 10: // OTP 로그인 응답 (필요시)
-        qDebug() << "[LoginWindow] OTP 로그인 응답 처리";
-        handleOtpLoginResponse(jsonObj);
+    case 23:
+        qDebug() << "[LoginWindow] 2차 로그인 응답 처리";
         break;
-    case 11: // OTP 회원가입 응답 (필요시)
-        qDebug() << "[LoginWindow] OTP 회원가입 응답 처리";
-        handleOtpSignUpResponse(jsonObj);
-        break;
-    case 12: // OTP QR 코드 응답 (필요시)
-        qDebug() << "[LoginWindow] QR 코드 응답 처리";
-        handleQrCodeResponse(jsonObj);
-        break;
+    // case 10: // OTP 로그인 응답 (필요시)
+    //     qDebug() << "[LoginWindow] OTP 로그인 응답 처리";
+    //     handleOtpLoginResponse(jsonObj);
+    //     break;
+    // case 11: // OTP 회원가입 응답 (필요시)
+    //     qDebug() << "[LoginWindow] OTP 회원가입 응답 처리";
+    //     handleOtpSignUpResponse(jsonObj);
+    //     break;
+    // case 12: // OTP QR 코드 응답 (필요시)
+    //     qDebug() << "[LoginWindow] QR 코드 응답 처리";
+    //     handleQrCodeResponse(jsonObj);
+    //     break;
     default:
         qDebug() << "[LoginWindow] 알 수 없는 request_id:" << requestId;
         qDebug() << "[LoginWindow] 전체 JSON:" << QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
@@ -764,14 +761,14 @@ void LoginWindow::handleLoginResponse(const QJsonObject &response)
 {
     int success = response["step1_success"].toInt();
     QString message = response["message"].toString();
-    bool isOtpUser = response["requires_otp"].toBool(false);
+    int isOtpUser = response["requires_otp"].toInt(0);
 
     qDebug() << "[LoginWindow] 로그인 응답 - 성공:" << success << "메시지:" << message << "OTP 사용자:" << isOtpUser;
 
     resetLoginButton();
 
     if (success != 0) {
-        if (isOtpUser) {
+        if (isOtpUser == 1) {
             // OTP 사용자인 경우 OTP 로그인 페이지로 전환
             ui->OTPLoginWidget->setCurrentIndex(1); // OTPLoginPage
             ui->idLineEdit_2->setFocus();
@@ -792,19 +789,19 @@ void LoginWindow::handleSignUpResponse(const QJsonObject &response)
 {
     int success = response["sign_up_success"].toInt();
     QString message = response["message"].toString();
-
-    qDebug() << "[LoginWindow] 회원가입 응답 - 성공:" << success << "메시지:" << message;
+    QString qrCodeSvg = response["qr_code_svg"].toString();
+    QString otpURI = response["otp_uri"].toString();
+    QString recoveryCodes = response["recovery_codes"].toString();
 
     if (success != 0) {
-        QMessageBox::information(this, "회원가입 성공", "회원가입이 완료되었습니다.");
-        // 로그인 페이지로 돌아가기
-        ui->stackedWidget->setCurrentIndex(0); // page_3 (로그인 페이지)
-        ui->OTPLoginWidget->setCurrentIndex(0); // LgoinPage
-        clearSignUpFields();
-        clearLoginFields();
+        QMessageBox::information(this, "회원가입 성공", "회원가입이 완료되었습니다. QR 코드를 통해 OTP를 등록해주십시오.");
+        handleOtpSignupSwitch();
     } else {
         QMessageBox::warning(this, "회원가입 실패", message.isEmpty() ? "회원가입에 실패했습니다." : message);
     }
+
+    qDebug() << "[LoginWindow] 회원가입 응답 - 성공:" << success << "메시지:" << message;
+
 }
 
 void LoginWindow::handleOtpLoginResponse(const QJsonObject &response)

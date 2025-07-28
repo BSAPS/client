@@ -39,6 +39,15 @@ MOC_DIR = build/moc
 RCC_DIR = build/rcc
 UI_DIR = build/ui
 
+# .env 파일을 빌드 디렉토리로 복사
+win32 {
+    ENV_FILE = $$PWD/.env
+    TARGET_DIR = $$DESTDIR
+    ENV_FILE ~= s,/,\\,g
+    TARGET_DIR ~= s,/,\\,g
+    QMAKE_POST_LINK += $$quote(copy /Y $$ENV_FILE $$TARGET_DIR$$escape_expand(\\n\\t))
+}
+
 # 컴파일러 플래그
 QMAKE_CXXFLAGS += -Wno-unused-parameter
 

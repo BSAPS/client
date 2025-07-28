@@ -68,6 +68,10 @@ private:
     QString m_currentUserId;
     QString m_currentPassword;
 
+    // 네트워크 설정 (.env에서 로드)
+    QString m_tcpHost;
+    quint16 m_tcpPort;
+
     // 초기화 메서드
     void setupPasswordFields();
     void setupPasswordErrorLabel();

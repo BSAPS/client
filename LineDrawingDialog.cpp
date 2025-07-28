@@ -17,6 +17,8 @@ VideoGraphicsView::VideoGraphicsView(QWidget *parent)
     , m_drawing(false)
     , m_currentLineItem(nullptr)
     , m_currentCategory(LineCategory::ROAD_DEFINITION)
+    , m_originalVideoSize(3840, 2160)  // 기본 원본 크기 설정
+    , m_currentViewSize(960, 540)      // 현재 뷰 크기 설정
 {
     // 씬 생성
     m_scene = new QGraphicsScene(this);
@@ -475,6 +477,78 @@ void VideoGraphicsView::clearHighlight()
     }
 }
 
+// BBox 관련 함수 구현
+void VideoGraphicsView::setBBoxes(const QList<BBox> &bboxes, qint64 timestamp)
+{
+    // 기존 BBox 아이템들 제거
+    clearBBoxes();
+
+    // 스케일 계산 (원본 해상도 → 뷰어 해상도)
+    double scaleX = static_cast<double>(m_currentViewSize.width()) / m_originalVideoSize.width();
+    double scaleY = static_cast<double>(m_currentViewSize.height()) / m_originalVideoSize.height();
+
+    for (const BBox &bbox : bboxes) {
+        // 좌표 스케일 변환
+        QRectF scaledRect(
+            bbox.rect.x() * scaleX,
+            bbox.rect.y() * scaleY,
+            bbox.rect.width() * scaleX,
+            bbox.rect.height() * scaleY
+        );
+
+        // 사각형 아이템 생성
+        QGraphicsRectItem* rectItem = new QGraphicsRectItem(scaledRect);
+        QPen pen(Qt::red, 2);
+        rectItem->setPen(pen);
+        rectItem->setBrush(Qt::NoBrush);
+        rectItem->setData(0, "bbox"); // 식별을 위한 데이터 설정
+        m_scene->addItem(rectItem);
+        m_bboxRectItems.append(rectItem);
+
+        // 텍스트 아이템 생성 (타입과 신뢰도 표시)
+        QString labelText = QString("%1 (%.2f)").arg(bbox.type).arg(bbox.confidence);
+        QGraphicsTextItem* textItem = new QGraphicsTextItem(labelText);
+        
+        // 텍스트 스타일 설정
+        QFont font = textItem->font();
+        font.setPointSize(10);
+        font.setBold(true);
+        textItem->setFont(font);
+        textItem->setDefaultTextColor(Qt::red);
+        
+        // 텍스트 위치 설정 (바운딩 박스 위쪽)
+        textItem->setPos(scaledRect.x(), scaledRect.y() - 20);
+        textItem->setData(0, "bbox_text"); // 식별을 위한 데이터 설정
+        m_scene->addItem(textItem);
+        m_bboxTextItems.append(textItem);
+    }
+
+    qDebug() << QString("[VideoView] BBox 시각화 완료 - %1개 객체, 타임스탬프: %2").arg(bboxes.size()).arg(timestamp);
+}
+
+void VideoGraphicsView::clearBBoxes()
+{
+    // 기존 BBox 사각형 아이템들 제거
+    for (QGraphicsRectItem* item : m_bboxRectItems) {
+        if (item) {
+            m_scene->removeItem(item);
+            delete item;
+        }
+    }
+    m_bboxRectItems.clear();
+
+    // 기존 BBox 텍스트 아이템들 제거
+    for (QGraphicsTextItem* item : m_bboxTextItems) {
+        if (item) {
+            m_scene->removeItem(item);
+            delete item;
+        }
+    }
+    m_bboxTextItems.clear();
+
+    qDebug() << "[VideoView] BBox 아이템들 제거 완료";
+}
+
 void VideoGraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
     if (!m_drawingMode || !m_drawing) {
@@ -586,6 +660,7 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     , m_selectedRoadLineIndex(-1)
     , m_roadLineSelectionMode(false)
     , m_tcpCommunicator(nullptr)
+    , m_bboxEnabled(false)
     , m_roadLinesLoaded(false)
     , m_detectionLinesLoaded(false)
 {
@@ -621,6 +696,10 @@ void LineDrawingDialog::setupTcpConnection()
                 this, &LineDrawingDialog::onSavedRoadLinesReceived);
         connect(m_tcpCommunicator, &TcpCommunicator::savedDetectionLinesReceived,
                 this, &LineDrawingDialog::onSavedDetectionLinesReceived);
+
+        // BBox 데이터 수신 시그널 연결
+        connect(m_tcpCommunicator, &TcpCommunicator::bboxesReceived,
+                this, &LineDrawingDialog::onBBoxesReceived);
 
         qDebug() << "TCP 통신 설정 완료";
     } else {
@@ -1049,6 +1128,21 @@ void LineDrawingDialog::setupUI()
                                            "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_sendCoordinatesButton, &QPushButton::clicked, this, &LineDrawingDialog::onSendCoordinatesClicked);
     m_buttonLayout->addWidget(m_sendCoordinatesButton);
+
+    // BBox 관련 버튼들
+    m_bboxOnButton = new QPushButton("BBox ON");
+    m_bboxOnButton->setStyleSheet("QPushButton { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+                                  "QPushButton:hover { background-color: #218838; }"
+                                  "QPushButton:disabled { background-color: #b3aca5; }");
+    connect(m_bboxOnButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOnClicked);
+    m_buttonLayout->addWidget(m_bboxOnButton);
+
+    m_bboxOffButton = new QPushButton("BBox OFF");
+    m_bboxOffButton->setStyleSheet("QPushButton { background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+                                   "QPushButton:hover { background-color: #c82333; }"
+                                   "QPushButton:disabled { background-color: #b3aca5; }");
+    connect(m_bboxOffButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOffClicked);
+    m_buttonLayout->addWidget(m_bboxOffButton);
 
     m_buttonLayout->addStretch();
 
@@ -1653,4 +1747,76 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
         addLogMessage("❌ 저장된 선 데이터 요청에 실패했습니다.", "ERROR");
         QMessageBox::warning(this, "오류", "저장된 선 데이터 요청에 실패했습니다.");
     }
+}
+
+// BBox 데이터 수신 슬롯 구현
+void LineDrawingDialog::onBBoxesReceived(const QList<BBox> &bboxes, qint64 timestamp)
+{
+    qDebug() << QString("[LineDrawingDialog] BBox 데이터 수신 - %1개 객체, 타임스탬프: %2").arg(bboxes.size()).arg(timestamp);
+    
+    // BBox가 비활성화되어 있다면 처리하지 않음
+    if (!m_bboxEnabled) {
+        qDebug() << "[LineDrawingDialog] BBox가 비활성화되어 있어 표시하지 않습니다.";
+        return;
+    }
+    
+    // VideoGraphicsView에 BBox 전달
+    if (m_videoView) {
+        m_videoView->setBBoxes(bboxes, timestamp);
+        
+        // 로그 메시지 추가
+        if (bboxes.isEmpty()) {
+            addLogMessage("📦 BBox 업데이트 - 감지된 객체가 없습니다.", "BBOX");
+        } else {
+            QString objectList;
+            for (const BBox &bbox : bboxes) {
+                objectList += QString("%1(%.2f) ").arg(bbox.type).arg(bbox.confidence);
+            }
+            addLogMessage(QString("📦 BBox 업데이트 - %1개 객체: %2").arg(bboxes.size()).arg(objectList.trimmed()), "BBOX");
+        }
+    } else {
+        qDebug() << "[LineDrawingDialog] VideoView가 null입니다. BBox를 표시할 수 없습니다.";
+        addLogMessage("❌ BBox 표시 실패 - VideoView를 찾을 수 없습니다.", "ERROR");
+    }
+}
+
+// BBox ON 버튼 클릭 슬롯
+void LineDrawingDialog::onBBoxOnClicked()
+{
+    m_bboxEnabled = true;
+    m_bboxOnButton->setEnabled(false);
+    m_bboxOffButton->setEnabled(true);
+    
+    addLogMessage("📦 BBox ON - 객체 감지 표시가 활성화되었습니다.", "ACTION");
+    
+    // 서버에 BBox 활성화 요청을 보낼 수 있습니다 (필요시)
+    // if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
+    //     QJsonObject bboxRequest;
+    //     bboxRequest["request_id"] = 201;
+    //     bboxRequest["bbox_enabled"] = true;
+    //     m_tcpCommunicator->sendJsonMessage(bboxRequest);
+    // }
+}
+
+// BBox OFF 버튼 클릭 슬롯
+void LineDrawingDialog::onBBoxOffClicked()
+{
+    m_bboxEnabled = false;
+    m_bboxOnButton->setEnabled(true);
+    m_bboxOffButton->setEnabled(false);
+    
+    // 현재 표시된 BBox들을 모두 제거
+    if (m_videoView) {
+        m_videoView->clearBBoxes();
+    }
+    
+    addLogMessage("📦 BBox OFF - 객체 감지 표시가 비활성화되었습니다.", "ACTION");
+    
+    // 서버에 BBox 비활성화 요청을 보낼 수 있습니다 (필요시)
+    // if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
+    //     QJsonObject bboxRequest;
+    //     bboxRequest["request_id"] = 201;
+    //     bboxRequest["bbox_enabled"] = false;
+    //     m_tcpCommunicator->sendJsonMessage(bboxRequest);
+    // }
 }

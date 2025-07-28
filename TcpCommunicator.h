@@ -9,6 +9,7 @@
 #include <QJsonArray>
 #include <QDateTime>
 #include <QThread>
+#include <QRect>
 
 #include <QSslSocket>
 #include <QSslError>
@@ -52,6 +53,14 @@ struct PerpendicularLineData {
     int index;              // 원본 감지선 번호
     double a;               // y = ax + b에서 a값 (기울기)
     double b;               // y = ax + b에서 b값 (y절편)
+};
+
+// BBox 데이터 구조체
+struct BBox {
+    int object_id;          // 객체 ID
+    QString type;           // 객체 타입 (예: "Vehicle", "Person" 등)
+    double confidence;      // 신뢰도 (0.0 ~ 1.0)
+    QRect rect;            // 바운딩 박스 영역 (x, y, width, height)
 };
 
 // 서버 양식에 맞춘 도로 기준선 데이터 구조체 수정
@@ -127,6 +136,9 @@ signals:
 
     void categorizedCoordinatesConfirmed(bool success, const QString &message, int roadLinesProcessed, int detectionLinesProcessed);
 
+    // BBox 관련 시그널
+    void bboxesReceived(const QList<BBox> &bboxes, qint64 timestamp);
+
 
 private slots:
     void onConnected();
@@ -198,6 +210,9 @@ private:
 
     void handleDetectionLinesFromServer(const QJsonObject &jsonObj);
     void handleRoadLinesFromServer(const QJsonObject &jsonObj);
+
+    // BBox 처리 함수
+    void handleBBoxResponse(const QJsonObject &jsonObj);
 
     // 저장된 선 데이터 관리
     QList<RoadLineData> m_receivedRoadLines;

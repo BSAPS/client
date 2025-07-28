@@ -82,6 +82,11 @@ public:
     // 즉시 테스트 선 그리기 함수
     void drawImmediateTestLines();
 
+    // BBox 관련 함수
+    void setBBoxes(const QList<BBox> &bboxes, qint64 timestamp);
+    void clearBBoxes();
+    void setOriginalVideoSize(const QSize &size) { m_originalVideoSize = size; }
+
 signals:
     void lineDrawn(const QPoint &start, const QPoint &end, LineCategory category);
     void coordinateClicked(int lineIndex, const QPoint &coordinate, bool isStartPoint);
@@ -109,6 +114,12 @@ private:
     QGraphicsLineItem *m_currentLineItem;
     LineCategory m_currentCategory;
     QList<CategorizedLine> m_categorizedLines;
+
+    // BBox 관련 멤버 변수
+    QList<QGraphicsRectItem*> m_bboxRectItems;     // BBox 사각형 아이템들
+    QList<QGraphicsTextItem*> m_bboxTextItems;     // BBox 텍스트 아이템들
+    QSize m_originalVideoSize;                      // 원본 비디오 크기
+    QSize m_currentViewSize;                        // 현재 뷰 크기
 };
 
 class LineDrawingDialog : public QDialog
@@ -145,6 +156,11 @@ private slots:
     void onSavedRoadLinesReceived(const QList<RoadLineData> &roadLines);
     void onSavedDetectionLinesReceived(const QList<DetectionLineData> &detectionLines);
 
+    // BBox 관련 슬롯
+    void onBBoxesReceived(const QList<BBox> &bboxes, qint64 timestamp);
+    void onBBoxOnClicked();
+    void onBBoxOffClicked();
+
 protected:
     void resizeEvent(QResizeEvent *event) override;
 
@@ -165,6 +181,11 @@ private:
     QPushButton *m_closeButton;
     QLabel *m_statusLabel;
     QLabel *m_frameCountLabel;
+
+    // BBox 관련 UI
+    QPushButton *m_bboxOnButton;
+    QPushButton *m_bboxOffButton;
+    bool m_bboxEnabled;
 
     // 로그 관련 UI
     QTextEdit *m_logTextEdit;

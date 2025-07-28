@@ -754,9 +754,9 @@ void LoginWindow::onTcpMessageReceived(const QString &message)
 
 void LoginWindow::handleLoginResponse(const QJsonObject &response)
 {
-    int success = response["login_success"].toInt();
+    int success = response["step1_success"].toInt();
     QString message = response["message"].toString();
-    bool isOtpUser = response["is_otp_user"].toBool(false);
+    bool isOtpUser = response["requires_otp"].toBool(false);
 
     qDebug() << "[LoginWindow] 로그인 응답 - 성공:" << success << "메시지:" << message << "OTP 사용자:" << isOtpUser;
 

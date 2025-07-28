@@ -27,7 +27,7 @@ QDialog {
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="page_3">
     <widget class="QLabel" name="BackgroundLabel">
@@ -343,7 +343,7 @@ QPushButton {
       </rect>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="SignUpPage">
       <widget class="QFrame" name="SignUp">
@@ -604,8 +604,8 @@ QPushButton {
          <rect>
           <x>60</x>
           <y>110</y>
-          <width>211</width>
-          <height>201</height>
+          <width>200</width>
+          <height>200</height>
          </rect>
         </property>
         <property name="styleSheet">

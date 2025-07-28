@@ -14,6 +14,11 @@
 #include <QByteArray>
 #include <QRegularExpression>
 
+
+#include <QtSvg/QSvgRenderer>
+#include <QPainter>
+#include <QLabel>
+
 LoginWindow::LoginWindow(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui_LoginWindow)
@@ -836,23 +841,51 @@ void LoginWindow::handleOtpSignUpResponse(const QJsonObject &response)
 
 void LoginWindow::handleQrCodeResponse(const QJsonObject &response)
 {
-    bool success = response["success"].toBool();
-    QString message = response["message"].toString();
-    QString qrCodeData = response["qr_code"].toString();
+    QString svgData = response["qr_code_svg"].toString();
+    QJsonArray recoveryCodesArray = response["recovery_codes"].toArray();
+    int signUpSuccess = response["sign_up_success"].toInt();
 
-    if (success && !qrCodeData.isEmpty()) {
-        // QR 코드를 UI에 표시 (여기서는 간단히 메시지로 표시)
-        QMessageBox::information(this, "OTP 설정",
-                                 "QR 코드가 생성되었습니다.\n"
-                                 "OTP 앱으로 QR 코드를 스캔한 후 인증번호를 입력해주세요.\n\n"
-                                 "QR 코드 데이터: " + qrCodeData);
+    if (signUpSuccess == 1 && !svgData.isEmpty()) {
+        QSvgRenderer svgRenderer(svgData.toUtf8());
+        QPixmap pixmap(200, 200); // frame 크기와 동일
+        pixmap.fill(Qt::transparent);
+        QPainter painter(&pixmap);
+        svgRenderer.render(&painter);
 
-        // 실제로는 QR 코드 이미지를 frame에 표시해야 함
-        // TODO: QR 코드 이미지 표시 구현
+        // QR코드 라벨 생성 및 표시
+        QFrame *frame = ui->OTPSignUp->findChild<QFrame*>("frame");
+        if (frame) {
+            // 기존 라벨 제거
+            QLabel *oldLabel = frame->findChild<QLabel*>("qrCodeLabel");
+            if (oldLabel) delete oldLabel;
 
+            QLabel *qrLabel = new QLabel(frame);
+            qrLabel->setObjectName("qrCodeLabel");
+            qrLabel->setPixmap(pixmap);
+            qrLabel->setGeometry(0, 0, 211, 201); // frame 내부 좌표
+            qrLabel->setAlignment(Qt::AlignCenter);
+            qrLabel->show();
+        }
+
+        // 복구코드 라벨 생성 및 표시
+        QStringList codeList;
+        for (const QJsonValue &v : recoveryCodesArray)
+            codeList << v.toString();
+
+        QLabel *oldRecovery = ui->OTPSignUp->findChild<QLabel*>("recoveryLabel");
+        if (oldRecovery) delete oldRecovery;
+
+        QLabel *recoveryLabel = new QLabel(ui->OTPSignUp);
+        recoveryLabel->setObjectName("recoveryLabel");
+        recoveryLabel->setText("복구 코드:\n" + codeList.join("\n"));
+        recoveryLabel->setStyleSheet("color: #333; font-size: 13px; background: #f5f5f5; border: 1px solid #ccc; border-radius: 6px; padding: 6px;");
+        recoveryLabel->setGeometry(60, 320, 211, 70); // frame 아래, lineEdit 위
+        recoveryLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+        recoveryLabel->show();
+
+        QMessageBox::information(this, "OTP 설정", "QR코드를 OTP 앱으로 스캔하고, 복구 코드를 안전하게 보관하세요.");
     } else {
-        QMessageBox::warning(this, "QR 코드 생성 실패", message.isEmpty() ? "QR 코드 생성에 실패했습니다." : message);
-        // 일반 회원가입 페이지로 돌아가기
-        ui->OTPLoginWidget_3->setCurrentIndex(0); // SignUpPage
+        QMessageBox::warning(this, "QR 코드 생성 실패", "QR 코드 생성에 실패했습니다.");
+        ui->OTPLoginWidget_3->setCurrentIndex(0); // SignUpPage로 복귀
     }
 }

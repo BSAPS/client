@@ -53,3 +53,5 @@ QMAKE_CXXFLAGS += -Wno-unused-parameter
 
 FORMS += \
     LoginWindow.ui
+
+QT += svg

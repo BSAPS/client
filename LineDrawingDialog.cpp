@@ -488,6 +488,12 @@ void VideoGraphicsView::setBBoxes(const QList<BBox> &bboxes, qint64 timestamp)
     double scaleY = static_cast<double>(m_currentViewSize.height()) / m_originalVideoSize.height();
 
     for (const BBox &bbox : bboxes) {
+        // Vehicle과 Human(Person) 타입만 필터링
+        QString lowerType = bbox.type.toLower();
+        if (lowerType != "vehical" && lowerType != "person" && lowerType != "human") {
+            continue; // 다른 타입은 건너뛰기
+        }
+        
         // 좌표 스케일 변환
         QRectF scaledRect(
             bbox.rect.x() * scaleX,
@@ -505,8 +511,8 @@ void VideoGraphicsView::setBBoxes(const QList<BBox> &bboxes, qint64 timestamp)
         m_scene->addItem(rectItem);
         m_bboxRectItems.append(rectItem);
 
-        // 텍스트 아이템 생성 (타입과 신뢰도 표시)
-        QString labelText = QString("%1 (%.2f)").arg(bbox.type).arg(bbox.confidence);
+        // 텍스트 아이템 생성 (타입과 신뢰도 표시 - 백분율로 표시)
+        QString labelText = QString("%1 (%2%)").arg(bbox.type).arg(static_cast<int>(bbox.confidence * 100));
         QGraphicsTextItem* textItem = new QGraphicsTextItem(labelText);
         
         // 텍스트 스타일 설정
@@ -1766,13 +1772,23 @@ void LineDrawingDialog::onBBoxesReceived(const QList<BBox> &bboxes, qint64 times
         
         // 로그 메시지 추가
         if (bboxes.isEmpty()) {
-            addLogMessage("📦 BBox 업데이트 - 감지된 객체가 없습니다.", "BBOX");
+            //addLogMessage("📦 BBox 업데이트 - 감지된 객체가 없습니다.", "BBOX");
         } else {
             QString objectList;
+            int filteredCount = 0;
             for (const BBox &bbox : bboxes) {
-                objectList += QString("%1(%.2f) ").arg(bbox.type).arg(bbox.confidence);
+                // Vehicle과 Human(Person) 타입만 로그에 표시
+                QString lowerType = bbox.type.toLower();
+                if (lowerType == "vehicle" || lowerType == "person" || lowerType == "human") {
+                    objectList += QString("%1(%2%) ").arg(bbox.type).arg(static_cast<int>(bbox.confidence * 100));
+                    filteredCount++;
+                }
             }
-            addLogMessage(QString("📦 BBox 업데이트 - %1개 객체: %2").arg(bboxes.size()).arg(objectList.trimmed()), "BBOX");
+            if (filteredCount > 0) {
+                //addLogMessage(QString("📦 BBox 업데이트 - %1개 객체 (Vehicle/Human만): %2").arg(filteredCount).arg(objectList.trimmed()), "BBOX");
+            } else {
+                //addLogMessage("📦 BBox 업데이트 - Vehicle/Human 객체가 없습니다.", "BBOX");
+            }
         }
     } else {
         qDebug() << "[LineDrawingDialog] VideoView가 null입니다. BBox를 표시할 수 없습니다.";
@@ -1787,15 +1803,20 @@ void LineDrawingDialog::onBBoxOnClicked()
     m_bboxOnButton->setEnabled(false);
     m_bboxOffButton->setEnabled(true);
     
-    addLogMessage("📦 BBox ON - 객체 감지 표시가 활성화되었습니다.", "ACTION");
+    addLogMessage("BBox ON - 객체 감지 표시가 활성화되었습니다.", "ACTION");
     
-    // 서버에 BBox 활성화 요청을 보낼 수 있습니다 (필요시)
-    // if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
-    //     QJsonObject bboxRequest;
-    //     bboxRequest["request_id"] = 201;
-    //     bboxRequest["bbox_enabled"] = true;
-    //     m_tcpCommunicator->sendJsonMessage(bboxRequest);
-    // }
+    // 서버에 BBox 활성화 요청
+    if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
+        QJsonObject bboxRequest;
+        bboxRequest["request_id"] = 31;  // BBox 활성화
+        bboxRequest["bbox_enabled"] = true;
+        bool success = m_tcpCommunicator->sendJsonMessage(bboxRequest);
+        if (success) {
+            qDebug() << "[BBox] ON 요청 전송 성공 (request_id: 31)";
+        } else {
+            qDebug() << "[BBox] ON 요청 전송 실패";
+        }
+    }
 }
 
 // BBox OFF 버튼 클릭 슬롯
@@ -1810,13 +1831,18 @@ void LineDrawingDialog::onBBoxOffClicked()
         m_videoView->clearBBoxes();
     }
     
-    addLogMessage("📦 BBox OFF - 객체 감지 표시가 비활성화되었습니다.", "ACTION");
+    addLogMessage("BBox OFF - 객체 감지 표시가 비활성화되었습니다.", "ACTION");
     
-    // 서버에 BBox 비활성화 요청을 보낼 수 있습니다 (필요시)
-    // if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
-    //     QJsonObject bboxRequest;
-    //     bboxRequest["request_id"] = 201;
-    //     bboxRequest["bbox_enabled"] = false;
-    //     m_tcpCommunicator->sendJsonMessage(bboxRequest);
-    // }
+    // 서버에 BBox 비활성화 요청
+    if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
+        QJsonObject bboxRequest;
+        bboxRequest["request_id"] = 32;  // BBox 비활성화
+        bboxRequest["bbox_enabled"] = false;
+        bool success = m_tcpCommunicator->sendJsonMessage(bboxRequest);
+        if (success) {
+            qDebug() << "[BBox] OFF 요청 전송 성공 (request_id: 32)";
+        } else {
+            qDebug() << "[BBox] OFF 요청 전송 실패";
+        }
+    }
 }

@@ -813,9 +813,13 @@ void TcpCommunicator::stopReconnectTimer()
 
 void TcpCommunicator::processJsonMessage(const QJsonObject &jsonObj)
 {
+    // request_id 또는 response_id 확인 (서버 호환성)
     int requestId = jsonObj["request_id"].toInt();
+    if (requestId == 0) {
+        requestId = jsonObj["response_id"].toInt();
+    }
 
-    qDebug() << "[TCP] JSON 메시지 처리 - request_id:" << requestId;
+    qDebug() << "[TCP] JSON 메시지 처리 - request_id/response_id:" << requestId;
 
     // 로그인 관련 응답 처리 (request_id: 8-12)
     // if (requestId >= 8 && requestId <= 12) {

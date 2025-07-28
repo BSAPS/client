@@ -27,7 +27,7 @@ QDialog {
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="page_3">
     <widget class="QLabel" name="BackgroundLabel">
@@ -43,7 +43,7 @@ QDialog {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap resource="resources.qrc">:/images/Background3.png</pixmap>
+      <pixmap>:/images/Background3.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -327,7 +327,7 @@ QPushButton {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap resource="resources.qrc">:/images/Background4.png</pixmap>
+      <pixmap>:/images/Background4.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -343,7 +343,7 @@ QPushButton {
       </rect>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="SignUpPage">
       <widget class="QFrame" name="SignUp">
@@ -637,8 +637,6 @@ QPushButton {
    </widget>
   </widget>
  </widget>
- <resources>
-  <include location="resources.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

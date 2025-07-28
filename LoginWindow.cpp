@@ -15,10 +15,6 @@
 #include <QByteArray>
 #include <QRegularExpression>
 
-// .env 파일에서 값 로드
-static QString m_tcpHost = EnvConfig::getValue("TCP_HOST", "192.168.0.81");
-static quint16 m_tcpPort = EnvConfig::getIntValue("TCP_PORT", 8080);
-
 LoginWindow::LoginWindow(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui_LoginWindow)
@@ -33,6 +29,12 @@ LoginWindow::LoginWindow(QWidget *parent)
 
     // .env 파일 로드
     EnvConfig::loadFromFile();
+    
+    // 네트워크 설정 초기화
+    m_tcpHost = EnvConfig::getValue("TCP_HOST", "192.168.0.81");
+    m_tcpPort = EnvConfig::getValue("TCP_PORT", "8080").toUInt();
+    
+    qDebug() << "[LoginWindow] .env 설정 로드 - TCP_HOST:" << m_tcpHost << "TCP_PORT:" << m_tcpPort;
 
     ui->setupUi(this);
 
@@ -240,7 +242,7 @@ void LoginWindow::setupTcpCommunication()
             this, &LoginWindow::onTcpMessageReceived);
 
     // 서버 연결 시도
-    qDebug() << "[LoginWindow] 서버 연결 시도: 192.168.0.81:8080";
+    qDebug() << "[LoginWindow] 서버 연결 시도:" << m_tcpHost << ":" << m_tcpPort;
     m_tcpCommunicator->connectToServer(m_tcpHost, m_tcpPort);
 
     // 연결 상태 업데이트

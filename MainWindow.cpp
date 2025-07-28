@@ -61,9 +61,9 @@ MainWindow::MainWindow(QWidget *parent)
     , m_statusLabel(nullptr)
     , m_modeComboBox(nullptr)
     , m_networkButton(nullptr)
-    , m_rtspUrl(EnvConfig::getValue("RTSP_URL", "rtsp://192.168.0.81:8554/retransmit"))
-    , m_tcpHost(EnvConfig::getValue("TCP_HOST", "192.168.0.81"))
-    , m_tcpPort(EnvConfig::getValue("TCP_PORT", "8080").toInt())
+    , m_rtspUrl("")  // 빈 문자열로 초기화
+    , m_tcpHost("")  // 빈 문자열로 초기화
+    , m_tcpPort(0)   // 0으로 초기화
     , m_isConnected(false)
     , m_tcpCommunicator(nullptr)
     , m_networkManager(nullptr)
@@ -75,6 +75,13 @@ MainWindow::MainWindow(QWidget *parent)
 {
     // .env 파일 로드
     EnvConfig::loadFromFile(".env");
+    
+    // .env에서 네트워크 설정 로드
+    m_rtspUrl = EnvConfig::getValue("RTSP_URL", "rtsp://192.168.0.81:8554/retransmit");
+    m_tcpHost = EnvConfig::getValue("TCP_HOST", "192.168.0.81");
+    m_tcpPort = EnvConfig::getValue("TCP_PORT", "8080").toInt();
+    
+    qDebug() << "[MainWindow] .env 설정 로드됨 - RTSP:" << m_rtspUrl << "TCP:" << m_tcpHost << ":" << m_tcpPort;
 
     // 선택된 날짜 초기화
     m_selectedDate = QDate::currentDate();

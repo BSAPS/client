@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "LineDrawingDialog.h"
 #include "NetworkConfigDialog.h"
+#include "EnvConfig.h"
 #include <QApplication>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -60,9 +61,9 @@ MainWindow::MainWindow(QWidget *parent)
     , m_statusLabel(nullptr)
     , m_modeComboBox(nullptr)
     , m_networkButton(nullptr)
-    , m_rtspUrl("rtsp://192.168.0.81:8554/retransmit")
-    , m_tcpHost("192.168.0.81")
-    , m_tcpPort(8080)
+    , m_rtspUrl(EnvConfig::getValue("RTSP_URL", "rtsp://192.168.0.81:8554/retransmit"))
+    , m_tcpHost(EnvConfig::getValue("TCP_HOST", "192.168.0.81"))
+    , m_tcpPort(EnvConfig::getValue("TCP_PORT", "8080").toInt())
     , m_isConnected(false)
     , m_tcpCommunicator(nullptr)
     , m_networkManager(nullptr)
@@ -72,6 +73,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_networkDialog(nullptr)
     , m_lineDrawingDialog(nullptr)
 {
+    // .env 파일 로드
+    EnvConfig::loadFromFile(".env");
 
     // 선택된 날짜 초기화
     m_selectedDate = QDate::currentDate();

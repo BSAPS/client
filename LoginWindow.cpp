@@ -2,6 +2,7 @@
 #include "ui_LoginWindow.h"
 #include "MainWindow.h"
 #include "TcpCommunicator.h"
+#include "EnvConfig.h"
 #include <QApplication>
 #include <QMessageBox>
 #include <QDebug>
@@ -14,9 +15,9 @@
 #include <QByteArray>
 #include <QRegularExpression>
 
-// 전역(파일 상단)에서 TCP 서버 정보 변수 선언
-static QString m_tcpHost = "192.168.0.34";
-static quint16 m_tcpPort = 8080;
+// .env 파일에서 값 로드
+static QString m_tcpHost = EnvConfig::getValue("TCP_HOST", "192.168.0.81");
+static quint16 m_tcpPort = EnvConfig::getIntValue("TCP_PORT", 8080);
 
 LoginWindow::LoginWindow(QWidget *parent)
     : QDialog(parent)
@@ -29,6 +30,9 @@ LoginWindow::LoginWindow(QWidget *parent)
     , m_connectionTimer(nullptr)
 {
     qDebug() << "[LoginWindow] 생성자 시작";
+
+    // .env 파일 로드
+    EnvConfig::loadFromFile();
 
     ui->setupUi(this);
 

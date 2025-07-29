@@ -1100,21 +1100,21 @@ void LineDrawingDialog::setupUI()
     m_buttonLayout = new QHBoxLayout();
 
     QPushButton *loadSavedLinesButton = new QPushButton("저장된 선 불러오기");
-    loadSavedLinesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+    loadSavedLinesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
                                         "QPushButton:hover { background-color: #f89b6c; }"
                                         "QPushButton:disabled { background-color: #b3aca5; }");
     connect(loadSavedLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onLoadSavedLinesClicked);
     m_buttonLayout->addWidget(loadSavedLinesButton);
 
     m_startDrawingButton = new QPushButton("그리기 시작");
-    m_startDrawingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+    m_startDrawingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
                                         "QPushButton:hover { background-color: #f89b6c; }"
                                         "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_startDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStartDrawingClicked);
     m_buttonLayout->addWidget(m_startDrawingButton);
 
     m_stopDrawingButton = new QPushButton("그리기 중지");
-    m_stopDrawingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+    m_stopDrawingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
                                        "QPushButton:hover { background-color: #f89b6c; }"
                                        "QPushButton:disabled { background-color: #b3aca5; }");
     m_stopDrawingButton->setEnabled(false);
@@ -1122,14 +1122,14 @@ void LineDrawingDialog::setupUI()
     m_buttonLayout->addWidget(m_stopDrawingButton);
 
     m_clearLinesButton = new QPushButton("선 지우기");
-    m_clearLinesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+    m_clearLinesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
                                       "QPushButton:hover { background-color: #e68900; }"
                                       "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_clearLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onClearLinesClicked);
     m_buttonLayout->addWidget(m_clearLinesButton);
 
     m_sendCoordinatesButton = new QPushButton("좌표 전송");
-    m_sendCoordinatesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+    m_sendCoordinatesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
                                            "QPushButton:hover { background-color: #f89b6c; }"
                                            "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_sendCoordinatesButton, &QPushButton::clicked, this, &LineDrawingDialog::onSendCoordinatesClicked);
@@ -1137,14 +1137,14 @@ void LineDrawingDialog::setupUI()
 
     // BBox 관련 버튼들
     m_bboxOnButton = new QPushButton("BBox ON");
-    m_bboxOnButton->setStyleSheet("QPushButton { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+    m_bboxOnButton->setStyleSheet("QPushButton { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
                                   "QPushButton:hover { background-color: #218838; }"
                                   "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_bboxOnButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOnClicked);
     m_buttonLayout->addWidget(m_bboxOnButton);
 
     m_bboxOffButton = new QPushButton("BBox OFF");
-    m_bboxOffButton->setStyleSheet("QPushButton { background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+    m_bboxOffButton->setStyleSheet("QPushButton { background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
                                    "QPushButton:hover { background-color: #c82333; }"
                                    "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_bboxOffButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOffClicked);
@@ -1153,7 +1153,7 @@ void LineDrawingDialog::setupUI()
     m_buttonLayout->addStretch();
 
     m_closeButton = new QPushButton("닫기");
-    m_closeButton->setStyleSheet("QPushButton { background-color: #9E9E9E; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+    m_closeButton->setStyleSheet("QPushButton { background-color: #9E9E9E; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
                                  "QPushButton:hover { background-color: #757575; }");
     connect(m_closeButton, &QPushButton::clicked, this, &QDialog::reject);
     m_buttonLayout->addWidget(m_closeButton);

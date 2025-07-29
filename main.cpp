@@ -2,6 +2,7 @@
 #include <QStyleFactory>
 #include <QDir>
 #include <QDebug>
+#include <QFontDatabase>
 #include "LoginWindow.h"
 #include "MainWindow.h"
 
@@ -16,6 +17,13 @@ int main(int argc, char *argv[])
 
     // 스타일 설정
     app.setStyle(QStyleFactory::create("Fusion"));
+
+    //폰트 적용
+    int fontId = QFontDatabase::addApplicationFont(":/font/ChosunGu.TTF");
+    QString family = QFontDatabase::applicationFontFamilies(fontId).at(0);
+    QFont customFont(family);
+    app.setFont(customFont);
+    customFont.setBold(true);
 
     // 다크 테마 스타일 적용
     app.setStyle(QStyleFactory::create("Fusion"));

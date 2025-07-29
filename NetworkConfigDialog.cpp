@@ -29,7 +29,7 @@ void NetworkConfigDialog::setupUI()
     
     // 제목
     QLabel *titleLabel = new QLabel("Network Connection Settings");
-    titleLabel->setStyleSheet("font-size: 16px; font-weight: bold; color: #F37321; padding: 5px;");
+    titleLabel->setStyleSheet("font-size: 16pt; font-weight: bold; color: #F37321; padding: 5px;");
     titleLabel->setMaximumHeight(80);
     titleLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(titleLabel);

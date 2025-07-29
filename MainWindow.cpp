@@ -59,7 +59,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_hourSpinBox(nullptr)
     , m_requestButton(nullptr)
     , m_statusLabel(nullptr)
-    , m_modeComboBox(nullptr)
     , m_networkButton(nullptr)
     , m_rtspUrl("")  // 빈 문자열로 초기화
     , m_tcpHost("")  // 빈 문자열로 초기화
@@ -215,7 +214,7 @@ void MainWindow::setupUI()
     setupLiveVideoTab();
     setupCapturedImageTab();
 
-    connect(m_tabWidget, &QTabWidget::currentChanged, this, &MainWindow::onTabChanged);
+
 
     contentLayout->addWidget(m_tabWidget, 3);
 
@@ -248,7 +247,7 @@ void MainWindow::setupLiveVideoTab()
     layout->addWidget(m_videoStreamWidget);
 
     m_streamingButton = new QPushButton("Start Streaming");
-    m_streamingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+    m_streamingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt} "
                                      "QPushButton:hover { background-color: #C8C8C8; } "
                                      "QPushButton:disabled { background-color: #837F7D; }");
     connect(m_streamingButton, &QPushButton::clicked, this, &MainWindow::onStreamingButtonClicked);
@@ -339,7 +338,9 @@ void MainWindow::setupCapturedImageTab()
     controlLayout->addSpacing(20);
 
     m_requestButton = new QPushButton("이미지 요청");
-    m_requestButton->setStyleSheet("QPushButton { background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #45a049; } QPushButton:disabled { background-color: #cccccc; }");
+    m_requestButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt} "
+                                   "QPushButton:hover { background-color: #f89b6c; } "
+                                   "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_requestButton, &QPushButton::clicked, this, &MainWindow::onRequestImagesClicked);
     controlLayout->addWidget(m_requestButton);
 
@@ -373,18 +374,6 @@ void MainWindow::setupCapturedImageTab()
     m_tabWidget->addTab(m_capturedImageTab, "Captured Images");
 }
 
-void MainWindow::setupWarningButtons()
-{
-    for (int i = 0; i < 4; ++i) {
-        QPushButton *button = new QPushButton(QString("Warning %1 (OFF)").arg(i + 1));
-        button->setFixedHeight(50);
-        button->setProperty("warningIndex", i);
-        connect(button, &QPushButton::clicked, this, &MainWindow::onWarningButtonClicked);
-        m_warningButtons.append(button);
-    }
-
-    updateWarningButtonStyles();
-}
 
 void MainWindow::setupNetworkConnection()
 {
@@ -437,23 +426,6 @@ void MainWindow::applyStyles()
     setStyleSheet("QMainWindow { background-color: #292d41; }");
 }
 
-QString MainWindow::getWarningButtonStyle(bool isActive)
-{
-    if (isActive) {
-        return "QPushButton { background-color: #cf5e2d; color: white; padding: 15px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #b54d26; }";
-    } else {
-        return "QPushButton { background-color: #b4afb9; color: white; padding: 15px; border: none; border-radius: 5px; font-weight: bold; } QPushButton:hover { background-color: #a09ca7; }";
-    }
-}
-
-void MainWindow::updateWarningButtonStyles()
-{
-    for (int i = 0; i < m_warningButtons.size(); ++i) {
-        bool isActive = m_warningStates[i];
-        m_warningButtons[i]->setStyleSheet(getWarningButtonStyle(isActive));
-        m_warningButtons[i]->setText(QString("Warning %1 (%2)").arg(i + 1).arg(isActive ? "ON" : "OFF"));
-    }
-}
 
 void MainWindow::clearImageGrid()
 {
@@ -518,34 +490,6 @@ void MainWindow::displayImages(const QList<ImageData> &images)
     m_imageGridWidget->adjustSize();
 }
 
-void MainWindow::onTabChanged(int index)
-{
-    if (index == 1) {
-        m_modeComboBox->setVisible(false);
-        for (QPushButton *button : m_warningButtons) {
-            button->setVisible(false);
-        }
-    } else {
-        m_modeComboBox->setVisible(true);
-        for (QPushButton *button : m_warningButtons) {
-            button->setVisible(true);
-        }
-    }
-}
-
-void MainWindow::onWarningButtonClicked()
-{
-    QPushButton *button = qobject_cast<QPushButton*>(sender());
-    if (!button) return;
-
-    int index = button->property("warningIndex").toInt();
-
-    m_warningStates[index] = !m_warningStates[index];
-
-    updateWarningButtonStyles();
-
-    qDebug() << QString("Warning %1 상태 변경: %2").arg(index + 1).arg(m_warningStates[index] ? "ON" : "OFF");
-}
 
 void MainWindow::onNetworkConfigClicked()
 {
@@ -695,7 +639,7 @@ void MainWindow::onStreamingButtonClicked()
         if (m_videoStreamWidget->isStreaming()) {
             m_videoStreamWidget->stopStream();
             m_streamingButton->setText("Start Streaming");
-            m_streamingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+            m_streamingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt} "
                                              "QPushButton:hover { background-color: #f37321; }");
         } else {
             if (m_rtspUrl.isEmpty()) {
@@ -705,7 +649,7 @@ void MainWindow::onStreamingButtonClicked()
 
             m_videoStreamWidget->startStream(m_rtspUrl);
             m_streamingButton->setText("Stop Streaming");
-            m_streamingButton->setStyleSheet("QPushButton { background-color: #A5A09E; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+            m_streamingButton->setStyleSheet("QPushButton { background-color: #A5A09E; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt} "
                                              "QPushButton:hover { background-color: #A5A09E; }");
         }
     }
@@ -838,7 +782,7 @@ void MainWindow::onStreamError(const QString &error)
 
     if (m_streamingButton) {
         m_streamingButton->setText("Start Streaming");
-        m_streamingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; } "
+        m_streamingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt} "
                                          "QPushButton:hover { background-color: #f37321; }");
     }
 }

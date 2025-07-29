@@ -109,6 +109,11 @@ QLabel {
           <height>20</height>
          </rect>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>ID</string>
         </property>
@@ -131,6 +136,11 @@ QLabel {
           <width>100</width>
           <height>20</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Password</string>
@@ -377,7 +387,7 @@ QPushButton {
       </rect>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="SignUpPage">
       <widget class="QFrame" name="SignUp">
@@ -429,6 +439,11 @@ QLabel {
           <height>20</height>
          </rect>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
         <property name="styleSheet">
          <string notr="true">color: rgb(104, 109, 127);</string>
         </property>
@@ -464,6 +479,11 @@ QLabel {
           <height>20</height>
          </rect>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
         <property name="styleSheet">
          <string notr="true">color: rgb(104, 109, 127);</string>
         </property>
@@ -490,6 +510,12 @@ QLabel {
           <height>40</height>
          </rect>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+          <bold>true</bold>
+         </font>
+        </property>
         <property name="styleSheet">
          <string notr="true">
 QPushButton {
@@ -513,11 +539,16 @@ QPushButton {
           <height>20</height>
          </rect>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
         <property name="styleSheet">
          <string notr="true">color: rgb(104, 109, 127);</string>
         </property>
         <property name="text">
-         <string>Password</string>
+         <string>Password 확인</string>
         </property>
        </widget>
        <widget class="QLineEdit" name="pwLineEdit_4">
@@ -535,9 +566,14 @@ QPushButton {
          <rect>
           <x>40</x>
           <y>360</y>
-          <width>141</width>
+          <width>181</width>
           <height>24</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
         </property>
         <property name="styleSheet">
          <string notr="true">QCheckBox {
@@ -618,6 +654,12 @@ QLabel {
           <width>120</width>
           <height>40</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+          <bold>true</bold>
+         </font>
         </property>
         <property name="styleSheet">
          <string notr="true">

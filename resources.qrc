@@ -9,7 +9,7 @@
         <file>images/SIGNUP_.png</file>
         <file>images/SignUp_fin.png</file>
         <file>ca-cert.crt</file>
-        <file>images/Background3.png</file>
         <file>font/ChosunGu.TTF</file>
+        <file>images/Background3.png</file>
     </qresource>
 </RCC>

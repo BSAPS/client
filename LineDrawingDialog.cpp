@@ -944,7 +944,7 @@ void LineDrawingDialog::setupUI()
     // 컴팩트한 헤더와 카테고리 선택 영역
     QWidget *headerWidget = new QWidget();
     headerWidget->setFixedHeight(80);
-    headerWidget->setStyleSheet("background-color: #f8f9fa; padding: 8px; border-radius: 6px; margin-bottom: 8px;");
+    headerWidget->setStyleSheet("background-color: #f8f9fa; padding: 8px;  margin-bottom: 8px;");
     QVBoxLayout *headerLayout = new QVBoxLayout(headerWidget);
     headerLayout->setContentsMargins(10, 5, 10, 5);
     headerLayout->setSpacing(5);
@@ -1035,7 +1035,7 @@ void LineDrawingDialog::setupUI()
     QWidget *logContainer = new QWidget();
     logContainer->setMinimumWidth(350);
     logContainer->setMaximumWidth(400);
-    logContainer->setStyleSheet("background-color: #d2d8df; border-radius: 8px;");
+    logContainer->setStyleSheet("background-color: #d2d8df; ");
 
     QVBoxLayout *logLayout = new QVBoxLayout(logContainer);
     logLayout->setContentsMargins(10, 10, 10, 10);
@@ -1057,7 +1057,6 @@ void LineDrawingDialog::setupUI()
     m_logTextEdit->setStyleSheet(
         "QTextEdit { "
         "background-color: white; "
-        "border-radius: 5px; "
         "padding: 8px; "
         "font-family: 'Consolas', 'Monaco', monospace; "
         "font-size: 11px; "

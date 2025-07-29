@@ -105,7 +105,7 @@ void LoginWindow::setupConnectionStatusLabel()
         "    background-color: transparent;"
         "}"
         );
-    m_connectionStatusLabel->setGeometry(40, 300, 200, 15); // 로그인 버튼 아래
+    m_connectionStatusLabel->setGeometry(40, 285, 200, 15); // 로그인 버튼 아래
     m_connectionStatusLabel->show();
 }
 
@@ -679,7 +679,7 @@ void LoginWindow::onTcpDisconnected()
 
     // 사용자에게 알림 (한 번만)
     static bool disconnectNotified = false;
-    if (!disconnectNotified) {
+    if (!disconnectNotified && this->isVisible()) {
         QMessageBox::warning(this, "연결 해제", "서버와의 연결이 끊어졌습니다.\n자동으로 재연결을 시도합니다.");
         disconnectNotified = true;
 

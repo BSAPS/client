@@ -5,6 +5,7 @@
 #include <QFontDatabase>
 #include "LoginWindow.h"
 #include "MainWindow.h"
+#include "TcpCommunicator.h"
 
 int main(int argc, char *argv[])
 {
@@ -43,14 +44,24 @@ int main(int argc, char *argv[])
     darkPalette.setColor(QPalette::HighlightedText, Qt::black);
     app.setPalette(darkPalette);
 
+    // 공유 TcpCommunicator 생성
+    TcpCommunicator *sharedTcpCommunicator = new TcpCommunicator();
+
     // 로그인 창 생성 및 표시
     LoginWindow loginWindow;
+    
+    // LoginWindow에 공유 TcpCommunicator 설정
+    loginWindow.setTcpCommunicator(sharedTcpCommunicator);
 
     // 로그인 성공 시 메인 창으로 전환
     QObject::connect(&loginWindow, &LoginWindow::loginSuccessful, [&]() {
         qDebug() << "로그인 성공 - 메인 창 표시";
 
         MainWindow *mainWindow = new MainWindow();
+        
+        // MainWindow에도 동일한 TcpCommunicator 설정
+        mainWindow->setTcpCommunicator(sharedTcpCommunicator);
+        
         mainWindow->show();
 
         qDebug() << "메인 창이 표시되었습니다.";
@@ -62,6 +73,7 @@ int main(int argc, char *argv[])
         return app.exec();
     } else {
         qDebug() << "로그인이 취소되었습니다.";
+        delete sharedTcpCommunicator; // 로그인 실패 시 정리
         return 0;
     }
 }

@@ -128,7 +128,11 @@ class LineDrawingDialog : public QDialog
 
 public:
     explicit LineDrawingDialog(const QString &rtspUrl, QWidget *parent = nullptr);
+    explicit LineDrawingDialog(const QString &rtspUrl, TcpCommunicator* tcpCommunicator, QWidget *parent = nullptr);
     ~LineDrawingDialog();
+
+    // TCP 통신기 설정 메서드
+    void setTcpCommunicator(TcpCommunicator* communicator);
 
 signals:
     void lineCoordinatesReady(int x1, int y1, int x2, int y2);

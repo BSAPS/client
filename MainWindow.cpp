@@ -134,7 +134,7 @@ void MainWindow::setupUI()
     // 헤더 영역
     QHBoxLayout *headerLayout = new QHBoxLayout();
 
-    QLabel *titleLabel = new QLabel("CCTV Remote Monitoring System");
+    QLabel *titleLabel = new QLabel("CCTV Monitoring System");
     titleLabel->setStyleSheet("color: #F37321; font-size: 24px; font-weight: bold;");
     headerLayout->addWidget(titleLabel);
 

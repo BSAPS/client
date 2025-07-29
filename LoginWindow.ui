@@ -27,7 +27,7 @@ QDialog {
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="page_3">
     <widget class="QLabel" name="BackgroundLabel">
@@ -59,7 +59,7 @@ QDialog {
       </rect>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="LgoinPage">
       <widget class="QFrame" name="Login">

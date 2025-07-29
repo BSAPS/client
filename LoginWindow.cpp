@@ -78,11 +78,12 @@ LoginWindow::~LoginWindow()
 {
     qDebug() << "[LoginWindow] 소멸자 호출";
 
-    if (m_tcpCommunicator) {
-        m_tcpCommunicator->disconnectFromServer();
-        m_tcpCommunicator->deleteLater();
-        m_tcpCommunicator = nullptr;
-    }
+    // TcpCommunicator는 공유 객체이므로 삭제하지 않음
+    // if (m_tcpCommunicator) {
+    //     m_tcpCommunicator->disconnectFromServer();
+    //     m_tcpCommunicator->deleteLater();
+    //     m_tcpCommunicator = nullptr;
+    // }
 
     if (m_connectionTimer) {
         m_connectionTimer->stop();
@@ -91,6 +92,61 @@ LoginWindow::~LoginWindow()
     delete ui;
 
     qDebug() << "[LoginWindow] 소멸자 완료";
+}
+
+// 화면 상태 확인 메서드들
+bool LoginWindow::isLoginWindowVisible() const
+{
+    return isVisible();
+}
+
+bool LoginWindow::isLoginWindowHidden() const
+{
+    return isHidden();
+}
+
+QString LoginWindow::getLoginWindowStatus() const
+{
+    if (isVisible()) {
+        return "LoginWindow가 현재 표시되고 있습니다.";
+    } else {
+        return "LoginWindow가 숨겨져 있습니다.";
+    }
+}
+
+// TCP 통신기 공유 메서드들
+TcpCommunicator* LoginWindow::getTcpCommunicator() const
+{
+    return m_tcpCommunicator;
+}
+
+void LoginWindow::setTcpCommunicator(TcpCommunicator* communicator)
+{
+    // 기존 연결 해제
+    if (m_tcpCommunicator && m_tcpCommunicator != communicator) {
+        disconnect(m_tcpCommunicator, &TcpCommunicator::connected,
+                  this, &LoginWindow::onTcpConnected);
+        disconnect(m_tcpCommunicator, &TcpCommunicator::disconnected,
+                  this, &LoginWindow::onTcpDisconnected);
+        disconnect(m_tcpCommunicator, &TcpCommunicator::errorOccurred,
+                  this, &LoginWindow::onTcpError);
+        disconnect(m_tcpCommunicator, &TcpCommunicator::messageReceived,
+                  this, &LoginWindow::onTcpMessageReceived);
+    }
+
+    m_tcpCommunicator = communicator;
+
+    // 새로운 통신기에 시그널 연결
+    if (m_tcpCommunicator) {
+        connect(m_tcpCommunicator, &TcpCommunicator::connected,
+                this, &LoginWindow::onTcpConnected);
+        connect(m_tcpCommunicator, &TcpCommunicator::disconnected,
+                this, &LoginWindow::onTcpDisconnected);
+        connect(m_tcpCommunicator, &TcpCommunicator::errorOccurred,
+                this, &LoginWindow::onTcpError);
+        connect(m_tcpCommunicator, &TcpCommunicator::messageReceived,
+                this, &LoginWindow::onTcpMessageReceived);
+    }
 }
 
 void LoginWindow::setupConnectionStatusLabel()

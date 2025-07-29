@@ -687,13 +687,95 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     QTimer::singleShot(500, this, &LineDrawingDialog::startVideoStream);
 }
 
+LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, TcpCommunicator* tcpCommunicator, QWidget *parent)
+    : QDialog(parent)
+    , m_mappingCountLabel(nullptr)
+    , m_sendMappingsButton(nullptr)
+    , m_mainLayout(nullptr)
+    , m_buttonLayout(nullptr)
+    , m_videoView(nullptr)
+    , m_startDrawingButton(nullptr)
+    , m_stopDrawingButton(nullptr)
+    , m_clearLinesButton(nullptr)
+    , m_sendCoordinatesButton(nullptr)
+    , m_closeButton(nullptr)
+    , m_statusLabel(nullptr)
+    , m_frameCountLabel(nullptr)
+    , m_logTextEdit(nullptr)
+    , m_logCountLabel(nullptr)
+    , m_clearLogButton(nullptr)
+    , m_mediaPlayer(nullptr)
+    , m_audioOutput(nullptr)
+    , m_rtspUrl(rtspUrl)
+    , m_drawnLines()
+    , m_isDrawingMode(false)
+    , m_frameTimer(nullptr)
+    , m_frameCount(0)
+    , m_currentCategory(LineCategory::ROAD_DEFINITION)
+    , m_selectedRoadLineIndex(-1)
+    , m_roadLineSelectionMode(false)
+    , m_tcpCommunicator(tcpCommunicator)
+    , m_bboxEnabled(false)
+    , m_roadLinesLoaded(false)
+    , m_detectionLinesLoaded(false)
+{
+    setWindowTitle("기준선 그리기");
+    setModal(true);
+    resize(1200, 700);
+
+    setupUI();
+    setupMediaPlayer();
+
+    // 좌표별 클릭 연결
+    connect(m_videoView, &VideoGraphicsView::coordinateClicked, this, &LineDrawingDialog::onCoordinateClicked);
+
+    // TCP 통신 설정 및 저장된 선 데이터 요청
+    setupTcpConnection();
+
+    // 비디오 스트림 시작
+    QTimer::singleShot(500, this, &LineDrawingDialog::startVideoStream);
+}
+
+// TCP 통신기 설정 메서드
+void LineDrawingDialog::setTcpCommunicator(TcpCommunicator* communicator)
+{
+    // 기존 연결 해제
+    if (m_tcpCommunicator && m_tcpCommunicator != communicator) {
+        disconnect(m_tcpCommunicator, &TcpCommunicator::savedRoadLinesReceived,
+                  this, &LineDrawingDialog::onSavedRoadLinesReceived);
+        disconnect(m_tcpCommunicator, &TcpCommunicator::savedDetectionLinesReceived,
+                  this, &LineDrawingDialog::onSavedDetectionLinesReceived);
+        disconnect(m_tcpCommunicator, &TcpCommunicator::bboxesReceived,
+                  this, &LineDrawingDialog::onBBoxesReceived);
+    }
+
+    m_tcpCommunicator = communicator;
+
+    // 새로운 통신기에 시그널 연결
+    if (m_tcpCommunicator) {
+        connect(m_tcpCommunicator, &TcpCommunicator::savedRoadLinesReceived,
+                this, &LineDrawingDialog::onSavedRoadLinesReceived);
+        connect(m_tcpCommunicator, &TcpCommunicator::savedDetectionLinesReceived,
+                this, &LineDrawingDialog::onSavedDetectionLinesReceived);
+        connect(m_tcpCommunicator, &TcpCommunicator::bboxesReceived,
+                this, &LineDrawingDialog::onBBoxesReceived);
+        
+        qDebug() << "LineDrawingDialog에 TcpCommunicator 설정 완료";
+    }
+}
+
 void LineDrawingDialog::setupTcpConnection()
 {
-    // 부모 위젯에서 TcpCommunicator 인스턴스 가져오기
-    QWidget *currentParent = this->parentWidget();
-    while (currentParent && !m_tcpCommunicator) {
-        m_tcpCommunicator = currentParent->findChild<TcpCommunicator*>();
-        currentParent = currentParent->parentWidget();
+    // TcpCommunicator가 이미 설정되어 있으면 부모 위젯에서 찾지 않음
+    if (m_tcpCommunicator) {
+        qDebug() << "TcpCommunicator가 이미 설정되어 있습니다.";
+    } else {
+        // 부모 위젯에서 TcpCommunicator 인스턴스 가져오기 (기존 방식)
+        QWidget *currentParent = this->parentWidget();
+        while (currentParent && !m_tcpCommunicator) {
+            m_tcpCommunicator = currentParent->findChild<TcpCommunicator*>();
+            currentParent = currentParent->parentWidget();
+        }
     }
 
     if (m_tcpCommunicator) {

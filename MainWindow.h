@@ -54,6 +54,9 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    // TCP 통신기 설정 메서드
+    void setTcpCommunicator(TcpCommunicator* communicator);
+
 private slots:
     void onTabChanged(int index);
     void onWarningButtonClicked();

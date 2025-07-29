@@ -1073,7 +1073,7 @@ void LineDrawingDialog::setupUI()
         "padding: 8px 15px; "
         "border: none; "
         "border-radius: 4px; "
-        "font-weight: bold; "
+        "font-weight: bold; font-size:10pt"
         "} "
         "QPushButton:hover { "
         "background-color: #5a6268; "
@@ -1088,7 +1088,7 @@ void LineDrawingDialog::setupUI()
 
     // 상태 정보
     m_statusLabel = new QLabel("비디오 스트림 연결 중...");
-    m_statusLabel->setStyleSheet("color: white; font-weight: bold; padding: 5px;");
+    m_statusLabel->setStyleSheet("color: white; font-weight: bold; padding: 5px; font-size:10pt");
     m_mainLayout->addWidget(m_statusLabel);
 
     m_frameCountLabel = new QLabel("프레임: 0");
@@ -1136,15 +1136,15 @@ void LineDrawingDialog::setupUI()
 
     // BBox 관련 버튼들
     m_bboxOnButton = new QPushButton("BBox ON");
-    m_bboxOnButton->setStyleSheet("QPushButton { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
-                                  "QPushButton:hover { background-color: #218838; }"
+    m_bboxOnButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
+                                  "QPushButton:hover { background-color: #f89b6c; }"
                                   "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_bboxOnButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOnClicked);
     m_buttonLayout->addWidget(m_bboxOnButton);
 
     m_bboxOffButton = new QPushButton("BBox OFF");
-    m_bboxOffButton->setStyleSheet("QPushButton { background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
-                                   "QPushButton:hover { background-color: #c82333; }"
+    m_bboxOffButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
+                                   "QPushButton:hover { background-color: #f89b6c; }"
                                    "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_bboxOffButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOffClicked);
     m_buttonLayout->addWidget(m_bboxOffButton);
@@ -1301,29 +1301,6 @@ void LineDrawingDialog::onLineDrawn(const QPoint &start, const QPoint &end, Line
                       .arg(start.x()).arg(start.y())
                       .arg(end.x()).arg(end.y()), "DRAW");
 
-    // 감지선인 경우 수직선 자동 생성
-    // if (category == LineCategory::OBJECT_DETECTION) {
-    //     QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
-    //     int detectionLineIndex = 0;
-
-    //     // 현재 그려진 감지선의 인덱스 찾기
-    //     for (int i = 0; i < allLines.size(); ++i) {
-    //         if (allLines[i].category == LineCategory::OBJECT_DETECTION) {
-    //             detectionLineIndex++;
-    //             if (allLines[i].start == start && allLines[i].end == end) {
-    //                 break;
-    //             }
-    //         }
-    //     }
-
-    //     // 수직선 생성
-    //     CategorizedLine detectionLine;
-    //     detectionLine.start = start;
-    //     detectionLine.end = end;
-    //     detectionLine.category = category;
-
-    //     generatePerpendicularLine(detectionLine, detectionLineIndex);
-    // }
 
     updateCategoryInfo();
     updateButtonStates();

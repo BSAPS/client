@@ -122,6 +122,59 @@ MainWindow::~MainWindow()
     }
 }
 
+// TCP 통신기 설정 메서드
+void MainWindow::setTcpCommunicator(TcpCommunicator* communicator)
+{
+    // 기존 연결 해제
+    if (m_tcpCommunicator && m_tcpCommunicator != communicator) {
+        disconnect(m_tcpCommunicator, &TcpCommunicator::connected,
+                  this, &MainWindow::onTcpConnected);
+        disconnect(m_tcpCommunicator, &TcpCommunicator::disconnected,
+                  this, &MainWindow::onTcpDisconnected);
+        disconnect(m_tcpCommunicator, &TcpCommunicator::errorOccurred,
+                  this, &MainWindow::onTcpError);
+        disconnect(m_tcpCommunicator, &TcpCommunicator::messageReceived,
+                  this, &MainWindow::onTcpDataReceived);
+        disconnect(m_tcpCommunicator, &TcpCommunicator::imagesReceived,
+                  this, &MainWindow::onImagesReceived);
+        disconnect(m_tcpCommunicator, &TcpCommunicator::coordinatesConfirmed,
+                  this, &MainWindow::onCoordinatesConfirmed);
+        disconnect(m_tcpCommunicator, &TcpCommunicator::statusUpdated,
+                  this, &MainWindow::onStatusUpdated);
+        disconnect(m_tcpCommunicator, &TcpCommunicator::perpendicularLineConfirmed,
+                  this, nullptr);
+    }
+
+    m_tcpCommunicator = communicator;
+
+    // 새로운 통신기에 시그널 연결
+    if (m_tcpCommunicator) {
+        connect(m_tcpCommunicator, &TcpCommunicator::connected,
+                this, &MainWindow::onTcpConnected);
+        connect(m_tcpCommunicator, &TcpCommunicator::disconnected,
+                this, &MainWindow::onTcpDisconnected);
+        connect(m_tcpCommunicator, &TcpCommunicator::errorOccurred,
+                this, &MainWindow::onTcpError);
+        connect(m_tcpCommunicator, &TcpCommunicator::messageReceived,
+                this, &MainWindow::onTcpDataReceived);
+        connect(m_tcpCommunicator, &TcpCommunicator::imagesReceived,
+                this, &MainWindow::onImagesReceived);
+        connect(m_tcpCommunicator, &TcpCommunicator::coordinatesConfirmed,
+                this, &MainWindow::onCoordinatesConfirmed);
+        connect(m_tcpCommunicator, &TcpCommunicator::statusUpdated,
+                this, &MainWindow::onStatusUpdated);
+        connect(m_tcpCommunicator, &TcpCommunicator::perpendicularLineConfirmed,
+                this, [this](bool success, const QString &message) {
+                    qDebug() << "수직선 서버 응답 - 성공:" << success << "메시지:" << message;
+                    if (success) {
+                        QMessageBox::information(this, "수직선 전송 완료", "수직선이 성공적으로 서버에 전송되었습니다.");
+                    } else {
+                        QMessageBox::warning(this, "수직선 전송 실패", "수직선 전송에 실패했습니다: " + message);
+                    }
+                });
+    }
+}
+
 void MainWindow::setupUI()
 {
     m_centralWidget = new QWidget(this);
@@ -330,30 +383,34 @@ void MainWindow::setupNetworkConnection()
     connect(m_updateTimer, &QTimer::timeout, this, &MainWindow::updateLogDisplay);
     m_updateTimer->start(5000);
 
-    m_tcpCommunicator = new TcpCommunicator(this);
+    // TcpCommunicator는 외부에서 설정되므로 여기서 생성하지 않음
+    // m_tcpCommunicator = new TcpCommunicator(this);
 
-    // 수정된 시그널 연결 - 개별 시그널로 분리
-    connect(m_tcpCommunicator, &TcpCommunicator::connected, this, &MainWindow::onTcpConnected);
-    connect(m_tcpCommunicator, &TcpCommunicator::disconnected, this, &MainWindow::onTcpDisconnected);
-    connect(m_tcpCommunicator, &TcpCommunicator::errorOccurred, this, &MainWindow::onTcpError);
-    connect(m_tcpCommunicator, &TcpCommunicator::messageReceived, this, &MainWindow::onTcpDataReceived);
-    connect(m_tcpCommunicator, &TcpCommunicator::imagesReceived, this, &MainWindow::onImagesReceived);
+    // 이미 설정된 TcpCommunicator가 있는 경우에만 시그널 연결
+    if (m_tcpCommunicator) {
+        // 수정된 시그널 연결 - 개별 시그널로 분리
+        connect(m_tcpCommunicator, &TcpCommunicator::connected, this, &MainWindow::onTcpConnected);
+        connect(m_tcpCommunicator, &TcpCommunicator::disconnected, this, &MainWindow::onTcpDisconnected);
+        connect(m_tcpCommunicator, &TcpCommunicator::errorOccurred, this, &MainWindow::onTcpError);
+        connect(m_tcpCommunicator, &TcpCommunicator::messageReceived, this, &MainWindow::onTcpDataReceived);
+        connect(m_tcpCommunicator, &TcpCommunicator::imagesReceived, this, &MainWindow::onImagesReceived);
 
-    // 새로운 JSON 기반 시그널 연결
-    connect(m_tcpCommunicator, &TcpCommunicator::coordinatesConfirmed, this, &MainWindow::onCoordinatesConfirmed);
-    connect(m_tcpCommunicator, &TcpCommunicator::statusUpdated, this, &MainWindow::onStatusUpdated);
+        // 새로운 JSON 기반 시그널 연결
+        connect(m_tcpCommunicator, &TcpCommunicator::coordinatesConfirmed, this, &MainWindow::onCoordinatesConfirmed);
+        connect(m_tcpCommunicator, &TcpCommunicator::statusUpdated, this, &MainWindow::onStatusUpdated);
 
-    // 수직선 확인 시그널 연결 추가
-    connect(m_tcpCommunicator, &TcpCommunicator::perpendicularLineConfirmed,
-            this, [this](bool success, const QString &message) {
-                qDebug() << "수직선 서버 응답 - 성공:" << success << "메시지:" << message;
+        // 수직선 확인 시그널 연결 추가
+        connect(m_tcpCommunicator, &TcpCommunicator::perpendicularLineConfirmed,
+                this, [this](bool success, const QString &message) {
+                    qDebug() << "수직선 서버 응답 - 성공:" << success << "메시지:" << message;
 
-                if (success) {
-                    QMessageBox::information(this, "수직선 전송 완료", "수직선이 성공적으로 서버에 전송되었습니다.");
-                } else {
-                    QMessageBox::warning(this, "수직선 전송 실패", "수직선 전송에 실패했습니다: " + message);
-                }
-            });
+                    if (success) {
+                        QMessageBox::information(this, "수직선 전송 완료", "수직선이 성공적으로 서버에 전송되었습니다.");
+                    } else {
+                        QMessageBox::warning(this, "수직선 전송 실패", "수직선 전송에 실패했습니다: " + message);
+                    }
+                });
+    }
 
     // 이미지 요청 타임아웃 타이머 설정
     m_requestTimeoutTimer = new QTimer(this);
@@ -468,7 +525,9 @@ void MainWindow::onVideoStreamClicked()
     }
 
     if (!m_lineDrawingDialog) {
-        m_lineDrawingDialog = new LineDrawingDialog(m_rtspUrl, this);
+        // TcpCommunicator를 직접 전달
+        m_lineDrawingDialog = new LineDrawingDialog(m_rtspUrl, m_tcpCommunicator, this);
+        
         // 기존 시그널 연결
         connect(m_lineDrawingDialog, &LineDrawingDialog::lineCoordinatesReady,
                 this, [this](int x1, int y1, int x2, int y2) {

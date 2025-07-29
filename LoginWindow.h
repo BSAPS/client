@@ -27,6 +27,15 @@ public:
     explicit LoginWindow(QWidget *parent = nullptr);
     ~LoginWindow();
 
+    // 화면 상태 확인 메서드
+    bool isLoginWindowVisible() const;
+    bool isLoginWindowHidden() const;
+    QString getLoginWindowStatus() const;
+
+    // TCP 통신기 공유 메서드
+    TcpCommunicator* getTcpCommunicator() const;
+    void setTcpCommunicator(TcpCommunicator* communicator);
+
 signals:
     void loginSuccessful();
 

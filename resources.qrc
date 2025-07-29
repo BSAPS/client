@@ -11,5 +11,7 @@
         <file>ca-cert.crt</file>
         <file>font/ChosunGu.TTF</file>
         <file>images/Background3.png</file>
+        <file>icons/bounding-box blue.png</file>
+        <file>icons/bounding-box.png</file>
     </qresource>
 </RCC>

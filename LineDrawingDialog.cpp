@@ -1135,6 +1135,15 @@ void LineDrawingDialog::setupUI()
     m_buttonLayout->addWidget(m_sendCoordinatesButton);
 
     // BBox 관련 버튼들
+    m_bboxOnButton = new QPushButton();
+    m_bboxOnButton->setIcon(QIcon(":/icons/bounding-box.png"));
+    m_bboxOnButton->setIconSize(QSize(24,24));
+    m_bboxOnButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; } "
+                                   "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
+    connect(m_bboxOnButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOnClicked);
+    m_buttonLayout->addWidget(m_bboxOnButton);
+
+    /*
     m_bboxOnButton = new QPushButton("BBox ON");
     m_bboxOnButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
                                   "QPushButton:hover { background-color: #f89b6c; }"
@@ -1148,6 +1157,7 @@ void LineDrawingDialog::setupUI()
                                    "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_bboxOffButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOffClicked);
     m_buttonLayout->addWidget(m_bboxOffButton);
+    */
 
     m_buttonLayout->addStretch();
 

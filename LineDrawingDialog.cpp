@@ -1359,7 +1359,7 @@ void LineDrawingDialog::onStartDrawingClicked()
     m_startDrawingButton->setEnabled(false);
     m_stopDrawingButton->setEnabled(true);
 
-    m_statusLabel->setText("그리기 모드 활성화 - 마우스로 선을 그어주세요");
+    //m_statusLabel->setText("그리기 모드 활성화 - 마우스로 선을 그어주세요");
     addLogMessage("그리기 모드가 활성화되었습니다.", "ACTION");
     updateButtonStates();
 

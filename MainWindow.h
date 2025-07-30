@@ -36,7 +36,6 @@ public:
 
 signals:
     void clicked(const QString &imagePath, const QString &timestamp, const QString &logText);
-
 protected:
     void mousePressEvent(QMouseEvent *event) override;
 
@@ -66,6 +65,7 @@ private slots:
     void onCalendarDateSelected(const QDate &date);
     void onHourComboChanged(int index);
     void onStreamingButtonClicked();
+    void onDrawButtonClicked();
     void onRequestImagesClicked();
     void onTcpConnected();
     void onTcpDisconnected();

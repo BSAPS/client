@@ -6,6 +6,7 @@
 #include <QThread>
 #include <QUrl>
 #include <QMessageBox>
+#include <QPushButton>
 
 VideoStreamWidget::VideoStreamWidget(QWidget *parent)
     : QWidget(parent)
@@ -40,33 +41,56 @@ VideoStreamWidget::~VideoStreamWidget()
 void VideoStreamWidget::setupUI()
 {
     m_layout = new QVBoxLayout(this);
-    
-    // 상태 표시 영역
-    QHBoxLayout *statusLayout = new QHBoxLayout();
-    
+    m_layout->setSpacing(0);
+    m_layout->setContentsMargins(0, 0, 0, 0);
+
+    // 상태 표시 영역 (상단 바)
+    QWidget *statusWidget = new QWidget();
+    statusWidget->setFixedHeight(50);  // 고정 높이
+    QHBoxLayout *statusLayout = new QHBoxLayout(statusWidget);
+    statusLayout->setContentsMargins(10, 4, 10, 4);
+    statusLayout->setSpacing(10);
+
+    // LIVE Indicator
     m_liveIndicator = new QLabel("●");
-    m_liveIndicator->setStyleSheet("color: red; font-size: 16px; font-weight: bold;");
+    m_liveIndicator->setStyleSheet("color: red; font-size: 14px; font-weight: bold;");
     m_liveIndicator->setVisible(false);
+    m_liveIndicator->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     statusLayout->addWidget(m_liveIndicator);
-    
+
+    // 상태 텍스트
     m_statusLabel = new QLabel("스트림 대기 중...");
-    m_statusLabel->setStyleSheet("color: #666; font-size: 12px; padding: 5px;");
+    m_statusLabel->setStyleSheet("color: #cccccc; font-size: 13px;");
+    m_statusLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     statusLayout->addWidget(m_statusLabel);
-    
+
     statusLayout->addStretch();
-    m_layout->addLayout(statusLayout);
-    
+
+    // draw 버튼 추가
+    QPushButton *drawButton = new QPushButton();
+    drawButton->setIcon(QIcon(":/icons/draw.png"));  // 아이콘 경로 확인
+    drawButton->setIconSize(QSize(22, 22));
+    drawButton->setFixedSize(36, 36);
+    drawButton->setCursor(Qt::PointingHandCursor);
+    drawButton->setStyleSheet(
+        "QPushButton { background-color: #3b3e52; border: none; border-radius: 6px; }"
+        "QPushButton:hover { background-color: #4b4f68; }"
+        );
+    connect(drawButton, &QPushButton::clicked, this, [=]() {
+        emit drawButtonClicked();  // MainWindow 연결 필요
+    });
+    statusLayout->addWidget(drawButton);
+
+    m_layout->addWidget(statusWidget);
     // 비디오 표시 영역
     m_videoWidget = new QVideoWidget();
     m_videoWidget->setMinimumSize(640, 480);
     m_videoWidget->setStyleSheet("border: 2px solid #ddd; background-color: #000000;");
-    
     m_layout->addWidget(m_videoWidget);
-    m_layout->setSpacing(0);
-    m_layout->setContentsMargins(0, 0, 0, 0);
 
     setLayout(m_layout);
 }
+
 
 void VideoStreamWidget::setupMediaPlayer()
 {

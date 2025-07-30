@@ -1,4 +1,5 @@
 #include "VideoStreamWidget.h"
+#include "custommessagebox.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QApplication>
@@ -186,14 +187,18 @@ void VideoStreamWidget::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
         m_connectionTimer->stop();
         break;
         
-    case QMediaPlayer::BufferingMedia:
+    case QMediaPlayer::BufferingMedia:{
         showConnectionStatus("연결됨", "#4caf50");
         m_connectionTimer->stop();
         m_liveIndicator->setVisible(true);
         m_liveBlinkTimer->start();
         m_reconnectAttempts = 0;
-        QMessageBox::information(this, "RTSP 연결", "RTSP 연결에 성공했습니다!");
+        CustomMessageBox msgBox(nullptr, "RTSP 연결", "RTSP 연결에 성공했습니다!");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         break;
+    }
+
         
     case QMediaPlayer::BufferedMedia:
         showConnectionStatus("연결됨", "#4caf50");
@@ -275,7 +280,10 @@ void VideoStreamWidget::onErrorOccurred(QMediaPlayer::Error error, const QString
     
     showConnectionStatus("에러 발생", "#f44336");
     emit streamError(errorMsg);
-    QMessageBox::warning(this, "RTSP 연결 실패", errorMsg);
+    //QMessageBox::warning(this, "RTSP 연결 실패", errorMsg);
+    CustomMessageBox msgBox(nullptr, "RTSP 연결 실패", errorMsg);
+    msgBox.setFixedSize(300,150);
+    msgBox.exec();
 
     if (m_isStreaming) {
         attemptReconnection();

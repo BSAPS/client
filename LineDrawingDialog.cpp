@@ -1,4 +1,5 @@
 #include "LineDrawingDialog.h"
+#include "custommessagebox.h"
 #include <QApplication>
 #include <QMessageBox>
 #include <QDebug>
@@ -986,6 +987,7 @@ void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordin
         updateMappingInfo();
 
         // 저장 완료 메시지
+        /*
         QMessageBox::information(this, "매핑 저장됨",
                                  QString("좌표-Matrix 매핑이 저장되었습니다.\n\n"
                                          "• 도로선: #%1 %2\n"
@@ -997,6 +999,20 @@ void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordin
                                      .arg(matrixNum)
                                      .arg(coordinate.x())
                                      .arg(coordinate.y()));
+        */
+        CustomMessageBox msgBox(nullptr, "매핑 저장됨",
+                                QString("좌표-Matrix 매핑이 저장되었습니다.\n\n"
+                                        "• 도로선: #%1 %2\n"
+                                        "• Matrix 번호: %3\n"
+                                        "• 좌표: (%4,%5)\n\n"
+                                        "전송하려면 '좌표 전송' 버튼을 클릭하세요.")
+                                    .arg(lineIndex + 1)
+                                    .arg(pointType)
+                                    .arg(matrixNum)
+                                    .arg(coordinate.x())
+                                    .arg(coordinate.y()));
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
     } else {
         addLogMessage("Matrix 선택이 취소되었습니다.", "INFO");
         m_videoView->clearHighlight(); // 하이라이트 제거
@@ -1462,7 +1478,10 @@ void LineDrawingDialog::onSendCoordinatesClicked()
 
     if (allLines.isEmpty()) {
         addLogMessage("전송할 선이 없습니다.", "WARNING");
-        QMessageBox::information(this, "알림", "전송할 선이 없습니다. 먼저 선을 그려주세요.");
+        //QMessageBox::information(this, "알림", "전송할 선이 없습니다. 먼저 선을 그려주세요.");
+        CustomMessageBox msgBox(nullptr, "알림", "전송할 선이 없습니다. 먼저 선을 그려주세요.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         return;
     }
 
@@ -1830,13 +1849,19 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
 {
     if (!m_tcpCommunicator) {
         addLogMessage("TCP 통신이 설정되지 않았습니다.", "ERROR");
-        QMessageBox::warning(this, "오류", "서버 연결이 설정되지 않았습니다.");
+        //QMessageBox::warning(this, "오류", "서버 연결이 설정되지 않았습니다.");
+        CustomMessageBox msgBox(nullptr, "오류", "서버 연결이 설정되지 않았습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         return;
     }
 
     if (!m_tcpCommunicator->isConnectedToServer()) {
         addLogMessage("서버에 연결되어 있지 않습니다.", "ERROR");
-        QMessageBox::warning(this, "오류", "서버에 연결되어 있지 않습니다.");
+        //QMessageBox::warning(this, "오류", "서버에 연결되어 있지 않습니다.");
+        CustomMessageBox msgBox(nullptr, "오류", "서버에 연결되어 있지 않습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         return;
     }
     m_tcpCommunicator->setVideoView(m_videoView);
@@ -1868,7 +1893,10 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
         // m_statusLabel->setText("저장된 선 데이터를 불러오는 중...");
     } else {
         addLogMessage("저장된 선 데이터 요청에 실패했습니다.", "ERROR");
-        QMessageBox::warning(this, "오류", "저장된 선 데이터 요청에 실패했습니다.");
+        //QMessageBox::warning(this, "오류", "저장된 선 데이터 요청에 실패했습니다.");
+        CustomMessageBox msgBox(nullptr, "오류", "저장된 선 데이터 요청에 실패했습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
     }
 }
 

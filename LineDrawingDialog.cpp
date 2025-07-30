@@ -926,9 +926,6 @@ void LineDrawingDialog::checkAndLoadAllLines()
             addLogMessage("화면에 선 그리기 완료 - 얇은 선으로 표시됩니다", "SUCCESS");
         }
 
-        // 상태 업데이트
-        // m_statusLabel->setText(QString("저장된 선 데이터 로드 완료 - 도로선: %1개, 감지선: %2개")
-        //                            .arg(m_loadedRoadLines.size()).arg(m_loadedDetectionLines.size()));
 
         // UI 업데이트
         updateCategoryInfo();
@@ -985,8 +982,6 @@ void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordin
                           .arg(matrixNum)
                           .arg(coordinate.x()).arg(coordinate.y()), "SUCCESS");
 
-        // m_statusLabel->setText(QString("좌표 (%1,%2) Matrix %3 매핑이 저장되었습니다.")
-        //                            .arg(coordinate.x()).arg(coordinate.y()).arg(matrixNum));
 
         updateMappingInfo();
 
@@ -1049,12 +1044,6 @@ void LineDrawingDialog::setupUI()
     separator->setStyleSheet("color: #ccc;");
     titleCategoryLayout->addWidget(separator);
 
-    // 카테고리 선택 영역
-    /*
-    QLabel *categoryLabel = new QLabel("선 종류:");
-    categoryLabel->setStyleSheet("color: #666; font-size: 12px; font-weight: bold;");
-    titleCategoryLayout->addWidget(categoryLabel);
-    */
 
     m_roadLineRadio = new QRadioButton("도로선");
     m_roadLineRadio->setStyleSheet("color: #ffffff; font-size: 12px; font-weight: bold;");
@@ -1170,15 +1159,6 @@ void LineDrawingDialog::setupUI()
 
     m_mainLayout->addLayout(contentLayout);
 
-    // 상태 정보
-    // m_statusLabel = new QLabel("비디오 스트림 연결 중...");
-    // m_statusLabel->setStyleSheet("color: white; font-weight: bold; padding: 5px; font-size:10pt");
-    // m_mainLayout->addWidget(m_statusLabel);
-
-    // m_frameCountLabel = new QLabel("프레임: 0");
-    // m_frameCountLabel->setStyleSheet("color: gray; padding: 2px;");
-    // m_mainLayout->addWidget(m_frameCountLabel);
-
     // 버튼 영역
     m_buttonLayout = new QHBoxLayout();
 
@@ -1197,14 +1177,6 @@ void LineDrawingDialog::setupUI()
                         "}");
     connect(loadSavedLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onLoadSavedLinesClicked);
     m_buttonLayout->addWidget(loadSavedLinesButton);
-    /*
-    QPushButton *loadSavedLinesButton = new QPushButton("저장된 선 불러오기");
-    loadSavedLinesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;} "
-                                        "QPushButton:hover { background-color: #f89b6c; }"
-                                        "QPushButton:disabled { background-color: #b3aca5; }");
-    connect(loadSavedLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onLoadSavedLinesClicked);
-    m_buttonLayout->addWidget(loadSavedLinesButton);
-    */
 
     //선 그리기
     m_startDrawingButton = new QPushButton();
@@ -1222,18 +1194,6 @@ void LineDrawingDialog::setupUI()
     connect(m_startDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStartDrawingClicked);
     m_buttonLayout->addWidget(m_startDrawingButton);
 
-
-
-
-
-    /*
-    m_startDrawingButton = new QPushButton("그리기 시작");
-    m_startDrawingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
-                                        "QPushButton:hover { background-color: #f89b6c; }"
-                                        "QPushButton:disabled { background-color: #b3aca5; }");
-    */
-    //connect(m_startDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStartDrawingClicked);
-    //m_buttonLayout->addWidget(m_startDrawingButton);
 
     // 선 그리기 중지
     m_stopDrawingButton = new QPushButton();
@@ -1268,14 +1228,6 @@ void LineDrawingDialog::setupUI()
                         "}");
     connect(m_clearLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onClearLinesClicked);
     m_buttonLayout->addWidget(m_clearLinesButton);
-    /*
-    m_clearLinesButton = new QPushButton("선 지우기");
-    m_clearLinesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
-                                      "QPushButton:hover { background-color: #e68900; }"
-                                      "QPushButton:disabled { background-color: #b3aca5; }");
-    connect(m_clearLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onClearLinesClicked);
-    m_buttonLayout->addWidget(m_clearLinesButton);
-    */
 
     //데이터 전송
     m_sendCoordinatesButton = new QPushButton();
@@ -1328,24 +1280,6 @@ void LineDrawingDialog::setupUI()
     m_bboxOffButton->hide();
 
 
-    /*
-    m_bboxOnButton = new QPushButton("BBox ON");
-    m_bboxOnButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
-                                  "QPushButton:hover { background-color: #f89b6c; }"
-                                  "QPushButton:disabled { background-color: #b3aca5; }");
-    connect(m_bboxOnButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOnClicked);
-    m_buttonLayout->addWidget(m_bboxOnButton);
-
-    m_bboxOffButton = new QPushButton("BBox OFF");
-    m_bboxOffButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
-                                   "QPushButton:hover { background-color: #f89b6c; }"
-                                   "QPushButton:disabled { background-color: #b3aca5; }");
-    connect(m_bboxOffButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOffClicked);
-    m_buttonLayout->addWidget(m_bboxOffButton);
-    */
-
-    // m_buttonLayout->addStretch();
-
     //닫기 버튼
     m_closeButton = new QPushButton();
     m_closeButton->setIcon(QIcon(":/icons/exit.png"));
@@ -1362,13 +1296,6 @@ void LineDrawingDialog::setupUI()
     connect(m_closeButton, &QPushButton::clicked, this, &QDialog::reject);
     m_buttonLayout->addWidget(m_closeButton);
 
-    /*
-    m_closeButton = new QPushButton("닫기");
-    m_closeButton->setStyleSheet("QPushButton { background-color: #9E9E9E; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
-                                 "QPushButton:hover { background-color: #757575; }");
-    connect(m_closeButton, &QPushButton::clicked, this, &QDialog::reject);
-    m_buttonLayout->addWidget(m_closeButton);
-    */
 
     m_mainLayout->addLayout(m_buttonLayout);
 

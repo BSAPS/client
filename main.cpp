@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
         qDebug() << "로그인 성공 - 메인 창 표시";
 
         MainWindow *mainWindow = new MainWindow();
-        
+
         // MainWindow에도 동일한 TcpCommunicator 설정
         mainWindow->setTcpCommunicator(sharedTcpCommunicator);
         

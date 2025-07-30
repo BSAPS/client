@@ -1141,7 +1141,7 @@ void LineDrawingDialog::setupUI()
     m_logTextEdit->setReadOnly(true);
     m_logTextEdit->setStyleSheet(
         "QTextEdit { "
-        "background-color: #848792; "
+        "background-color: #666977; "
         "padding: 8px; "
         "font-family: 'Consolas', 'Monaco', monospace; "
         "font-size: 11px; "
@@ -1153,7 +1153,7 @@ void LineDrawingDialog::setupUI()
     m_clearLogButton = new QPushButton("로그 지우기");
     m_clearLogButton->setStyleSheet(
         "QPushButton { "
-        "background-color: #848792; "
+        "background-color: #666977; "
         "color: white; "
         "padding: 8px 15px; "
         "border: none; "
@@ -1224,26 +1224,6 @@ void LineDrawingDialog::setupUI()
     m_buttonLayout->addWidget(m_startDrawingButton);
 
 
-
-
-    /*
-    m_startDrawingButton = new QPushButton("그리기 시작");
-    m_startDrawingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
-                                        "QPushButton:hover { background-color: #f89b6c; }"
-                                        "QPushButton:disabled { background-color: #b3aca5; }");
-    */
-    //connect(m_startDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStartDrawingClicked);
-    //m_buttonLayout->addWidget(m_startDrawingButton);
-
-    /*
-    m_stopDrawingButton = new QPushButton("그리기 중지");
-    m_stopDrawingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
-                                       "QPushButton:hover { background-color: #f89b6c; }"
-                                       "QPushButton:disabled { background-color: #b3aca5; }");
-    m_stopDrawingButton->setEnabled(false);
-    connect(m_stopDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStopDrawingClicked);
-    m_buttonLayout->addWidget(m_stopDrawingButton);
-    */
     //선 지우기
     m_clearLinesButton = new QPushButton();
     m_clearLinesButton->setIcon(QIcon(":/icons/eraser.png"));

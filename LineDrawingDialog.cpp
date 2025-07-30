@@ -1185,7 +1185,7 @@ void LineDrawingDialog::setupUI()
 
     //저장된 선 불러오기
     QPushButton *loadSavedLinesButton = new QPushButton();
-    loadSavedLinesButton->setIcon(QIcon(":/icons/database.png"));
+    loadSavedLinesButton->setIcon(QIcon(":/icons/download.png"));
     loadSavedLinesButton->setIconSize(QSize(30,30));
     loadSavedLinesButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; } "
                                           "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");

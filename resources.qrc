@@ -12,7 +12,6 @@
         <file>images/Background3.png</file>
         <file>icons/file-import.png</file>
         <file>icons/import-file.png</file>
-        <file>icons/data-import.png</file>
         <file>icons/cil_pen.png</file>
         <file>icons/cil_pen_clicked.png</file>
         <file>icons/eraser.png</file>
@@ -22,6 +21,6 @@
         <file>icons/close.png</file>
         <file>icons/squares.png</file>
         <file>font/05HanwhaGothicR.ttf</file>
-        <file>icons/database.png</file>
+        <file>icons/download.png</file>
     </qresource>
 </RCC>

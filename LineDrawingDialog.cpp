@@ -1185,7 +1185,7 @@ void LineDrawingDialog::setupUI()
 
     //저장된 선 불러오기
     QPushButton *loadSavedLinesButton = new QPushButton();
-    loadSavedLinesButton->setIcon(QIcon(":/icons/data-import.png"));
+    loadSavedLinesButton->setIcon(QIcon(":/icons/database.png"));
     loadSavedLinesButton->setIconSize(QSize(30,30));
     loadSavedLinesButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; } "
                                           "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
@@ -1359,7 +1359,7 @@ void LineDrawingDialog::onStartDrawingClicked()
     m_startDrawingButton->setEnabled(false);
     m_stopDrawingButton->setEnabled(true);
 
-    m_statusLabel->setText("그리기 모드 활성화 - 마우스로 선을 그어주세요");
+    // m_statusLabel->setText("그리기 모드 활성화 - 마우스로 선을 그어주세요");
     addLogMessage("그리기 모드가 활성화되었습니다.", "ACTION");
     updateButtonStates();
 

@@ -10,7 +10,6 @@
         <file>images/SignUp_fin.png</file>
         <file>ca-cert.crt</file>
         <file>images/Background3.png</file>
-
         <file>icons/file-import.png</file>
         <file>icons/import-file.png</file>
         <file>icons/data-import.png</file>
@@ -22,8 +21,7 @@
         <file>icons/export-file_clicked.png</file>
         <file>icons/close.png</file>
         <file>icons/squares.png</file>
-
         <file>font/05HanwhaGothicR.ttf</file>
-
+        <file>icons/database.png</file>
     </qresource>
 </RCC>

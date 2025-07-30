@@ -246,6 +246,7 @@ void MainWindow::setupUI()
     sidebarLayout->addWidget(m_modeComboBox);
 
     mainLayout->addLayout(contentLayout);
+
 }
 
 void MainWindow::setupLiveVideoTab()
@@ -416,6 +417,65 @@ void MainWindow::setupCapturedImageTab()
         );
 
     topLayout->addWidget(m_dateEdit);
+    connect(m_dateButton, &QPushButton::clicked, this, &MainWindow::onDateButtonClicked);
+    controlLayout->addWidget(m_dateButton);
+
+    // 달력 다이얼로그 설정
+    m_calendarDialog = new QDialog(this);
+    m_calendarDialog->setWindowTitle("날짜 선택");
+    m_calendarDialog->setModal(true);
+    m_calendarDialog->setFixedSize(380, 350);
+    m_calendarDialog->setStyleSheet(R"(
+    QCalendarWidget QToolButton {
+        background-color: #444857;
+        color: white;
+        font-weight: bold;
+        border: none;
+        margin: 5px;
+        height: 30px;
+    }
+
+    QCalendarWidget QToolButton::left-arrow {
+        image: url(:/icons/left.png);  /* 왼쪽 화살표 이미지 */
+        width: 50px;
+        height: 50px;
+    }
+
+    QCalendarWidget QToolButton::right-arrow {
+        image: QIcon(":/icons/right.png");  /* 오른쪽 화살표 이미지 */
+        width: 24px;
+        height: 24px;
+    }
+
+
+    QCalendarWidget QToolButton:hover {
+        background-color: #5a5e6e;
+    }
+
+    QCalendarWidget QHeaderView::section {
+        background-color: #3d4251;
+        color: #cfcfcf;
+        font-weight: bold;
+        border: none;
+        padding: 5px;
+    }
+
+    QCalendarWidget QTableView {
+        background-color: #2c2f38;
+        color: white;
+        selection-background-color: #F37321;
+        selection-color: black;
+        gridline-color: #888;
+    }
+)");
+
+    QVBoxLayout *calendarLayout = new QVBoxLayout(m_calendarDialog);
+
+    m_calendarWidget = new QCalendarWidget();
+    m_calendarWidget->setSelectedDate(m_selectedDate);
+    m_calendarWidget->setStyleSheet("background-color:#292D41;");
+    connect(m_calendarWidget, &QCalendarWidget::clicked, this, &MainWindow::onCalendarDateSelected);
+    calendarLayout->addWidget(m_calendarWidget);
 
     // 시간 라벨
     QLabel *timeLabel = new QLabel("시간:");
@@ -613,6 +673,7 @@ void MainWindow::onNetworkConfigClicked()
 {
     if (!m_networkDialog) {
         m_networkDialog = new NetworkConfigDialog(this);
+        m_networkDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
         m_networkDialog->setRtspUrl(m_rtspUrl);
         m_networkDialog->setTcpHost(m_tcpHost);
         m_networkDialog->setTcpPort(m_tcpPort);
@@ -645,6 +706,7 @@ void MainWindow::onVideoStreamClicked()
     if (!m_lineDrawingDialog) {
         // TcpCommunicator를 직접 전달
         m_lineDrawingDialog = new LineDrawingDialog(m_rtspUrl, m_tcpCommunicator, this);
+        m_lineDrawingDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
         
         // 기존 시그널 연결
         connect(m_lineDrawingDialog, &LineDrawingDialog::lineCoordinatesReady,

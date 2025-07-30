@@ -12,19 +12,22 @@
         <file>images/Background3.png</file>
         <file>icons/file-import.png</file>
         <file>icons/import-file.png</file>
-        <file>icons/data-import.png</file>
         <file>icons/cil_pen.png</file>
         <file>icons/cil_pen_clicked.png</file>
         <file>icons/eraser.png</file>
         <file>icons/eraser_clicked.png</file>
         <file>icons/export-file.png</file>
         <file>icons/export-file_clicked.png</file>
-        <file>icons/close.png</file>
         <file>icons/squares.png</file>
         <file>font/05HanwhaGothicR.ttf</file>
         <file>icons/draw.png</file>
         <file>icons/play.png</file>
         <file>icons/play1.png</file>
         <file>icons/up_down.png</file>
+        <file>icons/download.png</file>
+        <file>icons/exit.png</file>
+        <file>icons/squares_clicked.png</file>
+        <file>icons/left.png</file>
+        <file>icons/right.png</file>
     </qresource>
 </RCC>

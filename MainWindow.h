@@ -58,8 +58,6 @@ public:
     void setTcpCommunicator(TcpCommunicator* communicator);
 
 private slots:
-    void onTabChanged(int index);
-    void onWarningButtonClicked();
     void onNetworkConfigClicked();
     void onVideoStreamClicked();
     void onDateChanged(const QDate &date);

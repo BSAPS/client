@@ -149,7 +149,7 @@ private slots:
     void onPlayerStateChanged(QMediaPlayer::PlaybackState state);
     void onPlayerError(QMediaPlayer::Error error, const QString &errorString);
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
-    void updateFrameCount();
+    // void updateFrameCount();
     void onCategoryChanged();
     void onClearCategoryClicked();
     void updateCategoryInfo();
@@ -183,8 +183,8 @@ private:
     QPushButton *m_clearLinesButton;
     QPushButton *m_sendCoordinatesButton;
     QPushButton *m_closeButton;
-    QLabel *m_statusLabel;
-    QLabel *m_frameCountLabel;
+    // QLabel *m_statusLabel;
+    // QLabel *m_frameCountLabel;
 
     // BBox 관련 UI
     QPushButton *m_bboxOnButton;
@@ -204,8 +204,8 @@ private:
     QString m_rtspUrl;
     QList<QPair<QPoint, QPoint>> m_drawnLines;
     bool m_isDrawingMode;
-    QTimer *m_frameTimer;
-    int m_frameCount;
+    // QTimer *m_frameTimer;
+    // int m_frameCount;
 
     // 카테고리 선택 UI
     QWidget *m_categoryWidget;

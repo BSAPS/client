@@ -651,8 +651,8 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     , m_clearLinesButton(nullptr)
     , m_sendCoordinatesButton(nullptr)
     , m_closeButton(nullptr)
-    , m_statusLabel(nullptr)
-    , m_frameCountLabel(nullptr)
+    // , m_statusLabel(nullptr)
+    // , m_frameCountLabel(nullptr)
     , m_logTextEdit(nullptr)
     , m_logCountLabel(nullptr)
     , m_clearLogButton(nullptr)
@@ -661,8 +661,8 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     , m_rtspUrl(rtspUrl)
     , m_drawnLines()
     , m_isDrawingMode(false)
-    , m_frameTimer(nullptr)
-    , m_frameCount(0)
+    // , m_frameTimer(nullptr)
+    // , m_frameCount(0)
     , m_currentCategory(LineCategory::ROAD_DEFINITION)
     , m_selectedRoadLineIndex(-1)
     , m_roadLineSelectionMode(false)
@@ -700,8 +700,8 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, TcpCommunicator* tc
     , m_clearLinesButton(nullptr)
     , m_sendCoordinatesButton(nullptr)
     , m_closeButton(nullptr)
-    , m_statusLabel(nullptr)
-    , m_frameCountLabel(nullptr)
+    // , m_statusLabel(nullptr)
+    // , m_frameCountLabel(nullptr)
     , m_logTextEdit(nullptr)
     , m_logCountLabel(nullptr)
     , m_clearLogButton(nullptr)
@@ -710,8 +710,8 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, TcpCommunicator* tc
     , m_rtspUrl(rtspUrl)
     , m_drawnLines()
     , m_isDrawingMode(false)
-    , m_frameTimer(nullptr)
-    , m_frameCount(0)
+    // , m_frameTimer(nullptr)
+    // , m_frameCount(0)
     , m_currentCategory(LineCategory::ROAD_DEFINITION)
     , m_selectedRoadLineIndex(-1)
     , m_roadLineSelectionMode(false)
@@ -806,7 +806,7 @@ void LineDrawingDialog::requestSavedLinesFromServer()
 
         if (roadSuccess && detectionSuccess) {
             addLogMessage("서버에 저장된 도로선과 감지선 데이터를 자동으로 요청했습니다.", "INFO");
-            m_statusLabel->setText("저장된 선 데이터를 불러오는 중...");
+            // m_statusLabel->setText("저장된 선 데이터를 불러오는 중...");
         } else {
             addLogMessage("저장된 선 데이터 요청에 실패했습니다.", "ERROR");
         }
@@ -928,8 +928,8 @@ void LineDrawingDialog::checkAndLoadAllLines()
         }
 
         // 상태 업데이트
-        m_statusLabel->setText(QString("저장된 선 데이터 로드 완료 - 도로선: %1개, 감지선: %2개")
-                                   .arg(m_loadedRoadLines.size()).arg(m_loadedDetectionLines.size()));
+        // m_statusLabel->setText(QString("저장된 선 데이터 로드 완료 - 도로선: %1개, 감지선: %2개")
+        //                            .arg(m_loadedRoadLines.size()).arg(m_loadedDetectionLines.size()));
 
         // UI 업데이트
         updateCategoryInfo();
@@ -986,8 +986,8 @@ void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordin
                           .arg(matrixNum)
                           .arg(coordinate.x()).arg(coordinate.y()), "SUCCESS");
 
-        m_statusLabel->setText(QString("좌표 (%1,%2) Matrix %3 매핑이 저장되었습니다.")
-                                   .arg(coordinate.x()).arg(coordinate.y()).arg(matrixNum));
+        // m_statusLabel->setText(QString("좌표 (%1,%2) Matrix %3 매핑이 저장되었습니다.")
+        //                            .arg(coordinate.x()).arg(coordinate.y()).arg(matrixNum));
 
         updateMappingInfo();
 
@@ -1172,13 +1172,13 @@ void LineDrawingDialog::setupUI()
     m_mainLayout->addLayout(contentLayout);
 
     // 상태 정보
-    m_statusLabel = new QLabel("비디오 스트림 연결 중...");
-    m_statusLabel->setStyleSheet("color: white; font-weight: bold; padding: 5px; font-size:10pt");
-    m_mainLayout->addWidget(m_statusLabel);
+    // m_statusLabel = new QLabel("비디오 스트림 연결 중...");
+    // m_statusLabel->setStyleSheet("color: white; font-weight: bold; padding: 5px; font-size:10pt");
+    // m_mainLayout->addWidget(m_statusLabel);
 
-    m_frameCountLabel = new QLabel("프레임: 0");
-    m_frameCountLabel->setStyleSheet("color: gray; padding: 2px;");
-    m_mainLayout->addWidget(m_frameCountLabel);
+    // m_frameCountLabel = new QLabel("프레임: 0");
+    // m_frameCountLabel->setStyleSheet("color: gray; padding: 2px;");
+    // m_mainLayout->addWidget(m_frameCountLabel);
 
     // 버튼 영역
     m_buttonLayout = new QHBoxLayout();
@@ -1331,9 +1331,9 @@ void LineDrawingDialog::setupUI()
     m_mainLayout->addLayout(m_buttonLayout);
 
     // 프레임 카운터 타이머
-    m_frameTimer = new QTimer(this);
-    connect(m_frameTimer, &QTimer::timeout, this, &LineDrawingDialog::updateFrameCount);
-    m_frameTimer->start(1000);
+    // m_frameTimer = new QTimer(this);
+    // connect(m_frameTimer, &QTimer::timeout, this, &LineDrawingDialog::updateFrameCount);
+    // m_frameTimer->start(1000);
 
     // 초기 로그 메시지
     addLogMessage("기준선 그리기 다이얼로그가 시작되었습니다.", "SYSTEM");
@@ -1391,9 +1391,9 @@ void LineDrawingDialog::startVideoStream()
         qDebug() << "RTSP 스트림 시작:" << m_rtspUrl;
         m_mediaPlayer->setSource(QUrl(m_rtspUrl));
         m_mediaPlayer->play();
-        m_statusLabel->setText("비디오 스트림 연결 중...");
+        // m_statusLabel->setText("비디오 스트림 연결 중...");
     } else {
-        m_statusLabel->setText("RTSP URL이 설정되지 않았습니다.");
+        // m_statusLabel->setText("RTSP URL이 설정되지 않았습니다.");
         qDebug() << "RTSP URL이 비어있습니다.";
     }
 }
@@ -1403,9 +1403,9 @@ void LineDrawingDialog::stopVideoStream()
     if (m_mediaPlayer) {
         m_mediaPlayer->stop();
     }
-    if (m_frameTimer) {
-        m_frameTimer->stop();
-    }
+    // if (m_frameTimer) {
+    //     m_frameTimer->stop();
+    // }
 }
 
 /*
@@ -1417,7 +1417,7 @@ void LineDrawingDialog::onStartDrawingClicked()
     m_startDrawingButton->setEnabled(false);
     m_stopDrawingButton->setEnabled(true);
 
-    m_statusLabel->setText("그리기 모드 활성화 - 마우스로 선을 그어주세요");
+    // m_statusLabel->setText("그리기 모드 활성화 - 마우스로 선을 그어주세요");
     addLogMessage("그리기 모드가 활성화되었습니다.", "ACTION");
     updateButtonStates();
 
@@ -1433,7 +1433,7 @@ void LineDrawingDialog::onStopDrawingClicked()
     m_startDrawingButton->setEnabled(true);
     m_stopDrawingButton->setEnabled(false);
 
-    m_statusLabel->setText("그리기 모드 비활성화");
+    // m_statusLabel->setText("그리기 모드 비활성화");
     addLogMessage("그리기 모드가 비활성화되었습니다.", "ACTION");
     updateButtonStates();
 
@@ -1451,7 +1451,7 @@ void LineDrawingDialog::onClearLinesClicked()
     // 매핑 정보도 함께 지우기
     clearCoordinateMappings();
 
-    m_statusLabel->setText("모든 선과 매핑이 지워졌습니다");
+    // m_statusLabel->setText("모든 선과 매핑이 지워졌습니다");
     addLogMessage(QString("%1개의 선과 매핑 정보가 지워졌습니다.").arg(lineCount), "ACTION");
     updateCategoryInfo();
     updateButtonStates();
@@ -1599,8 +1599,8 @@ void LineDrawingDialog::onSendCoordinatesClicked()
                           .arg(line.x2).arg(line.y2), "COORD");
     }
 
-    m_statusLabel->setText(QString("좌표 전송 완료 - 도로선: %1개, 감지선: %2개")
-                               .arg(roadLines.size()).arg(detectionLines.size()));
+    // m_statusLabel->setText(QString("좌표 전송 완료 - 도로선: %1개, 감지선: %2개")
+    //                            .arg(roadLines.size()).arg(detectionLines.size()));
 }
 
 void LineDrawingDialog::onClearLogClicked()
@@ -1612,14 +1612,14 @@ void LineDrawingDialog::onPlayerStateChanged(QMediaPlayer::PlaybackState state)
 {
     switch (state) {
     case QMediaPlayer::PlayingState:
-        m_statusLabel->setText("비디오 스트림 재생 중");
+        // m_statusLabel->setText("비디오 스트림 재생 중");
         addLogMessage("비디오 스트림이 성공적으로 연결되었습니다.", "SUCCESS");
         break;
     case QMediaPlayer::PausedState:
-        m_statusLabel->setText("비디오 스트림 일시정지");
+        // m_statusLabel->setText("비디오 스트림 일시정지");
         break;
     case QMediaPlayer::StoppedState:
-        m_statusLabel->setText("비디오 스트림 중지됨");
+        // m_statusLabel->setText("비디오 스트림 중지됨");
         break;
     }
 }
@@ -1627,7 +1627,7 @@ void LineDrawingDialog::onPlayerStateChanged(QMediaPlayer::PlaybackState state)
 void LineDrawingDialog::onPlayerError(QMediaPlayer::Error error, const QString &errorString)
 {
     QString errorMsg = QString("비디오 스트림 오류: %1").arg(errorString);
-    m_statusLabel->setText(errorMsg);
+    // m_statusLabel->setText(errorMsg);
     addLogMessage(errorMsg, "ERROR");
     qDebug() << "미디어 플레이어 오류:" << error << errorString;
 }
@@ -1636,22 +1636,22 @@ void LineDrawingDialog::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
 {
     switch (status) {
     case QMediaPlayer::LoadingMedia:
-        m_statusLabel->setText("미디어 로딩 중...");
+        // m_statusLabel->setText("미디어 로딩 중...");
         break;
     case QMediaPlayer::LoadedMedia:
-        m_statusLabel->setText("미디어 로드 완료");
+        // m_statusLabel->setText("미디어 로드 완료");
         break;
     case QMediaPlayer::BufferingMedia:
-        m_statusLabel->setText("버퍼링 중...");
+        // m_statusLabel->setText("버퍼링 중...");
         break;
     case QMediaPlayer::BufferedMedia:
-        m_statusLabel->setText("버퍼링 완료");
+        // m_statusLabel->setText("버퍼링 완료");
         break;
     case QMediaPlayer::EndOfMedia:
-        m_statusLabel->setText("스트림 종료");
+        // m_statusLabel->setText("스트림 종료");
         break;
     case QMediaPlayer::InvalidMedia:
-        m_statusLabel->setText("유효하지 않은 미디어");
+        // m_statusLabel->setText("유효하지 않은 미디어");
         addLogMessage("유효하지 않은 RTSP 스트림입니다.", "ERROR");
         break;
     default:
@@ -1659,11 +1659,11 @@ void LineDrawingDialog::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
     }
 }
 
-void LineDrawingDialog::updateFrameCount()
-{
-    m_frameCount++;
-    m_frameCountLabel->setText(QString("프레임: %1").arg(m_frameCount));
-}
+// void LineDrawingDialog::updateFrameCount()
+// {
+//     m_frameCount++;
+//     m_frameCountLabel->setText(QString("프레임: %1").arg(m_frameCount));
+// }
 
 void LineDrawingDialog::addLogMessage(const QString &message, const QString &type)
 {
@@ -1921,7 +1921,7 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
 
     if (roadSuccess && detectionSuccess) {
         addLogMessage("✅ 서버에 저장된 도로선과 감지선 데이터를 요청했습니다.", "SUCCESS");
-        m_statusLabel->setText("저장된 선 데이터를 불러오는 중...");
+        // m_statusLabel->setText("저장된 선 데이터를 불러오는 중...");
     } else {
         addLogMessage("❌ 저장된 선 데이터 요청에 실패했습니다.", "ERROR");
         QMessageBox::warning(this, "오류", "저장된 선 데이터 요청에 실패했습니다.");

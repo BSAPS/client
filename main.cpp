@@ -64,8 +64,6 @@ int main(int argc, char *argv[])
 
         MainWindow *mainWindow = new MainWindow();
 
-        // mainWindow->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
-        
         // MainWindow에도 동일한 TcpCommunicator 설정
         mainWindow->setTcpCommunicator(sharedTcpCommunicator);
         

@@ -1140,7 +1140,7 @@ void LineDrawingDialog::setupUI()
     m_logTextEdit->setReadOnly(true);
     m_logTextEdit->setStyleSheet(
         "QTextEdit { "
-        "background-color: #848792; "
+        "background-color: #666977; "
         "padding: 8px; "
         "font-family: 'Consolas', 'Monaco', monospace; "
         "font-size: 11px; "
@@ -1152,7 +1152,7 @@ void LineDrawingDialog::setupUI()
     m_clearLogButton = new QPushButton("로그 지우기");
     m_clearLogButton->setStyleSheet(
         "QPushButton { "
-        "background-color: #848792; "
+        "background-color: #666977; "
         "color: white; "
         "padding: 8px 15px; "
         "border: none; "
@@ -1225,6 +1225,7 @@ void LineDrawingDialog::setupUI()
 
 
 
+
     /*
     m_startDrawingButton = new QPushButton("그리기 시작");
     m_startDrawingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
@@ -1250,6 +1251,7 @@ void LineDrawingDialog::setupUI()
     connect(m_stopDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStopDrawingClicked);
     m_buttonLayout->addWidget(m_stopDrawingButton);
     m_stopDrawingButton->hide();
+
 
     //선 지우기
     m_clearLinesButton = new QPushButton();

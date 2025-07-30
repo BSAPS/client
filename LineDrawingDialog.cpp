@@ -166,7 +166,7 @@ void VideoGraphicsView::loadSavedRoadLines(const QList<RoadLineData> &roadLines)
         // 좌표 유효성 검사
         if ((roadLine.x1 == 0 && roadLine.y1 == 0 && roadLine.x2 == 0 && roadLine.y2 == 0) ||
             (roadLine.x1 == roadLine.x2 && roadLine.y1 == roadLine.y2)) {
-            qDebug() << "❌ 도로선" << i << "좌표가 유효하지 않음 - 건너뜀";
+            qDebug() << "도로선" << i << "좌표가 유효하지 않음 - 건너뜀";
             continue;
         }
 
@@ -203,7 +203,7 @@ void VideoGraphicsView::loadSavedRoadLines(const QList<RoadLineData> &roadLines)
         m_scene->addItem(endPoint);
         m_pointItems.append(endPoint);
 
-        qDebug() << QString("✅ 도로선 %1 그리기 완료: (%2,%3) → (%4,%5)")
+        qDebug() << QString("도로선 %1 그리기 완료: (%2,%3) → (%4,%5)")
                         .arg(roadLine.index).arg(x1).arg(y1).arg(x2).arg(y2);
 
         QPoint startPointQP(x1,y1);
@@ -234,7 +234,7 @@ void VideoGraphicsView::loadSavedDetectionLines(const QList<DetectionLineData> &
 
         if ((detectionLine.x1 == 0 && detectionLine.y1 == 0 && detectionLine.x2 == 0 && detectionLine.y2 == 0) ||
             (detectionLine.x1 == detectionLine.x2 && detectionLine.y1 == detectionLine.y2)) {
-            qDebug() << "❌ 감지선" << i << "좌표가 유효하지 않음 - 건너뜀";
+            qDebug() << "감지선" << i << "좌표가 유효하지 않음 - 건너뜀";
             continue;
         }
 
@@ -271,7 +271,7 @@ void VideoGraphicsView::loadSavedDetectionLines(const QList<DetectionLineData> &
         m_scene->addItem(endPoint);
         m_pointItems.append(endPoint);
 
-        qDebug() << QString("✅ 감지선 %1 그리기 완료: (%2,%3) → (%4,%5)")
+        qDebug() << QString("감지선 %1 그리기 완료: (%2,%3) → (%4,%5)")
                         .arg(detectionLine.index).arg(x1).arg(y1).arg(x2).arg(y2);
 
         QPoint startPointQP(x1,y1);
@@ -643,7 +643,9 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     : QDialog(parent)
     , m_mappingCountLabel(nullptr)
     , m_sendMappingsButton(nullptr)
-    , m_mainLayout(nullptr)
+    , m_
+    
+    Layout(nullptr)
     , m_buttonLayout(nullptr)
     , m_videoView(nullptr)
     , m_startDrawingButton(nullptr)
@@ -831,14 +833,14 @@ void LineDrawingDialog::onSavedRoadLinesReceived(const QList<RoadLineData> &road
                         .arg(roadLine.x1).arg(roadLine.y1).arg(roadLine.x2).arg(roadLine.y2)
                         .arg(roadLine.matrixNum1).arg(roadLine.matrixNum2);
 
-        addLogMessage(QString("🔍 도로선 #%1: (%2,%3)→(%4,%5) Matrix:%6,%7")
+        addLogMessage(QString("도로선 #%1: (%2,%3)→(%4,%5) Matrix:%6,%7")
                           .arg(roadLine.index)
                           .arg(roadLine.x1).arg(roadLine.y1).arg(roadLine.x2).arg(roadLine.y2)
                           .arg(roadLine.matrixNum1).arg(roadLine.matrixNum2), "COORD");
     }
 
     if (roadLines.isEmpty()) {
-        addLogMessage("⚠️ 서버에서 받은 도로선 데이터가 비어있습니다.", "WARNING");
+        addLogMessage("서버에서 받은 도로선 데이터가 비어있습니다.", "WARNING");
         m_roadLinesLoaded = true;
         checkAndLoadAllLines();
         return;
@@ -847,7 +849,7 @@ void LineDrawingDialog::onSavedRoadLinesReceived(const QList<RoadLineData> &road
     m_loadedRoadLines = roadLines;
     m_roadLinesLoaded = true;
 
-    addLogMessage(QString("✅ 서버에서 도로선 데이터를 수신했습니다 - 총 %1개").arg(roadLines.size()), "SUCCESS");
+    addLogMessage(QString("서버에서 도로선 데이터를 수신했습니다 - 총 %1개").arg(roadLines.size()), "SUCCESS");
 
     // 도로선이 있는 경우 매핑 정보도 복원
     if (!roadLines.isEmpty()) {
@@ -863,7 +865,7 @@ void LineDrawingDialog::onSavedRoadLinesReceived(const QList<RoadLineData> &road
         }
 
         updateMappingInfo();
-        addLogMessage(QString("🔧 도로선 매핑 정보 복원 완료 - %1개 선의 매핑 정보")
+        addLogMessage(QString("도로선 매핑 정보 복원 완료 - %1개 선의 매핑 정보")
                           .arg(roadLines.size()), "ACTION");
     }
 
@@ -886,7 +888,7 @@ void LineDrawingDialog::onSavedDetectionLinesReceived(const QList<DetectionLineD
                         .arg(detectionLine.x2).arg(detectionLine.y2)
                         .arg(detectionLine.mode);
 
-        addLogMessage(QString("🔍 감지선 #%1 (%2): (%3,%4)→(%5,%6) 모드:%7")
+        addLogMessage(QString("감지선 #%1 (%2): (%3,%4)→(%5,%6) 모드:%7")
                           .arg(detectionLine.index).arg(detectionLine.name)
                           .arg(detectionLine.x1).arg(detectionLine.y1)
                           .arg(detectionLine.x2).arg(detectionLine.y2)
@@ -894,7 +896,7 @@ void LineDrawingDialog::onSavedDetectionLinesReceived(const QList<DetectionLineD
     }
 
     if (detectionLines.isEmpty()) {
-        addLogMessage("⚠️ 서버에서 받은 감지선 데이터가 비어있습니다.", "WARNING");
+        addLogMessage("서버에서 받은 감지선 데이터가 비어있습니다.", "WARNING");
         m_detectionLinesLoaded = true;
         checkAndLoadAllLines();
         return;
@@ -903,7 +905,7 @@ void LineDrawingDialog::onSavedDetectionLinesReceived(const QList<DetectionLineD
     m_loadedDetectionLines = detectionLines;
     m_detectionLinesLoaded = true;
 
-    addLogMessage(QString("✅ 서버에서 감지선 데이터를 수신했습니다 - 총 %1개").arg(detectionLines.size()), "SUCCESS");
+    addLogMessage(QString("서버에서 감지선 데이터를 수신했습니다 - 총 %1개").arg(detectionLines.size()), "SUCCESS");
 
     // 모든 선 데이터가 로드되었는지 확인
     checkAndLoadAllLines();
@@ -913,7 +915,7 @@ void LineDrawingDialog::checkAndLoadAllLines()
 {
     // 도로선과 감지선 모두 로드되었을 때 화면에 표시
     if (m_roadLinesLoaded && m_detectionLinesLoaded) {
-        addLogMessage(QString("🔄 모든 선 데이터 로드 완료 - 화면에 그리기 시작 (도로선:%1개, 감지선:%2개)")
+        addLogMessage(QString("모든 선 데이터 로드 완료 - 화면에 그리기 시작 (도로선:%1개, 감지선:%2개)")
                           .arg(m_loadedRoadLines.size()).arg(m_loadedDetectionLines.size()), "ACTION");
 
         if (m_videoView) {
@@ -924,7 +926,7 @@ void LineDrawingDialog::checkAndLoadAllLines()
             m_videoView->loadSavedRoadLines(m_loadedRoadLines);
             qDebug() << "비디오 뷰에 저장된 선 데이터 로드 완료";
 
-            addLogMessage("🎨 화면에 선 그리기 완료 - 얇은 선으로 표시됩니다", "SUCCESS");
+            addLogMessage("화면에 선 그리기 완료 - 얇은 선으로 표시됩니다", "SUCCESS");
         }
 
         // 상태 업데이트
@@ -935,14 +937,14 @@ void LineDrawingDialog::checkAndLoadAllLines()
         updateCategoryInfo();
         updateButtonStates();
 
-        addLogMessage(QString("✅ 모든 저장된 선 데이터가 화면에 표시되었습니다 - 총 %1개")
+        addLogMessage(QString("모든 저장된 선 데이터가 화면에 표시되었습니다 - 총 %1개")
                           .arg(m_loadedRoadLines.size() + m_loadedDetectionLines.size()), "SUCCESS");
 
         // 상태 초기화
         m_roadLinesLoaded = false;
         m_detectionLinesLoaded = false;
     } else {
-        addLogMessage(QString("⏳ 데이터 로드 대기 중... (도로선:%1, 감지선:%2)")
+        addLogMessage(QString("데이터 로드 대기 중... (도로선:%1, 감지선:%2)")
                           .arg(m_roadLinesLoaded ? "완료" : "대기")
                           .arg(m_detectionLinesLoaded ? "완료" : "대기"), "INFO");
     }
@@ -1120,7 +1122,7 @@ void LineDrawingDialog::setupUI()
     QWidget *logContainer = new QWidget();
     logContainer->setMinimumWidth(350);
     logContainer->setMaximumWidth(400);
-    logContainer->setStyleSheet("background-color: #d2d8df; ");
+    logContainer->setStyleSheet("background-color: #353B55; ");
 
     QVBoxLayout *logLayout = new QVBoxLayout(logContainer);
     logLayout->setContentsMargins(10, 10, 10, 10);
@@ -1128,12 +1130,12 @@ void LineDrawingDialog::setupUI()
 
     // 로그 헤더
     QLabel *logHeaderLabel = new QLabel("작업 로그");
-    logHeaderLabel->setStyleSheet("color: #333; font-size: 16px; font-weight: bold; padding: 5px;");
+    logHeaderLabel->setStyleSheet("color: #ffffff; font-size: 16px; font-weight: bold; padding: 2px;");
     logLayout->addWidget(logHeaderLabel);
 
     // 로그 카운트 라벨
     m_logCountLabel = new QLabel("로그: 0개");
-    m_logCountLabel->setStyleSheet("color: #666; font-size: 12px; padding: 2px;");
+    m_logCountLabel->setStyleSheet("color: #ffffff; font-size: 12px; padding: 2px;");
     logLayout->addWidget(m_logCountLabel);
 
     // 로그 텍스트 영역
@@ -1141,7 +1143,7 @@ void LineDrawingDialog::setupUI()
     m_logTextEdit->setReadOnly(true);
     m_logTextEdit->setStyleSheet(
         "QTextEdit { "
-        "background-color: white; "
+        "background-color: #848792; "
         "padding: 8px; "
         "font-family: 'Consolas', 'Monaco', monospace; "
         "font-size: 11px; "
@@ -1153,7 +1155,7 @@ void LineDrawingDialog::setupUI()
     m_clearLogButton = new QPushButton("로그 지우기");
     m_clearLogButton->setStyleSheet(
         "QPushButton { "
-        "background-color: #6c757d; "
+        "background-color: #848792; "
         "color: white; "
         "padding: 8px 15px; "
         "border: none; "
@@ -1187,7 +1189,7 @@ void LineDrawingDialog::setupUI()
     QPushButton *loadSavedLinesButton = new QPushButton();
     loadSavedLinesButton->setIcon(QIcon(":/icons/download.png"));
     loadSavedLinesButton->setIconSize(QSize(30,30));
-    loadSavedLinesButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; } "
+    loadSavedLinesButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; padding: 15px 20px;} "
                                           "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
     loadSavedLinesButton->setToolTip("데이터 불러오기");
     qApp->setStyleSheet("QToolTip { "
@@ -1200,7 +1202,7 @@ void LineDrawingDialog::setupUI()
     m_buttonLayout->addWidget(loadSavedLinesButton);
     /*
     QPushButton *loadSavedLinesButton = new QPushButton("저장된 선 불러오기");
-    loadSavedLinesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
+    loadSavedLinesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;} "
                                         "QPushButton:hover { background-color: #f89b6c; }"
                                         "QPushButton:disabled { background-color: #b3aca5; }");
     connect(loadSavedLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onLoadSavedLinesClicked);
@@ -1211,7 +1213,7 @@ void LineDrawingDialog::setupUI()
     m_startDrawingButton = new QPushButton();
     m_startDrawingButton->setIcon(QIcon(":/icons/cil_pen.png"));
     m_startDrawingButton->setIconSize(QSize(30,30));
-    m_startDrawingButton->setStyleSheet("QPushButton { background-color: transparent; font-size: 20px; border: none; } "
+    m_startDrawingButton->setStyleSheet("QPushButton { background-color: transparent; font-size: 20px; border: none; padding: 15px 20px;} "
                                         "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
     m_startDrawingButton->setToolTip("선 그리기 시작");
     qApp->setStyleSheet("QToolTip { "
@@ -1248,7 +1250,7 @@ void LineDrawingDialog::setupUI()
     m_clearLinesButton = new QPushButton();
     m_clearLinesButton->setIcon(QIcon(":/icons/eraser.png"));
     m_clearLinesButton->setIconSize(QSize(30,30));
-    m_clearLinesButton->setStyleSheet("QPushButton { background-color: transparent; color: black; font-size: 20px; border: none; } "
+    m_clearLinesButton->setStyleSheet("QPushButton { background-color: transparent; color: black; font-size: 20px; border: none; padding: 15px 20px;} "
                                         "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
     m_clearLinesButton->setToolTip("지우기");
     qApp->setStyleSheet("QToolTip { "
@@ -1272,7 +1274,7 @@ void LineDrawingDialog::setupUI()
     m_sendCoordinatesButton = new QPushButton();
     m_sendCoordinatesButton->setIcon(QIcon(":/icons/export-file.png"));
     m_sendCoordinatesButton->setIconSize(QSize(30,30));
-    m_sendCoordinatesButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; } "
+    m_sendCoordinatesButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; padding: 15px 20px;} "
                                            "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
     m_sendCoordinatesButton->setToolTip("데이터 전송");
     qApp->setStyleSheet("QToolTip { "
@@ -1285,12 +1287,11 @@ void LineDrawingDialog::setupUI()
     m_buttonLayout->addWidget(m_sendCoordinatesButton);
 
 
-    // BBox 관련 버튼들
-
+    // BBox
     m_bboxOnButton = new QPushButton();
     m_bboxOnButton->setIcon(QIcon(":/icons/squares.png"));
     m_bboxOnButton->setIconSize(QSize(30,30));
-    m_bboxOnButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; } "
+    m_bboxOnButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; padding: 15px 20px;} "
                                    "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
     m_bboxOnButton->setToolTip("Bounding Box ON");
     qApp->setStyleSheet("QToolTip { "
@@ -1321,25 +1322,37 @@ void LineDrawingDialog::setupUI()
     m_buttonLayout->addStretch();
     */
 
+    //닫기 버튼
+    m_closeButton = new QPushButton();
+    m_closeButton->setIcon(QIcon(":/icons/exit.png"));
+    m_closeButton->setIconSize(QSize(30,30));
+    m_closeButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; padding: 15px 20px;} "
+                                  "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
+    m_closeButton->setToolTip("닫기");
+    qApp->setStyleSheet("QToolTip { "
+                        "color: black; "          // 글씨색
+                        "background-color: #ffffff; "  // 밝은 배경색
+                        "border: 1px solid gray; "
+                        "padding: 3px; "
+                        "}");
+    connect(m_closeButton, &QPushButton::clicked, this, &QDialog::reject);
+    m_buttonLayout->addWidget(m_closeButton);
+
+    /*
     m_closeButton = new QPushButton("닫기");
     m_closeButton->setStyleSheet("QPushButton { background-color: #9E9E9E; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
                                  "QPushButton:hover { background-color: #757575; }");
     connect(m_closeButton, &QPushButton::clicked, this, &QDialog::reject);
     m_buttonLayout->addWidget(m_closeButton);
-
+    */
 
     m_mainLayout->addLayout(m_buttonLayout);
 
-    // 프레임 카운터 타이머
-    // m_frameTimer = new QTimer(this);
-    // connect(m_frameTimer, &QTimer::timeout, this, &LineDrawingDialog::updateFrameCount);
-    // m_frameTimer->start(1000);
-
     // 초기 로그 메시지
     addLogMessage("기준선 그리기 다이얼로그가 시작되었습니다.", "SYSTEM");
-    addLogMessage("💡 '저장된 선 불러오기' 버튼을 클릭하여 서버에서 선 데이터를 가져오세요.", "INFO");
-    addLogMessage("💡 도로선(파란색)의 시작점이나 끝점을 클릭하여 각 좌표별로 Dot Matrix 번호를 설정하세요.", "INFO");
-    addLogMessage("💡 감지선을 그리면 수직선이 자동으로 계산되고 전송됩니다.", "INFO");
+    addLogMessage("'저장된 선 불러오기' 버튼을 클릭하여 서버에서 선 데이터를 가져오세요.", "INFO");
+    addLogMessage("도로선(파란색)의 시작점이나 끝점을 클릭하여 각 좌표별로 Dot Matrix 번호를 설정하세요.", "INFO");
+    addLogMessage("감지선을 그리면 수직선이 자동으로 계산되고 전송됩니다.", "INFO");
 
     qDebug() << "UI 설정 완료";
 }
@@ -1358,8 +1371,7 @@ void LineDrawingDialog::onStartDrawingClicked()
 
     m_startDrawingButton->setEnabled(false);
     m_stopDrawingButton->setEnabled(true);
-
-    // m_statusLabel->setText("그리기 모드 활성화 - 마우스로 선을 그어주세요");
+  
     addLogMessage("그리기 모드가 활성화되었습니다.", "ACTION");
     updateButtonStates();
 
@@ -1672,21 +1684,21 @@ void LineDrawingDialog::addLogMessage(const QString &message, const QString &typ
 
     // 타입별 색상 및 아이콘 설정
     if (type == "ERROR") {
-        coloredMessage = QString("<span style='color: #dc3545; font-weight: bold;'>🚫 %1 %2</span>").arg(timestamp, message);
+        coloredMessage = QString("<span style='color: #ffffff; font-weight: bold;'> %1 %2</span>").arg(timestamp, message);
     } else if (type == "SUCCESS") {
-        coloredMessage = QString("<span style='color: #28a745; font-weight: bold;'>✅ %1 %2</span>").arg(timestamp, message);
+        coloredMessage = QString("<span style='color: #ffffff; font-weight: bold;'> %1 %2</span>").arg(timestamp, message);
     } else if (type == "WARNING") {
-        coloredMessage = QString("<span style='color: #ffc107; font-weight: bold;'>⚠️ %1 %2</span>").arg(timestamp, message);
+        coloredMessage = QString("<span style='color: #ffffff; font-weight: bold;'>️ %1 %2</span>").arg(timestamp, message);
     } else if (type == "ACTION") {
-        coloredMessage = QString("<span style='color: #007bff; font-weight: bold;'>🔧 %1 %2</span>").arg(timestamp, message);
+        coloredMessage = QString("<span style='color: #ffffff; font-weight: bold;'> %1 %2</span>").arg(timestamp, message);
     } else if (type == "DRAW") {
-        coloredMessage = QString("<span style='color: #6f42c1; font-weight: bold;'>✏️ %1 %2</span>").arg(timestamp, message);
+        coloredMessage = QString("<span style='color: #ffffff; font-weight: bold;'>️ %1 %2</span>").arg(timestamp, message);
     } else if (type == "COORD") {
-        coloredMessage = QString("<span style='color: #fd7e14; font-weight: bold;'>📍 %1 %2</span>").arg(timestamp, message);
+        coloredMessage = QString("<span style='color: #ffffff; font-weight: bold;'> %1 %2</span>").arg(timestamp, message);
     } else if (type == "SYSTEM") {
-        coloredMessage = QString("<span style='color: #6c757d; font-weight: bold;'>⚙️ %1 %2</span>").arg(timestamp, message);
+        coloredMessage = QString("<span style='color: #ffffff; font-weight: bold;'>️ %1 %2</span>").arg(timestamp, message);
     } else {
-        coloredMessage = QString("<span style='color: #495057;'>ℹ️ %1 %2</span>").arg(timestamp, message);
+        coloredMessage = QString("<span style='color: #ffffff;'>️ %1 %2</span>").arg(timestamp, message);
     }
 
     m_logTextEdit->append(coloredMessage);
@@ -1897,7 +1909,7 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
     }
     m_tcpCommunicator->setVideoView(m_videoView);
 
-    addLogMessage("🔄 수동으로 저장된 선 데이터를 요청합니다.", "ACTION");
+    addLogMessage("수동으로 저장된 선 데이터를 요청합니다.", "ACTION");
 
     // 상태 초기화
     m_roadLinesLoaded = false;
@@ -1920,10 +1932,10 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
     updateButtonStates();
 
     if (roadSuccess && detectionSuccess) {
-        addLogMessage("✅ 서버에 저장된 도로선과 감지선 데이터를 요청했습니다.", "SUCCESS");
+        addLogMessage("서버에 저장된 도로선과 감지선 데이터를 요청했습니다.", "SUCCESS");
         // m_statusLabel->setText("저장된 선 데이터를 불러오는 중...");
     } else {
-        addLogMessage("❌ 저장된 선 데이터 요청에 실패했습니다.", "ERROR");
+        addLogMessage("저장된 선 데이터 요청에 실패했습니다.", "ERROR");
         QMessageBox::warning(this, "오류", "저장된 선 데이터 요청에 실패했습니다.");
     }
 }
@@ -1939,13 +1951,13 @@ void LineDrawingDialog::onBBoxesReceived(const QList<BBox> &bboxes, qint64 times
         return;
     }
     
-    // VideoGraphicsView에 BBox 전달
+    // VideoGraphicsView에 Bounding Box 전달
     if (m_videoView) {
         m_videoView->setBBoxes(bboxes, timestamp);
         
         // 로그 메시지 추가
         if (bboxes.isEmpty()) {
-            //addLogMessage("📦 BBox 업데이트 - 감지된 객체가 없습니다.", "BBOX");
+            //addLogMessage("Bounding Box 업데이트 - 감지된 객체가 없습니다.", "Bounding Box");
         } else {
             QString objectList;
             int filteredCount = 0;
@@ -1958,14 +1970,14 @@ void LineDrawingDialog::onBBoxesReceived(const QList<BBox> &bboxes, qint64 times
                 }
             }
             if (filteredCount > 0) {
-                //addLogMessage(QString("📦 BBox 업데이트 - %1개 객체 (Vehicle/Human만): %2").arg(filteredCount).arg(objectList.trimmed()), "BBOX");
+                //addLogMessage(QString("Bounding Box 업데이트 - %1개 객체 (Vehicle/Human만): %2").arg(filteredCount).arg(objectList.trimmed()), "BBOX");
             } else {
-                //addLogMessage("📦 BBox 업데이트 - Vehicle/Human 객체가 없습니다.", "BBOX");
+                //addLogMessage("Bounding Box 업데이트 - Vehicle/Human 객체가 없습니다.", "Bounding Box");
             }
         }
     } else {
         qDebug() << "[LineDrawingDialog] VideoView가 null입니다. BBox를 표시할 수 없습니다.";
-        addLogMessage("❌ BBox 표시 실패 - VideoView를 찾을 수 없습니다.", "ERROR");
+        addLogMessage("Bounding Box 표시 실패 - VideoView를 찾을 수 없습니다.", "ERROR");
     }
 }
 

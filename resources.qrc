@@ -18,9 +18,9 @@
         <file>icons/eraser_clicked.png</file>
         <file>icons/export-file.png</file>
         <file>icons/export-file_clicked.png</file>
-        <file>icons/close.png</file>
         <file>icons/squares.png</file>
         <file>font/05HanwhaGothicR.ttf</file>
         <file>icons/download.png</file>
+        <file>icons/exit.png</file>
     </qresource>
 </RCC>

@@ -22,6 +22,7 @@
         <file>font/05HanwhaGothicR.ttf</file>
         <file>icons/download.png</file>
         <file>icons/exit.png</file>
+        <file>icons/squares_clicked.png</file>
         <file>icons/left.png</file>
         <file>icons/right.png</file>
     </qresource>

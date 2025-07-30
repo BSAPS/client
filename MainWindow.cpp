@@ -540,6 +540,7 @@ void MainWindow::onNetworkConfigClicked()
 {
     if (!m_networkDialog) {
         m_networkDialog = new NetworkConfigDialog(this);
+        m_networkDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
         m_networkDialog->setRtspUrl(m_rtspUrl);
         m_networkDialog->setTcpHost(m_tcpHost);
         m_networkDialog->setTcpPort(m_tcpPort);
@@ -572,6 +573,7 @@ void MainWindow::onVideoStreamClicked()
     if (!m_lineDrawingDialog) {
         // TcpCommunicator를 직접 전달
         m_lineDrawingDialog = new LineDrawingDialog(m_rtspUrl, m_tcpCommunicator, this);
+        m_lineDrawingDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
         
         // 기존 시그널 연결
         connect(m_lineDrawingDialog, &LineDrawingDialog::lineCoordinatesReady,

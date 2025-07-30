@@ -27,7 +27,7 @@ QDialog {
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page_3">
     <widget class="QLabel" name="BackgroundLabel">
@@ -52,14 +52,14 @@ QDialog {
     <widget class="QStackedWidget" name="OTPLoginWidget">
      <property name="geometry">
       <rect>
-       <x>650</x>
-       <y>140</y>
-       <width>331</width>
+       <x>640</x>
+       <y>130</y>
+       <width>341</width>
        <height>421</height>
       </rect>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="LgoinPage">
       <widget class="QFrame" name="Login">
@@ -67,7 +67,7 @@ QDialog {
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>331</width>
+         <width>341</width>
          <height>421</height>
         </rect>
        </property>
@@ -78,10 +78,13 @@ QDialog {
 }
 </string>
        </property>
+       <property name="lineWidth">
+        <number>1</number>
+       </property>
        <widget class="QLabel" name="titleLabel">
         <property name="geometry">
          <rect>
-          <x>130</x>
+          <x>120</x>
           <y>40</y>
           <width>100</width>
           <height>40</height>
@@ -98,6 +101,9 @@ QLabel {
         </property>
         <property name="text">
          <string>LOGIN</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
         </property>
        </widget>
        <widget class="QLabel" name="idLabel">
@@ -123,7 +129,7 @@ QLabel {
          <rect>
           <x>40</x>
           <y>130</y>
-          <width>251</width>
+          <width>261</width>
           <height>40</height>
          </rect>
         </property>
@@ -151,7 +157,7 @@ QLabel {
          <rect>
           <x>40</x>
           <y>220</y>
-          <width>251</width>
+          <width>261</width>
           <height>40</height>
          </rect>
         </property>
@@ -216,7 +222,7 @@ QPushButton {
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>331</width>
+         <width>341</width>
          <height>421</height>
         </rect>
        </property>
@@ -228,12 +234,15 @@ QPushButton {
 }
 </string>
        </property>
+       <property name="lineWidth">
+        <number>1</number>
+       </property>
        <widget class="QLabel" name="titleLabel_2">
         <property name="geometry">
          <rect>
-          <x>130</x>
+          <x>120</x>
           <y>40</y>
-          <width>71</width>
+          <width>100</width>
           <height>40</height>
          </rect>
         </property>
@@ -247,7 +256,10 @@ QLabel {
 </string>
         </property>
         <property name="text">
-         <string>Login</string>
+         <string>LOGIN</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
         </property>
        </widget>
        <widget class="QLabel" name="idLabel_2">
@@ -255,7 +267,7 @@ QLabel {
          <rect>
           <x>40</x>
           <y>155</y>
-          <width>141</width>
+          <width>151</width>
           <height>20</height>
          </rect>
         </property>
@@ -268,7 +280,7 @@ QLabel {
          <rect>
           <x>40</x>
           <y>180</y>
-          <width>251</width>
+          <width>261</width>
           <height>40</height>
          </rect>
         </property>

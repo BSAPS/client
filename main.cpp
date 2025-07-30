@@ -11,6 +11,7 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
+
     // 애플리케이션 정보 설정
     app.setApplicationName("CCTV Monitoring System");
     app.setApplicationVersion("2.0");
@@ -50,6 +51,9 @@ int main(int argc, char *argv[])
 
     // 로그인 창 생성 및 표시
     LoginWindow loginWindow;
+
+    loginWindow.setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+
     
     // LoginWindow에 공유 TcpCommunicator 설정
     loginWindow.setTcpCommunicator(sharedTcpCommunicator);
@@ -63,6 +67,7 @@ int main(int argc, char *argv[])
         // MainWindow에도 동일한 TcpCommunicator 설정
         mainWindow->setTcpCommunicator(sharedTcpCommunicator);
         
+
         mainWindow->show();
 
         qDebug() << "메인 창이 표시되었습니다.";

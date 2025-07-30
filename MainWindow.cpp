@@ -230,6 +230,7 @@ void MainWindow::setupUI()
     sidebarLayout->addWidget(m_modeComboBox);
 
     mainLayout->addLayout(contentLayout);
+
 }
 
 void MainWindow::setupLiveVideoTab()

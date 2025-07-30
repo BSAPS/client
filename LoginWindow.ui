@@ -27,7 +27,7 @@ QDialog {
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="page_3">
     <widget class="QLabel" name="BackgroundLabel">
@@ -343,9 +343,9 @@ QPushButton {
     <widget class="QLabel" name="label">
      <property name="geometry">
       <rect>
-       <x>690</x>
-       <y>60</y>
-       <width>291</width>
+       <x>660</x>
+       <y>50</y>
+       <width>301</width>
        <height>31</height>
       </rect>
      </property>
@@ -360,6 +360,9 @@ QPushButton {
      </property>
      <property name="text">
       <string>CCTV Monitoring System</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignmentFlag::AlignCenter</set>
      </property>
     </widget>
    </widget>
@@ -383,7 +386,7 @@ QPushButton {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>:/images/Background4.png</pixmap>
+      <pixmap resource="resources.qrc">:/images/SIGNUP_.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -399,7 +402,7 @@ QPushButton {
       </rect>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="SignUpPage">
       <widget class="QFrame" name="SignUp">

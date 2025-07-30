@@ -1317,7 +1317,8 @@ void LineDrawingDialog::onStartDrawingClicked()
 
     m_startDrawingButton->setEnabled(false);
     m_stopDrawingButton->setEnabled(true);
-  
+
+
     addLogMessage("그리기 모드가 활성화되었습니다.", "ACTION");
     updateButtonStates();
 

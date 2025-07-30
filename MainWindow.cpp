@@ -3,6 +3,7 @@
 #include "NetworkConfigDialog.h"
 #include "EnvConfig.h"
 #include <QApplication>
+#include <QStackedLayout>
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QStandardPaths>
@@ -180,42 +181,57 @@ void MainWindow::setupUI()
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
 
-
     QVBoxLayout *mainLayout = new QVBoxLayout(m_centralWidget);
-
     // 헤더 영역
-    QHBoxLayout *headerLayout = new QHBoxLayout();
+    QWidget *headerBar = new QWidget();
+    headerBar->setFixedHeight(40);
+    headerBar->setStyleSheet("background-color: #2d3040;");
 
+    QGridLayout *headerLayout = new QGridLayout(headerBar);
+    headerLayout->setContentsMargins(0, 0, 20, 0);
+
+    // 왼쪽 빈 공간 (혹시 버튼 들어갈 수도 있음)
+    QWidget *leftSpacer = new QWidget();
+    headerLayout->addWidget(leftSpacer, 0, 0, Qt::AlignLeft);
+
+    // 가운데 타이틀
     QLabel *titleLabel = new QLabel("CCTV Monitoring System");
-    titleLabel->setStyleSheet("color: #F37321; font-size: 24px; font-weight: bold;");
-    headerLayout->addWidget(titleLabel);
+    titleLabel->setAlignment(Qt::AlignCenter);
+    titleLabel->setStyleSheet("color: white; font-size: 24px; font-weight: bold;");
+    headerLayout->addWidget(titleLabel, 0, 1, Qt::AlignCenter);
 
-    headerLayout->addStretch();
+    // 오른쪽 버튼
+    headerLayout->addWidget(m_networkButton, 0, 2, Qt::AlignRight);
 
+    // 열 너비 균형
+    headerLayout->setColumnStretch(0, 1);
+    headerLayout->setColumnStretch(1, 2); // 가운데 강조
+    headerLayout->setColumnStretch(2, 1);
+
+    // 오른쪽 버튼
     m_networkButton = new QPushButton();
-    m_networkButton->setIcon(QIcon(":/icons/NetworkConnect.png"));
+    m_networkButton->setIcon(QIcon(":/icons/NetworkConnect.png")); // 아이콘 리소스 확인
     m_networkButton->setIconSize(QSize(24, 24));
-    m_networkButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; } "
-                                   "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
-    connect(m_networkButton, &QPushButton::clicked, this, &MainWindow::onNetworkConfigClicked);
+    m_networkButton->setFixedSize(40, 40);
+    m_networkButton->setStyleSheet(
+        "QPushButton { background-color: transparent; border: none; } "
+        "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 20px; }");
+    headerLayout->addWidget(m_networkButton, 0, Qt::AlignRight);
 
-    headerLayout->addWidget(m_networkButton);
-
-    mainLayout->addLayout(headerLayout);
+    // headerLayout 자동 적용
+    mainLayout->addWidget(headerBar);
 
     // 콘텐츠 영역
     QHBoxLayout *contentLayout = new QHBoxLayout();
 
     m_tabWidget = new QTabWidget();
-    m_tabWidget->setStyleSheet("QTabWidget::pane { border: 1px solid #c0c0c0; background-color: white; } "
-                               "QTabBar::tab { background-color: #f0f0f0; color : black; padding: 10px 20px; margin-right: 2px; } "
-                               "QTabBar::tab:selected { background-color: white; color : #6750a4; border-bottom: 2px solid #6750a4; }");
+
+    m_tabWidget->setStyleSheet("QTabWidget::pane {background-color: #474B5C; } "
+                               "QTabBar::tab { background-color: #666977; color : white; padding: 10px 20px; border-top-left-radius: 15px; border-top-right-radius: 15px; } "
+                               "QTabBar::tab:selected { background-color: #474B5C; color : #F37321; border-bottom: 2px solid #474B5C; }");
 
     setupLiveVideoTab();
     setupCapturedImageTab();
-
-
-
     contentLayout->addWidget(m_tabWidget, 3);
 
     // 사이드바
@@ -235,63 +251,172 @@ void MainWindow::setupUI()
 
 void MainWindow::setupLiveVideoTab()
 {
+
     m_liveVideoTab = new QWidget();
+    m_liveVideoTab->setStyleSheet("background-color: #474B5C;");
 
     QVBoxLayout *layout = new QVBoxLayout(m_liveVideoTab);
+    layout->setSpacing(0);
+    layout->setContentsMargins(5, 5, 5, 5);
+
+    // 컨테이너 + 오버레이 구조
+    QWidget *videoContainer = new QWidget();
+    QStackedLayout *stackedLayout = new QStackedLayout(videoContainer);
 
     m_videoStreamWidget = new VideoStreamWidget();
     m_videoStreamWidget->setMinimumHeight(400);
+
+    // 재생 버튼 (아이콘 이미지 사용)
+    QPushButton *playOverlayButton = new QPushButton();
+    playOverlayButton->setIcon(QIcon(":/icons/play1.png"));  //재생 이미지
+    playOverlayButton->setIconSize(QSize(48, 48));
+    playOverlayButton->setFixedSize(64, 48);
+    playOverlayButton->setCursor(Qt::PointingHandCursor);
+    playOverlayButton->setStyleSheet(
+        "QPushButton { background-color: #f37321; border: none; border-radius: 12px; } "
+        "QPushButton:hover { background-color: #fa8a3f; }"
+        );
+
+    // 버튼을 가운데 정렬할 수 있도록 wrap 위젯
+    QWidget *overlayWidget = new QWidget();
+    QVBoxLayout *overlayLayout = new QVBoxLayout(overlayWidget);
+    overlayLayout->addStretch();
+    overlayLayout->addWidget(playOverlayButton, 0, Qt::AlignHCenter);
+    overlayLayout->addStretch();
+    overlayLayout->setContentsMargins(0, 0, 0, 0);
+
+    // ▶ 버튼 클릭 시: 영상 시작 + 영상 위젯을 전면에
+    connect(playOverlayButton, &QPushButton::clicked, this, [=]() {
+        if (!m_rtspUrl.isEmpty()) {
+            m_videoStreamWidget->startStream(m_rtspUrl);
+            stackedLayout->setCurrentWidget(m_videoStreamWidget);
+        } else {
+            QMessageBox::warning(this, "RTSP URL 누락", "먼저 네트워크 설정에서 RTSP URL을 입력하세요.");
+        }
+    });
+
+    // 영상 클릭 시: 정지 + ▶ 버튼 레이어 다시 앞으로
+    connect(m_videoStreamWidget, &VideoStreamWidget::clicked, this, [=]() {
+        if (m_videoStreamWidget->isStreaming()) {
+            m_videoStreamWidget->stopStream();
+            stackedLayout->setCurrentWidget(overlayWidget);  // ⬅ 오버레이를 다시 위로
+        }
+    });
+
+    stackedLayout->addWidget(overlayWidget);
+    stackedLayout->addWidget(m_videoStreamWidget);
+
+    // 클릭하면 재생 + 버튼 숨김
+    connect(playOverlayButton, &QPushButton::clicked, this, [=]() {
+        if (!m_rtspUrl.isEmpty()) {
+            m_videoStreamWidget->startStream(m_rtspUrl);
+            stackedLayout->setCurrentWidget(m_videoStreamWidget);  // ⭐ 영상 보여주기
+        } else {
+            QMessageBox::warning(this, "RTSP URL 누락", "먼저 네트워크 설정에서 RTSP URL을 입력하세요.");
+        }
+    });
+    // event 연결
     connect(m_videoStreamWidget, &VideoStreamWidget::clicked, this, &MainWindow::onVideoStreamClicked);
     connect(m_videoStreamWidget, &VideoStreamWidget::streamError, this, &MainWindow::onStreamError);
-    layout->setSpacing(10);
-    layout->setContentsMargins(5, 5, 5, 5);
-    layout->addWidget(m_videoStreamWidget);
+    //drawButton
+    connect(m_videoStreamWidget, &VideoStreamWidget::drawButtonClicked,
+            this, &MainWindow::onDrawButtonClicked);
 
-    m_streamingButton = new QPushButton("Start Streaming");
-    m_streamingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt} "
-                                     "QPushButton:hover { background-color: #C8C8C8; } "
-                                     "QPushButton:disabled { background-color: #837F7D; }");
-    connect(m_streamingButton, &QPushButton::clicked, this, &MainWindow::onStreamingButtonClicked);
-    layout->addWidget(m_streamingButton);
+    // 레이아웃 적용
+    layout->addWidget(videoContainer);
 
     m_tabWidget->addTab(m_liveVideoTab, "Live Video Stream");
+}
+
+void MainWindow::onDrawButtonClicked()
+{
+    if (!m_videoStreamWidget->isStreaming()) {
+        QMessageBox::information(this, "안내", "먼저 스트리밍을 시작해주세요.");
+        return;
+    }
+
+    if (!m_lineDrawingDialog) {
+        m_lineDrawingDialog = new LineDrawingDialog(m_rtspUrl, m_tcpCommunicator, this);
+
+        connect(m_lineDrawingDialog, &LineDrawingDialog::lineCoordinatesReady,
+                this, [this](int x1, int y1, int x2, int y2) {
+                    this->sendSingleLineCoordinates(x1, y1, x2, y2);
+                });
+
+        connect(m_lineDrawingDialog, &LineDrawingDialog::categorizedLinesReady,
+                this, [this](const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines) {
+                    this->sendCategorizedCoordinates(roadLines, detectionLines);
+                });
+
+        connect(m_lineDrawingDialog, &LineDrawingDialog::perpendicularLineGenerated,
+                this, [this](int detectionLineIndex, double a, double b) {
+                    if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
+                        PerpendicularLineData perpData{detectionLineIndex, a, b};
+                        if (m_tcpCommunicator->sendPerpendicularLine(perpData)) {
+                            qDebug() << "수직선 전송 성공";
+                        } else {
+                            QMessageBox::warning(this, "전송 실패", "수직선 전송에 실패했습니다.");
+                        }
+                    }
+                });
+    }
+
+    m_lineDrawingDialog->exec();
 }
 
 void MainWindow::setupCapturedImageTab()
 {
     m_capturedImageTab = new QWidget();
+    m_capturedImageTab->setStyleSheet("background-color: #474B5C;");
 
     QVBoxLayout *mainLayout = new QVBoxLayout(m_capturedImageTab);
+    mainLayout->setContentsMargins(15, 15, 15, 15);
 
-    // 컨트롤 영역
-    QWidget *controlWidget = new QWidget();
-    controlWidget->setStyleSheet("background-color: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 10px;");
-    QHBoxLayout *controlLayout = new QHBoxLayout(controlWidget);
+    // 상단 컨트롤 바
+    QWidget *topBar = new QWidget();
+    topBar->setStyleSheet("background-color: #474B5C;");
+    QHBoxLayout *topLayout = new QHBoxLayout(topBar);
+    topLayout->setContentsMargins(0, 0, 0, 0);
+    topLayout->setSpacing(10);
+
+    // 날짜 라벨
+    QLabel *dateLabel = new QLabel("날짜:");
+    dateLabel->setStyleSheet("color: white; font-weight: bold;");
+    topLayout->addWidget(dateLabel);
 
     // 날짜 선택
-    QLabel *dateLabel = new QLabel("날짜:");
-    dateLabel->setStyleSheet("color: black; font-size: 14px; font-weight: bold;");
-    controlLayout->addWidget(dateLabel);
-
-    m_dateButton = new QPushButton();
-    m_dateButton->setText(m_selectedDate.toString("yyyy-MM-dd (dddd)"));
-    m_dateButton->setStyleSheet(
-        "QPushButton { "
-        "background-color: white; "
-        "color: black; "
-        "padding: 8px 12px; "
-        "border: 1px solid #ccc; "
-        "border-radius: 4px; "
-        "text-align: left; "
-        "min-width: 150px; "
-        "} "
-        "QPushButton:hover { "
-        "background-color: #f0f0f0; "
-        "} "
-        "QPushButton:pressed { "
-        "background-color: #e0e0e0; "
+    m_dateEdit = new QDateEdit(QDate::currentDate());
+    m_dateEdit->setDisplayFormat("yyyy-MM-dd");
+    m_dateEdit->setCalendarPopup(true);
+    m_dateEdit->setStyleSheet(
+        "QDateEdit {"
+        " background-color: #383A41;"
+        " color: white;"
+        " padding: 6px 12px;"
+        " border: none;"
+        " border-radius: 15px;"
+        "}"
+        "QDateEdit::drop-down {"
+        " background-color: #383A41;"
+        " width: 24px;"
+        " border: none;"
+        " border-top-right-radius: 15px;"
+        " border-bottom-right-radius: 15px;"
+        "}"
+        "QDateEdit::down-arrow {"
+        " image: url(:/icons/up_down.png);"  // 너가 넣은 화살표 아이콘 경로
+        " width: 20px;"
+        " height: 20px;"
+        "}"
+        "QDateEdit QAbstractItemView {"
+        " background-color: #2c2c2c;"
+        " color: white;"
+        " selection-background-color: #505050;"
+        " border: none;"
         "}"
         );
+
+    topLayout->addWidget(m_dateEdit);
     connect(m_dateButton, &QPushButton::clicked, this, &MainWindow::onDateButtonClicked);
     controlLayout->addWidget(m_dateButton);
 
@@ -352,58 +477,65 @@ void MainWindow::setupCapturedImageTab()
     connect(m_calendarWidget, &QCalendarWidget::clicked, this, &MainWindow::onCalendarDateSelected);
     calendarLayout->addWidget(m_calendarWidget);
 
-    controlLayout->addSpacing(20);
+    // 시간 라벨
+    QLabel *timeLabel = new QLabel("시간:");
+    timeLabel->setStyleSheet("color: white; font-weight: bold;");
+    topLayout->addWidget(timeLabel);
 
-    // 시간대 선택
-    QLabel *hourLabel = new QLabel("시간대:");
-    hourLabel->setStyleSheet("color: black; font-size: 14px; font-weight: bold;");
-    controlLayout->addWidget(hourLabel);
-
+    // 시간 선택
     m_hourComboBox = new QComboBox();
-    m_hourComboBox->setStyleSheet(
-        "QComboBox { background-color: white; color: black; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 100px; } "
-        "QComboBox::drop-down { subcontrol-origin: padding; subcontrol-position: center right; width: 20px; border-left-width: 1px; border-left-color: #ccc; border-left-style: solid; border-top-right-radius: 3px; border-bottom-right-radius: 3px; } "
-        "QComboBox::down-arrow { image: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid #666; } "
-        "QComboBox QAbstractItemView { background-color: white; color: black; selection-background-color: #e3f2fd; border: 1px solid #ccc; }"
-        );
-
-    // 24시간 시간대 추가
-    for (int hour = 0; hour < 24; hour++) {
-        QString timeRange = QString("%1시 ~ %2시").arg(hour).arg(hour + 1);
-        m_hourComboBox->addItem(timeRange, hour);
-    }
-
-    // 현재 시간으로 기본값 설정
+    for (int h = 0; h < 24; ++h)
+        m_hourComboBox->addItem(QString("%1시 ~ %2시").arg(h, 2, 10, QChar('0')).arg(h + 1, 2, 10, QChar('0')));
     m_hourComboBox->setCurrentIndex(QTime::currentTime().hour());
+    m_hourComboBox->setStyleSheet(
+        "QComboBox {"
+        " background-color: #383A41;"
+        " color: white;"
+        " padding: 6px 12px;"
+        " border: none;"
+        " border-radius: 15px;"
+        "}"
+        "QComboBox::drop-down {"
+        " background-color: #383A41;"
+        " width: 24px;"
+        " border: none;"
+        " border-top-right-radius: 15px;"
+        " border-bottom-right-radius: 15px;"
+        "}"
+        "QComboBox::down-arrow {"
+        " image: url(:/icons/up_down.png);"  // 화살표 아이콘
+        " width: 20px;"
+        " height: 20px;"
+        "}"
+        "QComboBox QAbstractItemView {"
+        " background-color: #2c2c2c;"
+        " color: white;"
+        " selection-background-color: #505050;"
+        " border: none;"
+        "}"
+        );
+    topLayout->addWidget(m_hourComboBox);
 
-    connect(m_hourComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &MainWindow::onHourComboChanged);
-    controlLayout->addWidget(m_hourComboBox);
-
-    controlLayout->addSpacing(20);
-
-    m_requestButton = new QPushButton("이미지 요청");
-    m_requestButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt} "
-                                   "QPushButton:hover { background-color: #f89b6c; } "
-                                   "QPushButton:disabled { background-color: #b3aca5; }");
+    // load 버튼
+    m_requestButton = new QPushButton("load");
+    m_requestButton->setStyleSheet(
+        "QPushButton { background-color: #f37321; color: white; padding: 6px 16px; border-radius: 4px; font-weight: bold; }"
+        "QPushButton:hover { background-color: #f89b6c; }"
+        "QPushButton:disabled { background-color: #aaa; }"
+        );
+    //버튼 클릭 신호 연결
     connect(m_requestButton, &QPushButton::clicked, this, &MainWindow::onRequestImagesClicked);
-    controlLayout->addWidget(m_requestButton);
+    topLayout->addWidget(m_requestButton);
+    topLayout->addStretch(); // 오른쪽 여백 확보
 
-    controlLayout->addStretch();
-
-    m_statusLabel = new QLabel("서버에 연결하여 이미지를 요청하세요.");
-    m_statusLabel->setStyleSheet("color: #666; font-size: 12px;");
-    controlLayout->addWidget(m_statusLabel);
-
-    mainLayout->addWidget(controlWidget);
-
+    mainLayout->addWidget(topBar);
     // 이미지 영역
     m_imageScrollArea = new QScrollArea();
     m_imageScrollArea->setWidgetResizable(true);
-    m_imageScrollArea->setStyleSheet("QScrollArea { border: 1px solid #ddd; background-color: white; }");
+    m_imageScrollArea->setStyleSheet("QScrollArea { background-color: #474B5C; border: none;}");
 
     m_imageGridWidget = new QWidget();
-    m_imageGridWidget->setStyleSheet("background-color: white;");
+    m_imageGridWidget->setStyleSheet("background-color: #474B5C; border: none;");
     m_imageGridLayout = new QGridLayout(m_imageGridWidget);
     m_imageGridLayout->setSpacing(15);
     m_imageGridLayout->setContentsMargins(15, 15, 15, 15);
@@ -418,6 +550,7 @@ void MainWindow::setupCapturedImageTab()
 
     m_tabWidget->addTab(m_capturedImageTab, "Captured Images");
 }
+
 
 
 void MainWindow::setupNetworkConnection()

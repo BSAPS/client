@@ -26,6 +26,7 @@ public:
 
 signals:
     void clicked();
+    void drawButtonClicked();
     void streamError(const QString &error);
 
 protected:

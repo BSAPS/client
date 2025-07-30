@@ -643,9 +643,6 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     : QDialog(parent)
     , m_mappingCountLabel(nullptr)
     , m_sendMappingsButton(nullptr)
-    , m_
-    
-    Layout(nullptr)
     , m_buttonLayout(nullptr)
     , m_videoView(nullptr)
     , m_startDrawingButton(nullptr)
@@ -1209,7 +1206,7 @@ void LineDrawingDialog::setupUI()
     m_buttonLayout->addWidget(loadSavedLinesButton);
     */
 
-    //선 그리기 및 (중지)
+    //선 그리기
     m_startDrawingButton = new QPushButton();
     m_startDrawingButton->setIcon(QIcon(":/icons/cil_pen.png"));
     m_startDrawingButton->setIconSize(QSize(30,30));
@@ -1237,15 +1234,23 @@ void LineDrawingDialog::setupUI()
     //connect(m_startDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStartDrawingClicked);
     //m_buttonLayout->addWidget(m_startDrawingButton);
 
-    /*
-    m_stopDrawingButton = new QPushButton("그리기 중지");
-    m_stopDrawingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
-                                       "QPushButton:hover { background-color: #f89b6c; }"
-                                       "QPushButton:disabled { background-color: #b3aca5; }");
-    m_stopDrawingButton->setEnabled(false);
+    // 선 그리기 중지
+    m_stopDrawingButton = new QPushButton();
+    m_stopDrawingButton->setIcon(QIcon(":/icons/cil_pen_clicked.png"));
+    m_stopDrawingButton->setIconSize(QSize(30,30));
+    m_stopDrawingButton->setStyleSheet("QPushButton { background-color: transparent; font-size: 20px; border: none; padding: 15px 20px;} "
+                                        "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
+    m_stopDrawingButton->setToolTip("선 그리기 중지");
+    qApp->setStyleSheet("QToolTip { "
+                        "color: black; "          // 글씨색
+                        "background-color: #ffffff; "  // 밝은 배경색
+                        "border: 1px solid gray; "
+                        "padding: 3px; "
+                        "}");
     connect(m_stopDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStopDrawingClicked);
     m_buttonLayout->addWidget(m_stopDrawingButton);
-    */
+    m_stopDrawingButton->hide();
+
     //선 지우기
     m_clearLinesButton = new QPushButton();
     m_clearLinesButton->setIcon(QIcon(":/icons/eraser.png"));
@@ -1287,7 +1292,7 @@ void LineDrawingDialog::setupUI()
     m_buttonLayout->addWidget(m_sendCoordinatesButton);
 
 
-    // BBox
+    // BBox ON
     m_bboxOnButton = new QPushButton();
     m_bboxOnButton->setIcon(QIcon(":/icons/squares.png"));
     m_bboxOnButton->setIconSize(QSize(30,30));
@@ -1302,6 +1307,23 @@ void LineDrawingDialog::setupUI()
                         "}");
     connect(m_bboxOnButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOnClicked);
     m_buttonLayout->addWidget(m_bboxOnButton);
+
+    // BBox OFF
+    m_bboxOffButton = new QPushButton();
+    m_bboxOffButton->setIcon(QIcon(":/icons/squares_clicked.png"));
+    m_bboxOffButton->setIconSize(QSize(30,30));
+    m_bboxOffButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; padding: 15px 20px;} "
+                                   "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
+    m_bboxOffButton->setToolTip("Bounding Box OFF");
+    qApp->setStyleSheet("QToolTip { "
+                        "color: black; "          // 글씨색
+                        "background-color: #ffffff; "  // 밝은 배경색
+                        "border: 1px solid gray; "
+                        "padding: 3px; "
+                        "}");
+    connect(m_bboxOffButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOffClicked);
+    m_buttonLayout->addWidget(m_bboxOffButton);
+    m_bboxOffButton->hide();
 
 
     /*
@@ -1318,9 +1340,9 @@ void LineDrawingDialog::setupUI()
                                    "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_bboxOffButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOffClicked);
     m_buttonLayout->addWidget(m_bboxOffButton);
-
-    m_buttonLayout->addStretch();
     */
+
+    // m_buttonLayout->addStretch();
 
     //닫기 버튼
     m_closeButton = new QPushButton();
@@ -1358,14 +1380,9 @@ void LineDrawingDialog::setupUI()
 }
 void LineDrawingDialog::onStartDrawingClicked()
 {
-    static bool isClicked = false;
-    if (!isClicked) {
-        m_startDrawingButton->setIcon(QIcon(":/icons/cil_pen_clicked.png"));
-        isClicked = true;
-    } else {
-        m_startDrawingButton->setIcon(QIcon(":/icons/cil_pen.png"));
-        isClicked = false;
-    }
+    m_startDrawingButton->hide();
+    m_stopDrawingButton->show();
+
     m_isDrawingMode = true;
     m_videoView->setDrawingMode(true);
 
@@ -1420,25 +1437,11 @@ void LineDrawingDialog::stopVideoStream()
     // }
 }
 
-/*
-void LineDrawingDialog::onStartDrawingClicked()
-{
-    m_isDrawingMode = true;
-    m_videoView->setDrawingMode(true);
-
-    m_startDrawingButton->setEnabled(false);
-    m_stopDrawingButton->setEnabled(true);
-
-    // m_statusLabel->setText("그리기 모드 활성화 - 마우스로 선을 그어주세요");
-    addLogMessage("그리기 모드가 활성화되었습니다.", "ACTION");
-    updateButtonStates();
-
-    qDebug() << "그리기 모드 활성화됨";
-}
-*/
-
 void LineDrawingDialog::onStopDrawingClicked()
 {
+    m_startDrawingButton->show();
+    m_stopDrawingButton->hide();
+
     m_isDrawingMode = false;
     m_videoView->setDrawingMode(false);
 
@@ -1984,6 +1987,9 @@ void LineDrawingDialog::onBBoxesReceived(const QList<BBox> &bboxes, qint64 times
 // BBox ON 버튼 클릭 슬롯
 void LineDrawingDialog::onBBoxOnClicked()
 {
+    m_bboxOffButton->show();
+    m_bboxOnButton->hide();
+
     m_bboxEnabled = true;
     m_bboxOnButton->setEnabled(false);
     m_bboxOffButton->setEnabled(true);
@@ -2007,6 +2013,9 @@ void LineDrawingDialog::onBBoxOnClicked()
 // BBox OFF 버튼 클릭 슬롯
 void LineDrawingDialog::onBBoxOffClicked()
 {
+    m_bboxOffButton->hide();
+    m_bboxOnButton->show();
+
     m_bboxEnabled = false;
     m_bboxOnButton->setEnabled(true);
     m_bboxOffButton->setEnabled(false);

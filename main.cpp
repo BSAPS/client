@@ -20,11 +20,12 @@ int main(int argc, char *argv[])
     app.setStyle(QStyleFactory::create("Fusion"));
 
     //폰트 적용
-    int fontId = QFontDatabase::addApplicationFont(":/font/ChosunGu.TTF");
+    int fontId = QFontDatabase::addApplicationFont(":/font/05HanwhaGothicR.ttf");
     QString family = QFontDatabase::applicationFontFamilies(fontId).at(0);
     QFont customFont(family);
+    customFont.setPointSize(10);
+    // customFont.setBold(true);
     app.setFont(customFont);
-    customFont.setBold(true);
 
     // 다크 테마 스타일 적용
     app.setStyle(QStyleFactory::create("Fusion"));

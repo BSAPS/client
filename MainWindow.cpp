@@ -76,7 +76,7 @@ MainWindow::MainWindow(QWidget *parent)
     EnvConfig::loadFromFile(".env");
     
     // .env에서 네트워크 설정 로드
-    m_rtspUrl = EnvConfig::getValue("RTSP_URL", "rtsp://192.168.0.81:8554/retransmit");
+    m_rtspUrl = EnvConfig::getValue("RTSP_URL", "rtsp://192.168.0.81:8554/original");
     m_tcpHost = EnvConfig::getValue("TCP_HOST", "192.168.0.81");
     m_tcpPort = EnvConfig::getValue("TCP_PORT", "8080").toInt();
     

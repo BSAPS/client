@@ -78,12 +78,6 @@ LoginWindow::~LoginWindow()
 {
     qDebug() << "[LoginWindow] 소멸자 호출";
 
-    // TcpCommunicator는 공유 객체이므로 삭제하지 않음
-    // if (m_tcpCommunicator) {
-    //     m_tcpCommunicator->disconnectFromServer();
-    //     m_tcpCommunicator->deleteLater();
-    //     m_tcpCommunicator = nullptr;
-    // }
 
     if (m_connectionTimer) {
         m_connectionTimer->stop();

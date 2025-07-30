@@ -7,6 +7,7 @@
 #include <QTextDocument>
 #include <QGraphicsProxyWidget>
 #include <QInputDialog>
+#include <QToolTip>
 
 // VideoGraphicsView 구현
 VideoGraphicsView::VideoGraphicsView(QWidget *parent)
@@ -1026,7 +1027,7 @@ void LineDrawingDialog::setupUI()
     // 컴팩트한 헤더와 카테고리 선택 영역
     QWidget *headerWidget = new QWidget();
     headerWidget->setFixedHeight(80);
-    headerWidget->setStyleSheet("background-color: #f8f9fa; padding: 8px;  margin-bottom: 8px;");
+    headerWidget->setStyleSheet("background-color: #353B55; padding: 8px;  margin-bottom: 8px;");
     QVBoxLayout *headerLayout = new QVBoxLayout(headerWidget);
     headerLayout->setContentsMargins(10, 5, 10, 5);
     headerLayout->setSpacing(5);
@@ -1039,7 +1040,7 @@ void LineDrawingDialog::setupUI()
 
     // 제목
     QLabel *titleLabel = new QLabel("기준선 그리기");
-    titleLabel->setStyleSheet("color: #333; font-size: 16px; font-weight: bold;");
+    titleLabel->setStyleSheet("color: #ffffff; font-size: 16px; font-weight: bold;");
     titleCategoryLayout->addWidget(titleLabel);
 
     // 구분선
@@ -1050,16 +1051,18 @@ void LineDrawingDialog::setupUI()
     titleCategoryLayout->addWidget(separator);
 
     // 카테고리 선택 영역
+    /*
     QLabel *categoryLabel = new QLabel("선 종류:");
     categoryLabel->setStyleSheet("color: #666; font-size: 12px; font-weight: bold;");
     titleCategoryLayout->addWidget(categoryLabel);
+    */
 
     m_roadLineRadio = new QRadioButton("도로선");
-    m_roadLineRadio->setStyleSheet("color: #0066cc; font-size: 12px; font-weight: bold;");
+    m_roadLineRadio->setStyleSheet("color: #ffffff; font-size: 12px; font-weight: bold;");
     m_roadLineRadio->setChecked(true);
 
     m_detectionLineRadio = new QRadioButton("감지선");
-    m_detectionLineRadio->setStyleSheet("color: #cc0000; font-size: 12px; font-weight: bold;");
+    m_detectionLineRadio->setStyleSheet("color: #ffffff; font-size: 12px; font-weight: bold;");
 
     m_categoryButtonGroup = new QButtonGroup(this);
     m_categoryButtonGroup->addButton(m_roadLineRadio, 0);
@@ -1073,8 +1076,8 @@ void LineDrawingDialog::setupUI()
     titleCategoryLayout->addStretch();
 
     // 현재 선택 정보
-    m_categoryInfoLabel = new QLabel("현재: 도로선 (파란색)");
-    m_categoryInfoLabel->setStyleSheet("color: #0066cc; font-size: 11px; font-style: italic;");
+    m_categoryInfoLabel = new QLabel("현재: 도로선");
+    m_categoryInfoLabel->setStyleSheet("color: #f37321; font-size: 11px; ");
     titleCategoryLayout->addWidget(m_categoryInfoLabel);
 
     headerLayout->addWidget(titleCategoryWidget);
@@ -1086,17 +1089,17 @@ void LineDrawingDialog::setupUI()
     statsLayout->setSpacing(10);
 
     m_roadLineCountLabel = new QLabel("도로선: 0개");
-    m_roadLineCountLabel->setStyleSheet("color: #0066cc; font-size: 11px; padding: 2px 6px; background-color: rgba(0,102,204,0.1); border-radius: 3px;");
+    m_roadLineCountLabel->setStyleSheet("color: #ffffff; font-size: 11px; padding: 2px 6px; ");
 
     m_detectionLineCountLabel = new QLabel("감지선: 0개");
-    m_detectionLineCountLabel->setStyleSheet("color: #cc0000; font-size: 11px; padding: 2px 6px; background-color: rgba(204,0,0,0.1); border-radius: 3px;");
+    m_detectionLineCountLabel->setStyleSheet("color: #ffffff; font-size: 11px; padding: 2px 6px; ");
 
     statsLayout->addWidget(m_roadLineCountLabel);
     statsLayout->addWidget(m_detectionLineCountLabel);
 
     // 매핑 정보 추가
     m_mappingCountLabel = new QLabel("매핑: 0개");
-    m_mappingCountLabel->setStyleSheet("color: #28a745; font-size: 11px; padding: 2px 6px; background-color: rgba(40,167,69,0.1); border-radius: 3px;");
+    m_mappingCountLabel->setStyleSheet("color: #ffffff; font-size: 11px; padding: 2px 6px; ");
 
     statsLayout->addWidget(m_mappingCountLabel);
 
@@ -1180,20 +1183,59 @@ void LineDrawingDialog::setupUI()
     // 버튼 영역
     m_buttonLayout = new QHBoxLayout();
 
+    //저장된 선 불러오기
+    QPushButton *loadSavedLinesButton = new QPushButton();
+    loadSavedLinesButton->setIcon(QIcon(":/icons/data-import.png"));
+    loadSavedLinesButton->setIconSize(QSize(30,30));
+    loadSavedLinesButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; } "
+                                          "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
+    loadSavedLinesButton->setToolTip("데이터 불러오기");
+    qApp->setStyleSheet("QToolTip { "
+                        "color: black; "          // 글씨색
+                        "background-color: #ffffff; "  // 밝은 배경색
+                        "border: 1px solid gray; "
+                        "padding: 3px; "
+                        "}");
+    connect(loadSavedLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onLoadSavedLinesClicked);
+    m_buttonLayout->addWidget(loadSavedLinesButton);
+    /*
     QPushButton *loadSavedLinesButton = new QPushButton("저장된 선 불러오기");
     loadSavedLinesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
                                         "QPushButton:hover { background-color: #f89b6c; }"
                                         "QPushButton:disabled { background-color: #b3aca5; }");
     connect(loadSavedLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onLoadSavedLinesClicked);
     m_buttonLayout->addWidget(loadSavedLinesButton);
+    */
 
+    //선 그리기 및 (중지)
+    m_startDrawingButton = new QPushButton();
+    m_startDrawingButton->setIcon(QIcon(":/icons/cil_pen.png"));
+    m_startDrawingButton->setIconSize(QSize(30,30));
+    m_startDrawingButton->setStyleSheet("QPushButton { background-color: transparent; font-size: 20px; border: none; } "
+                                        "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
+    m_startDrawingButton->setToolTip("선 그리기 시작");
+    qApp->setStyleSheet("QToolTip { "
+                        "color: black; "          // 글씨색
+                        "background-color: #ffffff; "  // 밝은 배경색
+                        "border: 1px solid gray; "
+                        "padding: 3px; "
+                        "}");
+    connect(m_startDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStartDrawingClicked);
+    m_buttonLayout->addWidget(m_startDrawingButton);
+
+
+
+
+    /*
     m_startDrawingButton = new QPushButton("그리기 시작");
     m_startDrawingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
                                         "QPushButton:hover { background-color: #f89b6c; }"
                                         "QPushButton:disabled { background-color: #b3aca5; }");
-    connect(m_startDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStartDrawingClicked);
-    m_buttonLayout->addWidget(m_startDrawingButton);
+    */
+    //connect(m_startDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStartDrawingClicked);
+    //m_buttonLayout->addWidget(m_startDrawingButton);
 
+    /*
     m_stopDrawingButton = new QPushButton("그리기 중지");
     m_stopDrawingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
                                        "QPushButton:hover { background-color: #f89b6c; }"
@@ -1201,22 +1243,67 @@ void LineDrawingDialog::setupUI()
     m_stopDrawingButton->setEnabled(false);
     connect(m_stopDrawingButton, &QPushButton::clicked, this, &LineDrawingDialog::onStopDrawingClicked);
     m_buttonLayout->addWidget(m_stopDrawingButton);
-
+    */
+    //선 지우기
+    m_clearLinesButton = new QPushButton();
+    m_clearLinesButton->setIcon(QIcon(":/icons/eraser.png"));
+    m_clearLinesButton->setIconSize(QSize(30,30));
+    m_clearLinesButton->setStyleSheet("QPushButton { background-color: transparent; color: black; font-size: 20px; border: none; } "
+                                        "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
+    m_clearLinesButton->setToolTip("지우기");
+    qApp->setStyleSheet("QToolTip { "
+                        "color: black; "          // 글씨색
+                        "background-color: #ffffff; "  // 밝은 배경색
+                        "border: 1px solid gray; "
+                        "padding: 3px; "
+                        "}");
+    connect(m_clearLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onClearLinesClicked);
+    m_buttonLayout->addWidget(m_clearLinesButton);
+    /*
     m_clearLinesButton = new QPushButton("선 지우기");
     m_clearLinesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
                                       "QPushButton:hover { background-color: #e68900; }"
                                       "QPushButton:disabled { background-color: #b3aca5; }");
     connect(m_clearLinesButton, &QPushButton::clicked, this, &LineDrawingDialog::onClearLinesClicked);
     m_buttonLayout->addWidget(m_clearLinesButton);
+    */
 
-    m_sendCoordinatesButton = new QPushButton("좌표 전송");
-    m_sendCoordinatesButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt;} "
-                                           "QPushButton:hover { background-color: #f89b6c; }"
-                                           "QPushButton:disabled { background-color: #b3aca5; }");
+    //데이터 전송
+    m_sendCoordinatesButton = new QPushButton();
+    m_sendCoordinatesButton->setIcon(QIcon(":/icons/export-file.png"));
+    m_sendCoordinatesButton->setIconSize(QSize(30,30));
+    m_sendCoordinatesButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; } "
+                                           "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
+    m_sendCoordinatesButton->setToolTip("데이터 전송");
+    qApp->setStyleSheet("QToolTip { "
+                        "color: black; "          // 글씨색
+                        "background-color: #ffffff; "  // 밝은 배경색
+                        "border: 1px solid gray; "
+                        "padding: 3px; "
+                        "}");
     connect(m_sendCoordinatesButton, &QPushButton::clicked, this, &LineDrawingDialog::onSendCoordinatesClicked);
     m_buttonLayout->addWidget(m_sendCoordinatesButton);
 
+
     // BBox 관련 버튼들
+
+    m_bboxOnButton = new QPushButton();
+    m_bboxOnButton->setIcon(QIcon(":/icons/squares.png"));
+    m_bboxOnButton->setIconSize(QSize(30,30));
+    m_bboxOnButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; } "
+                                   "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
+    m_bboxOnButton->setToolTip("Bounding Box ON");
+    qApp->setStyleSheet("QToolTip { "
+                        "color: black; "          // 글씨색
+                        "background-color: #ffffff; "  // 밝은 배경색
+                        "border: 1px solid gray; "
+                        "padding: 3px; "
+                        "}");
+    connect(m_bboxOnButton, &QPushButton::clicked, this, &LineDrawingDialog::onBBoxOnClicked);
+    m_buttonLayout->addWidget(m_bboxOnButton);
+
+
+    /*
     m_bboxOnButton = new QPushButton("BBox ON");
     m_bboxOnButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
                                   "QPushButton:hover { background-color: #f89b6c; }"
@@ -1232,12 +1319,14 @@ void LineDrawingDialog::setupUI()
     m_buttonLayout->addWidget(m_bboxOffButton);
 
     m_buttonLayout->addStretch();
+    */
 
     m_closeButton = new QPushButton("닫기");
     m_closeButton->setStyleSheet("QPushButton { background-color: #9E9E9E; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;font-size:10pt; } "
                                  "QPushButton:hover { background-color: #757575; }");
     connect(m_closeButton, &QPushButton::clicked, this, &QDialog::reject);
     m_buttonLayout->addWidget(m_closeButton);
+
 
     m_mainLayout->addLayout(m_buttonLayout);
 
@@ -1253,6 +1342,28 @@ void LineDrawingDialog::setupUI()
     addLogMessage("💡 감지선을 그리면 수직선이 자동으로 계산되고 전송됩니다.", "INFO");
 
     qDebug() << "UI 설정 완료";
+}
+void LineDrawingDialog::onStartDrawingClicked()
+{
+    static bool isClicked = false;
+    if (!isClicked) {
+        m_startDrawingButton->setIcon(QIcon(":/icons/cil_pen_clicked.png"));
+        isClicked = true;
+    } else {
+        m_startDrawingButton->setIcon(QIcon(":/icons/cil_pen.png"));
+        isClicked = false;
+    }
+    m_isDrawingMode = true;
+    m_videoView->setDrawingMode(true);
+
+    m_startDrawingButton->setEnabled(false);
+    m_stopDrawingButton->setEnabled(true);
+
+    m_statusLabel->setText("그리기 모드 활성화 - 마우스로 선을 그어주세요");
+    addLogMessage("그리기 모드가 활성화되었습니다.", "ACTION");
+    updateButtonStates();
+
+    qDebug() << "그리기 모드 활성화됨";
 }
 
 void LineDrawingDialog::setupMediaPlayer()
@@ -1297,6 +1408,7 @@ void LineDrawingDialog::stopVideoStream()
     // }
 }
 
+/*
 void LineDrawingDialog::onStartDrawingClicked()
 {
     m_isDrawingMode = true;
@@ -1311,6 +1423,7 @@ void LineDrawingDialog::onStartDrawingClicked()
 
     qDebug() << "그리기 모드 활성화됨";
 }
+*/
 
 void LineDrawingDialog::onStopDrawingClicked()
 {
@@ -1344,6 +1457,7 @@ void LineDrawingDialog::onClearLinesClicked()
     updateButtonStates();
 }
 
+
 void LineDrawingDialog::onCategoryChanged()
 {
     int selectedId = m_categoryButtonGroup->checkedId();
@@ -1352,15 +1466,16 @@ void LineDrawingDialog::onCategoryChanged()
     m_videoView->setCurrentCategory(m_currentCategory);
 
     if (m_currentCategory == LineCategory::ROAD_DEFINITION) {
-        m_categoryInfoLabel->setText("현재: 도로선 (파란색)");
-        m_categoryInfoLabel->setStyleSheet("color: #0066cc; font-size: 11px; font-style: italic;");
+        m_categoryInfoLabel->setText("현재: 도로선");
+        m_categoryInfoLabel->setStyleSheet("color: #f37321; font-size: 11px; ");
         addLogMessage("도로 명시선 모드로 변경되었습니다.", "ACTION");
     } else {
-        m_categoryInfoLabel->setText("현재: 감지선 (빨간색)");
-        m_categoryInfoLabel->setStyleSheet("color: #cc0000; font-size: 11px; font-style: italic;");
+        m_categoryInfoLabel->setText("현재: 감지선");
+        m_categoryInfoLabel->setStyleSheet("color: #f37321; font-size: 11px; ");
         addLogMessage("객체 감지선 모드로 변경되었습니다.", "ACTION");
     }
 }
+
 
 void LineDrawingDialog::onClearCategoryClicked()
 {

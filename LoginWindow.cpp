@@ -594,7 +594,10 @@ void LoginWindow::sendSignUpRequest(const QString &id, const QString &password, 
 
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
-        QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
+        // QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
+        CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         return;
     }
 
@@ -613,7 +616,10 @@ void LoginWindow::sendSignUpRequest(const QString &id, const QString &password, 
     // 서버로 전송
     bool success = m_tcpCommunicator->sendJsonMessage(signUpMessage);
     if (!success) {
-        QMessageBox::warning(this, "전송 오류", "회원가입 정보 전송에 실패했습니다.");
+        // QMessageBox::warning(this, "전송 오류", "회원가입 정보 전송에 실패했습니다.");
+        CustomMessageBox msgBox(nullptr, "전송 오류", "회원가입 정보 전송에 실패했습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
     } else {
         qDebug() << "[LoginWindow] 회원가입 요청 전송 성공";
     }
@@ -625,7 +631,10 @@ void LoginWindow::sendOtpLoginRequest(const QString &otpCode)
 
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
-        QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
+        // QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
+        CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         resetOtpLoginButton();
         return;
     }
@@ -641,7 +650,10 @@ void LoginWindow::sendOtpLoginRequest(const QString &otpCode)
     // 서버로 전송
     bool success = m_tcpCommunicator->sendJsonMessage(otpLoginMessage);
     if (!success) {
-        QMessageBox::warning(this, "전송 오류", "OTP 인증 정보 전송에 실패했습니다.");
+        // QMessageBox::warning(this, "전송 오류", "OTP 인증 정보 전송에 실패했습니다.");
+        CustomMessageBox msgBox(nullptr, "전송 오류", "OTP 인증 정보 전송에 실패했습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         resetOtpLoginButton();
     }
 
@@ -710,7 +722,10 @@ void LoginWindow::onTcpDisconnected()
     // 사용자에게 알림 (한 번만)
     static bool disconnectNotified = false;
     if (!disconnectNotified && this->isVisible()) {
-        QMessageBox::warning(this, "연결 해제", "서버와의 연결이 끊어졌습니다.\n자동으로 재연결을 시도합니다.");
+        // QMessageBox::warning(this, "연결 해제", "서버와의 연결이 끊어졌습니다.\n자동으로 재연결을 시도합니다.");
+        CustomMessageBox msgBox(nullptr, "전송 오류", "OTP 인증 정보 전송에 실패했습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         disconnectNotified = true;
 
         // 5초 후 알림 플래그 리셋

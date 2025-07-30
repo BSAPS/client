@@ -232,7 +232,7 @@ void MainWindow::setupUI()
     m_tabWidget = new QTabWidget();
 
     m_tabWidget->setStyleSheet("QTabWidget::pane {background-color: #474B5C; } "
-                               "QTabBar::tab { background-color: #666977; color : white; padding: 10px 20px; border-top-left-radius: 15px; border-top-right-radius: 15px; } "
+                               "QTabBar::tab { background-color: #666977; color : white; padding: 10px 20px; border-top-left-radius: 15px; border-top-right-radius: 15px;} "
                                "QTabBar::tab:selected { background-color: #474B5C; color : #F37321; border-bottom: 2px solid #474B5C; }");
 
     setupLiveVideoTab();
@@ -663,7 +663,7 @@ void MainWindow::displayImages(const QList<ImageData> &images)
 
         QLabel *timeLabel = new QLabel(imageData.timestamp);
         timeLabel->setAlignment(Qt::AlignCenter);
-        timeLabel->setStyleSheet("background-color: rgba(0,0,0,0.7); color: white; padding: 5px; border-radius: 3px; font-size: 12px;");
+        timeLabel->setStyleSheet("background-color: rgba(0,0,0,0.7); color: white; padding: 5px; font-size: 12px;");
 
         QWidget *container = new QWidget();
         container->setFixedSize(320, 240);
@@ -808,7 +808,7 @@ void MainWindow::sendSingleLineCoordinates(int x1, int y1, int x2, int y2)
 void MainWindow::onDateChanged(const QDate &date)
 {
     qDebug() << "날짜 변경:" << date.toString("yyyy-MM-dd");
-    m_statusLabel->setText(QString("선택된 날짜: %1").arg(date.toString("yyyy-MM-dd")));
+    // m_statusLabel->setText(QString("선택된 날짜: %1").arg(date.toString("yyyy-MM-dd")));
 }
 
 void MainWindow::onHourChanged(int hour)
@@ -834,7 +834,7 @@ void MainWindow::onCalendarDateSelected(const QDate &date)
     m_calendarDialog->accept();
 
     qDebug() << "달력에서 날짜 선택:" << date.toString("yyyy-MM-dd");
-    m_statusLabel->setText(QString("선택된 날짜: %1").arg(date.toString("yyyy-MM-dd")));
+    // m_statusLabel->setText(QString("선택된 날짜: %1").arg(date.toString("yyyy-MM-dd")));
 }
 
 void MainWindow::onHourComboChanged(int index)
@@ -879,7 +879,7 @@ void MainWindow::onRequestImagesClicked()
     int selectedHour = m_hourComboBox->currentData().toInt();
     QString dateString = m_selectedDate.toString("yyyy-MM-dd");
 
-    m_statusLabel->setText("이미지 요청 중... (60초 후 타임아웃)");
+    // m_statusLabel->setText("이미지 요청 중... (60초 후 타임아웃)");
     m_requestButton->setEnabled(false);
 
     // 타임아웃을 60초로 증가
@@ -901,9 +901,9 @@ void MainWindow::onTcpConnected()
         m_requestButton->setEnabled(true);
     }
 
-    if (m_statusLabel) {
-        m_statusLabel->setText("서버 연결됨. 이미지를 요청할 수 있습니다.");
-    }
+    // if (m_statusLabel) {
+    //     m_statusLabel->setText("서버 연결됨. 이미지를 요청할 수 있습니다.");
+    // }
 
     CustomMessageBox msgBox(nullptr, "연결 성공", "TCP 서버에 성공적으로 연결되었습니다.");
     msgBox.setFixedSize(300,150);
@@ -919,9 +919,9 @@ void MainWindow::onTcpDisconnected()
         m_requestButton->setEnabled(false);
     }
 
-    if (m_statusLabel) {
-        m_statusLabel->setText("서버 연결이 끊어졌습니다.");
-    }
+    // if (m_statusLabel) {
+    //     m_statusLabel->setText("서버 연결이 끊어졌습니다.");
+    // }
 }
 
 void MainWindow::onTcpError(const QString &error)
@@ -932,9 +932,9 @@ void MainWindow::onTcpError(const QString &error)
         m_requestButton->setEnabled(false);
     }
 
-    if (m_statusLabel) {
-        m_statusLabel->setText("연결 오류: " + error);
-    }
+    // if (m_statusLabel) {
+    //     m_statusLabel->setText("연결 오류: " + error);
+    // }
 
     CustomMessageBox msgBox(nullptr, "TCP 연결 오류", error);
     msgBox.setFixedSize(300,150);
@@ -961,7 +961,7 @@ void MainWindow::onImagesReceived(const QList<ImageData> &images)
 
     displayImages(images);
 
-    m_statusLabel->setText(QString("이미지 %1개를 불러왔습니다.").arg(images.size()));
+    // m_statusLabel->setText(QString("이미지 %1개를 불러왔습니다.").arg(images.size()));
     m_requestButton->setEnabled(true);
 }
 
@@ -987,7 +987,7 @@ void MainWindow::onRequestTimeout()
 {
     qDebug() << "이미지 요청 타임아웃 (60초)";
 
-    m_statusLabel->setText("이미지 요청 타임아웃. 서버가 응답하지 않습니다.");
+    // m_statusLabel->setText("이미지 요청 타임아웃. 서버가 응답하지 않습니다.");
     m_requestButton->setEnabled(m_isConnected);
 
     CustomMessageBox msgBox(nullptr, "요청 타임아웃",
@@ -1030,9 +1030,9 @@ void MainWindow::onStatusUpdated(const QString &status)
 {
     qDebug() << "상태 업데이트:" << status;
 
-    if (m_statusLabel) {
-        m_statusLabel->setText(status);
-    }
+    // if (m_statusLabel) {
+    //     m_statusLabel->setText(status);
+    // }
 }
 
 void MainWindow::sendCategorizedCoordinates(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines)

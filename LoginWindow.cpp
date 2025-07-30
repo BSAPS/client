@@ -19,6 +19,8 @@
 #include <QPainter>
 #include <QLabel>
 
+#include "custommessagebox.h"
+
 LoginWindow::LoginWindow(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui_LoginWindow)
@@ -396,13 +398,19 @@ void LoginWindow::handleLogin()
     QString password = ui->pwLineEdit->text().trimmed();
 
     if (id.isEmpty() || password.isEmpty()) {
-        QMessageBox::warning(this, "입력 오류", "아이디와 패스워드를 모두 입력해주세요.");
+        // QMessageBox::warning(this, "입력 오류", "아이디와 패스워드를 모두 입력해주세요.");
+        CustomMessageBox msgBox(nullptr, "입력 오류", "아이디와 패스워드를 모두 입력해주세요.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec(); // 모달(modal)로 띄워서 사용자의 응답을 기다림
         return;
     }
 
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
-        QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.\n잠시 후 다시 시도해주세요.");
+        // QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.\n잠시 후 다시 시도해주세요.");
+        CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.\n잠시 후 다시 시도해주세요.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
 
         // 재연결 시도
         m_tcpCommunicator->connectToServer(m_tcpHost, m_tcpPort);
@@ -448,20 +456,29 @@ void LoginWindow::handleSubmitSignUp()
 
     // 입력 유효성 검사
     if (id.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-        QMessageBox::warning(this, "입력 오류", "모든 필드를 입력해주세요.");
+        // QMessageBox::warning(this, "입력 오류", "모든 필드를 입력해주세요.");
+        CustomMessageBox msgBox(nullptr, "입력 오류", "모든 필드를 입력해주세요.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         return;
     }
 
     // 비밀번호 일치 검증
     if (password != confirmPassword) {
         m_passwordErrorLabel->show();
-        QMessageBox::warning(this, "비밀번호 오류", "비밀번호가 일치하지 않습니다.");
+        // QMessageBox::warning(this, "비밀번호 오류", "비밀번호가 일치하지 않습니다.");
+        CustomMessageBox msgBox(nullptr, "비밀번호 오류", "비밀번호가 일치하지 않습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         return;
     }
 
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
-        QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.\n잠시 후 다시 시도해주세요.");
+        // QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.\n잠시 후 다시 시도해주세요.");
+        CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.\n잠시 후 다시 시도해주세요.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
 
         // 재연결 시도
         m_tcpCommunicator->connectToServer(m_tcpHost, m_tcpPort);
@@ -481,13 +498,19 @@ void LoginWindow::handleSubmitOtpLogin()
     QString otpCode = ui->idLineEdit_2->text().trimmed();
 
     if (otpCode.isEmpty()) {
-        QMessageBox::warning(this, "입력 오류", "OTP 코드를 입력해주세요.");
+        // QMessageBox::warning(this, "입력 오류", "OTP 코드를 입력해주세요.");
+        CustomMessageBox msgBox(nullptr, "입력 오류", "OTP 코드를 입력해주세요.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         return;
     }
 
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
-        QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
+        // QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
+        CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         resetOtpLoginButton();
         return;
     }
@@ -512,7 +535,10 @@ void LoginWindow::handleSubmitOtpSignUp()
 
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
-        QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
+        // QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
+        CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         return;
     }
 
@@ -526,7 +552,10 @@ void LoginWindow::sendLoginRequest(const QString &id, const QString &password)
 
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
-        QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
+        // QMessageBox::warning(this, "연결 오류", "서버에 연결되지 않았습니다.");
+        CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         resetLoginButton();
         return;
     }
@@ -549,7 +578,10 @@ void LoginWindow::sendLoginRequest(const QString &id, const QString &password)
     // 서버로 전송
     bool success = m_tcpCommunicator->sendJsonMessage(loginMessage);
     if (!success) {
-        QMessageBox::warning(this, "전송 오류", "로그인 정보 전송에 실패했습니다.");
+        // QMessageBox::warning(this, "전송 오류", "로그인 정보 전송에 실패했습니다.");
+        CustomMessageBox msgBox(nullptr, "전송 오류", "로그인 정보 전송에 실패했습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         resetLoginButton();
     } else {
         qDebug() << "[LoginWindow] 로그인 요청 전송 성공";

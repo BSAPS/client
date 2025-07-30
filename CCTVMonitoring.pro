@@ -8,6 +8,7 @@ TEMPLATE = app
 # 소스 파일
 SOURCES += \
     LoginWindow.cpp \
+    custommessagebox.cpp \
     main.cpp \
     MainWindow.cpp \
     VideoStreamWidget.cpp \
@@ -26,7 +27,8 @@ HEADERS += \
     ImageViewerDialog.h \
     NetworkConfigDialog.h \
     LineDrawingDialog.h \
-    EnvConfig.h
+    EnvConfig.h \
+    custommessagebox.h
 
 # 리소스 파일
 RESOURCES += resources.qrc

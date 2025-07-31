@@ -218,7 +218,7 @@ void MainWindow::setupUI()
     //닫기 버튼
     m_closeButton = new QPushButton();
     m_closeButton->setIcon(QIcon(":/icons/close.png"));
-    m_closeButton->setIconSize(QSize(35,35));
+    m_closeButton->setIconSize(QSize(25,25));
     m_closeButton->setFixedSize(40, 40);
     m_closeButton->setStyleSheet("QPushButton { background-color: transparent; border: none; } "
                                  "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 20px; }");
@@ -270,7 +270,7 @@ void MainWindow::setupUI()
 
     connect(m_networkButton,&QPushButton::clicked,this,&MainWindow::onNetworkConfigClicked);
     connect(m_closeButton, &QPushButton::clicked, this, &MainWindow::close);
-
+}
 
 void MainWindow::setupLiveVideoTab()
 {

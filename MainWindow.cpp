@@ -398,6 +398,7 @@ void MainWindow::setupCapturedImageTab()
     dateLabel->setStyleSheet("color: white; font-weight: bold;");
     topLayout->addWidget(dateLabel);
 
+
     // 날짜 선택
     m_dateEdit = new QDateEdit(QDate::currentDate());
     m_dateEdit->setDisplayFormat("yyyy-MM-dd");
@@ -431,8 +432,12 @@ void MainWindow::setupCapturedImageTab()
         );
 
     topLayout->addWidget(m_dateEdit);
-    connect(m_dateButton, &QPushButton::clicked, this, &MainWindow::onDateButtonClicked);
-    topLayout->addWidget(m_dateButton);
+    connect(m_dateEdit, &QDateEdit::dateChanged, this, [this](const QDate &newDate) {
+        // 새로운 날짜(newDate)를 사용해 원하는 작업을 수행
+        qDebug() << "날짜가 변경되었습니다: " << newDate.toString("yyyy-MM-dd");
+        m_selectedDate = newDate;
+        // 다른 UI 업데이트나 로직을 여기에 추가할 수 있습니다.
+    });
 
     // 달력 다이얼로그 설정
     m_calendarDialog = new QDialog(this);
@@ -499,7 +504,7 @@ void MainWindow::setupCapturedImageTab()
     // 시간 선택
     m_hourComboBox = new QComboBox();
     for (int h = 0; h < 24; ++h)
-        m_hourComboBox->addItem(QString("%1시 ~ %2시").arg(h, 2, 10, QChar('0')).arg(h + 1, 2, 10, QChar('0')));
+        m_hourComboBox->addItem(QString("%1시 ~ %2시").arg(h, 2, 10, QChar('0')).arg(h + 1, 2, 10, QChar('0')), h);
     m_hourComboBox->setCurrentIndex(QTime::currentTime().hour());
     m_hourComboBox->setStyleSheet(
         "QComboBox {"
@@ -528,6 +533,9 @@ void MainWindow::setupCapturedImageTab()
         " border: none;"
         "}"
         );
+    m_hourComboBox->setCurrentIndex(QTime::currentTime().hour());
+    connect(m_hourComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &MainWindow::onHourComboChanged);
     topLayout->addWidget(m_hourComboBox);
 
     // load 버튼
@@ -880,11 +888,11 @@ void MainWindow::onRequestImagesClicked()
     QString dateString = m_selectedDate.toString("yyyy-MM-dd");
 
     // m_statusLabel->setText("이미지 요청 중... (60초 후 타임아웃)");
-    m_requestButton->setEnabled(false);
+    // m_requestButton->setEnabled(false);
 
     // 타임아웃을 60초로 증가
-    m_requestTimeoutTimer->setInterval(60000);
-    m_requestTimeoutTimer->start();
+    // m_requestTimeoutTimer->setInterval(60000);
+    // m_requestTimeoutTimer->start();
 
     // JSON 기반 이미지 요청
     m_tcpCommunicator->requestImageData(dateString, selectedHour);

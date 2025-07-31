@@ -982,7 +982,7 @@ void LoginWindow::handleQrCodeResponse(const QJsonObject &response)
         scrollArea->show();
 
         //QMessageBox::information(this, "OTP 설정", "QR코드를 OTP 앱으로 스캔하고, 복구 코드를 안전하게 보관하세요. \n복구 코드는 계정당 5개 주어지며, 한 번 사용한 코드는 다시 사용할 수 없습니다.");
-        CustomMessageBox msgBox(nullptr, "OTP 설정", "QR코드를 OTP 앱으로 스캔하고, 복구 코드를 안전하게 보관하세요. \n복구 코드는 계정당 5개 주어지며, 한 번 사용한 코드는 다시 사용할 수 없습니다.");
+        CustomMessageBox msgBox(nullptr, "OTP 설정", "QR코드를 OTP 앱으로 스캔하고, \n복구 코드를 안전하게 보관하세요. \n복구 코드는 계정당 5개 주어지며, \n한 번 사용한 코드는 다시 사용할 수 없습니다.");
         msgBox.setFixedSize(300,150);
         msgBox.exec();
     } else {

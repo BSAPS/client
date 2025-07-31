@@ -368,6 +368,7 @@ void MainWindow::onDrawButtonClicked()
 
     if (!m_lineDrawingDialog) {
         m_lineDrawingDialog = new LineDrawingDialog(m_rtspUrl, m_tcpCommunicator, this);
+        m_lineDrawingDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
 
         connect(m_lineDrawingDialog, &LineDrawingDialog::lineCoordinatesReady,
                 this, [this](int x1, int y1, int x2, int y2) {

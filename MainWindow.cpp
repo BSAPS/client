@@ -192,7 +192,7 @@ void MainWindow::setupUI()
     // 헤더 영역
     QWidget *headerBar = new QWidget();
     headerBar->setFixedHeight(50);
-    headerBar->setStyleSheet("background-color: #353B55;");
+    headerBar->setStyleSheet("background-color: #292D41;");
 
 
     QGridLayout *headerLayout = new QGridLayout(headerBar);
@@ -202,7 +202,7 @@ void MainWindow::setupUI()
 
     QLabel* titleLabel = new QLabel("CCTV Monitoring System");
     titleLabel->setAlignment(Qt::AlignCenter);
-    titleLabel->setStyleSheet("color: white; font-size: 24px; font-weight: bold;");
+    titleLabel->setStyleSheet("background-color: #292D41; color: white; font-size: 24px; font-weight: bold;");
     // headerLayout->addWidget(titleLabel);
 
     headerLayout->addWidget(titleLabel, 0, 0, 1, 3, Qt::AlignHCenter);
@@ -251,7 +251,7 @@ void MainWindow::setupUI()
 
     m_tabWidget->setStyleSheet("QTabWidget::pane {background-color: #474B5C; } "
                                "QTabBar::tab { background-color: #666977; color : white; padding: 10px 20px; border-top-left-radius: 15px; border-top-right-radius: 15px;} "
-                               "QTabBar::tab:selected { background-color: #474B5C; color : #F37321; border-bottom: 2px solid #474B5C; }");
+                               "QTabBar::tab:selected { background-color: #474B5C; color : #F37321;}");
 
     setupLiveVideoTab();
     setupCapturedImageTab();
@@ -679,6 +679,7 @@ void MainWindow::displayImages(const QList<ImageData> &images)
         imageLabel->setFixedSize(300, 200);
         imageLabel->setScaledContents(true);
         imageLabel->setImageData(imageData.imagePath, imageData.timestamp, imageData.logText);
+        imageLabel->setStyleSheet("border: none; padding: 2px; margin:0px");
 
         QPixmap pixmap;
         if (pixmap.load(imageData.imagePath)) {
@@ -704,9 +705,12 @@ void MainWindow::displayImages(const QList<ImageData> &images)
         QVBoxLayout *containerLayout = new QVBoxLayout(container);
         containerLayout->setContentsMargins(5, 5, 5, 5);
         containerLayout->setSpacing(8);
-        containerLayout->addWidget(imageLabel);
-        containerLayout->addWidget(timeLabel);
 
+        //가운데 정렬
+        containerLayout->addStretch(1);          // 위쪽 여백
+        containerLayout->addWidget(imageLabel, 0, Qt::AlignHCenter);
+        containerLayout->addStretch(1);          // 아래쪽 여백
+        containerLayout->addWidget(timeLabel, 0, Qt::AlignHCenter);
         connect(imageLabel, &ClickableImageLabel::clicked, this, &MainWindow::onImageClicked);
 
         m_imageGridLayout->addWidget(container, row, col);

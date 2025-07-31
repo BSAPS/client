@@ -183,8 +183,6 @@ private:
     QPushButton *m_clearLinesButton;
     QPushButton *m_sendCoordinatesButton;
     QPushButton *m_closeButton;
-    // QLabel *m_statusLabel;
-    // QLabel *m_frameCountLabel;
 
     // BBox 관련 UI
     QPushButton *m_bboxOnButton;

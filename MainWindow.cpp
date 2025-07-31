@@ -46,6 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_centralWidget(nullptr)
     , m_tabWidget(nullptr)
+    , m_closeButton(nullptr)
     , m_liveVideoTab(nullptr)
     , m_videoStreamWidget(nullptr)
     , m_streamingButton(nullptr)
@@ -186,34 +187,59 @@ void MainWindow::setupUI()
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
 
+
     QVBoxLayout *mainLayout = new QVBoxLayout(m_centralWidget);
     // 헤더 영역
     QWidget *headerBar = new QWidget();
-    headerBar->setFixedHeight(40);
+    headerBar->setFixedHeight(50);
     headerBar->setStyleSheet("background-color: #2d3040;");
 
-    QGridLayout* headerLayout = new QGridLayout(headerBar);
-    headerLayout->setContentsMargins(0, 0, 0, 0);
+
+    QGridLayout *headerLayout = new QGridLayout(headerBar);
+    headerLayout->setContentsMargins(0, 0, 5, 0);
+    headerLayout->setHorizontalSpacing(5);
+
 
     QLabel* titleLabel = new QLabel("CCTV Monitoring System");
     titleLabel->setAlignment(Qt::AlignCenter);
     titleLabel->setStyleSheet("color: white; font-size: 24px; font-weight: bold;");
 
-    // 0행 전체(1열~3열)를 타이틀이 차지하게 함
-    headerLayout->addWidget(titleLabel, 0, 1, 1, 3, Qt::AlignHCenter);
 
 
-    // 오른쪽 버튼
+    // 네트워크 버튼
     m_networkButton = new QPushButton();
     m_networkButton->setIcon(QIcon(":/icons/NetworkConnect.png")); // 아이콘 리소스 확인
-    m_networkButton->setIconSize(QSize(24, 24));
+    m_networkButton->setIconSize(QSize(25, 25));
     m_networkButton->setFixedSize(40, 40);
     m_networkButton->setStyleSheet(
         "QPushButton { background-color: transparent; border: none; } "
         "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 20px; }");
-    headerLayout->addWidget(m_networkButton, 0,3, Qt::AlignRight);
 
-    // headerLayout 자동 적용
+    //닫기 버튼
+    m_closeButton = new QPushButton();
+    m_closeButton->setIcon(QIcon(":/icons/close.png"));
+    m_closeButton->setIconSize(QSize(35,35));
+    m_closeButton->setFixedSize(40, 40);
+    m_closeButton->setStyleSheet("QPushButton { background-color: transparent; border: none; } "
+                                 "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 20px; }");
+
+
+    // 버튼 컨테이너 (수평 배치)
+    QHBoxLayout *rightButtonsLayout = new QHBoxLayout();
+    rightButtonsLayout->setSpacing(5);
+    rightButtonsLayout->addWidget(m_networkButton);
+    rightButtonsLayout->addWidget(m_closeButton);
+
+    // 오른쪽 영역 위젯으로 감싸기
+    QWidget *rightButtonsWidget = new QWidget();
+    rightButtonsWidget->setLayout(rightButtonsLayout);
+    headerLayout->addWidget(rightButtonsWidget, 0, 2, Qt::AlignRight);
+
+    // 열 너비 균형
+    headerLayout->setColumnStretch(0, 1);
+    headerLayout->setColumnStretch(1, 2); // 가운데 강조
+    headerLayout->setColumnStretch(2, 1);
+
     mainLayout->addWidget(headerBar);
 
     // 콘텐츠 영역
@@ -241,10 +267,10 @@ void MainWindow::setupUI()
     sidebarLayout->addWidget(m_modeComboBox);
 
     mainLayout->addLayout(contentLayout);
-    connect(m_networkButton, &QPushButton::clicked, this, &MainWindow::onNetworkConfigClicked);
 
+    connect(m_networkButton,&QPushButton::clicked,this,&MainWindow::onNetworkConfigClicked);
+    connect(m_closeButton, &QPushButton::clicked, this, &MainWindow::close);
 
-}
 
 void MainWindow::setupLiveVideoTab()
 {
@@ -298,7 +324,7 @@ void MainWindow::setupLiveVideoTab()
     connect(m_videoStreamWidget, &VideoStreamWidget::clicked, this, [=]() {
         if (m_videoStreamWidget->isStreaming()) {
             m_videoStreamWidget->stopStream();
-            stackedLayout->setCurrentWidget(overlayWidget);  // ⬅ 오버레이를 다시 위로
+            stackedLayout->setCurrentWidget(overlayWidget);  // 오버레이를 다시 위로
         }
     });
 
@@ -309,7 +335,7 @@ void MainWindow::setupLiveVideoTab()
     connect(playOverlayButton, &QPushButton::clicked, this, [=]() {
         if (!m_rtspUrl.isEmpty()) {
             m_videoStreamWidget->startStream(m_rtspUrl);
-            stackedLayout->setCurrentWidget(m_videoStreamWidget);  // ⭐ 영상 보여주기
+            stackedLayout->setCurrentWidget(m_videoStreamWidget);  // 영상 보여주기
         } else {
             CustomMessageBox msgBox(nullptr, "RTSP URL 누락", "먼저 네트워크 설정에서 RTSP URL을 입력하세요.");
             msgBox.setFixedSize(300,150);

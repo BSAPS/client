@@ -2,6 +2,7 @@
 #include "LineDrawingDialog.h"
 #include "NetworkConfigDialog.h"
 #include "EnvConfig.h"
+#include "custommessagebox.h"
 #include <QApplication>
 #include <QStackedLayout>
 #include <QMessageBox>
@@ -75,12 +76,12 @@ MainWindow::MainWindow(QWidget *parent)
 {
     // .env 파일 로드
     EnvConfig::loadFromFile(".env");
-    
+
     // .env에서 네트워크 설정 로드
     m_rtspUrl = EnvConfig::getValue("RTSP_URL", "rtsp://192.168.0.81:8554/original");
     m_tcpHost = EnvConfig::getValue("TCP_HOST", "192.168.0.81");
     m_tcpPort = EnvConfig::getValue("TCP_PORT", "8080").toInt();
-    
+
     qDebug() << "[MainWindow] .env 설정 로드됨 - RTSP:" << m_rtspUrl << "TCP:" << m_tcpHost << ":" << m_tcpPort;
 
     // 선택된 날짜 초기화
@@ -129,21 +130,21 @@ void MainWindow::setTcpCommunicator(TcpCommunicator* communicator)
     // 기존 연결 해제
     if (m_tcpCommunicator && m_tcpCommunicator != communicator) {
         disconnect(m_tcpCommunicator, &TcpCommunicator::connected,
-                  this, &MainWindow::onTcpConnected);
+                   this, &MainWindow::onTcpConnected);
         disconnect(m_tcpCommunicator, &TcpCommunicator::disconnected,
-                  this, &MainWindow::onTcpDisconnected);
+                   this, &MainWindow::onTcpDisconnected);
         disconnect(m_tcpCommunicator, &TcpCommunicator::errorOccurred,
-                  this, &MainWindow::onTcpError);
+                   this, &MainWindow::onTcpError);
         disconnect(m_tcpCommunicator, &TcpCommunicator::messageReceived,
-                  this, &MainWindow::onTcpDataReceived);
+                   this, &MainWindow::onTcpDataReceived);
         disconnect(m_tcpCommunicator, &TcpCommunicator::imagesReceived,
-                  this, &MainWindow::onImagesReceived);
+                   this, &MainWindow::onImagesReceived);
         disconnect(m_tcpCommunicator, &TcpCommunicator::coordinatesConfirmed,
-                  this, &MainWindow::onCoordinatesConfirmed);
+                   this, &MainWindow::onCoordinatesConfirmed);
         disconnect(m_tcpCommunicator, &TcpCommunicator::statusUpdated,
-                  this, &MainWindow::onStatusUpdated);
+                   this, &MainWindow::onStatusUpdated);
         disconnect(m_tcpCommunicator, &TcpCommunicator::perpendicularLineConfirmed,
-                  this, nullptr);
+                   this, nullptr);
     }
 
     m_tcpCommunicator = communicator;
@@ -168,9 +169,13 @@ void MainWindow::setTcpCommunicator(TcpCommunicator* communicator)
                 this, [this](bool success, const QString &message) {
                     qDebug() << "수직선 서버 응답 - 성공:" << success << "메시지:" << message;
                     if (success) {
-                        QMessageBox::information(this, "수직선 전송 완료", "수직선이 성공적으로 서버에 전송되었습니다.");
+                        CustomMessageBox msgBox(nullptr, "수직선 전송 완료", "수직선이 성공적으로 서버에 전송되었습니다.");
+                        msgBox.setFixedSize(300,150);
+                        msgBox.exec();
                     } else {
-                        QMessageBox::warning(this, "수직선 전송 실패", "수직선 전송에 실패했습니다: " + message);
+                        CustomMessageBox msgBox(nullptr, "수직선 전송 실패", "수직선 전송에 실패했습니다: " + message);
+                        msgBox.setFixedSize(300,150);
+                        msgBox.exec();
                     }
                 });
     }
@@ -217,7 +222,7 @@ void MainWindow::setupUI()
     m_tabWidget = new QTabWidget();
 
     m_tabWidget->setStyleSheet("QTabWidget::pane {background-color: #474B5C; } "
-                               "QTabBar::tab { background-color: #666977; color : white; padding: 10px 20px; border-top-left-radius: 15px; border-top-right-radius: 15px; } "
+                               "QTabBar::tab { background-color: #666977; color : white; padding: 10px 20px; border-top-left-radius: 15px; border-top-right-radius: 15px;} "
                                "QTabBar::tab:selected { background-color: #474B5C; color : #F37321; border-bottom: 2px solid #474B5C; }");
 
     setupLiveVideoTab();
@@ -237,6 +242,7 @@ void MainWindow::setupUI()
 
     mainLayout->addLayout(contentLayout);
     connect(m_networkButton, &QPushButton::clicked, this, &MainWindow::onNetworkConfigClicked);
+
 
 }
 
@@ -282,7 +288,9 @@ void MainWindow::setupLiveVideoTab()
             m_videoStreamWidget->startStream(m_rtspUrl);
             stackedLayout->setCurrentWidget(m_videoStreamWidget);
         } else {
-            QMessageBox::warning(this, "RTSP URL 누락", "먼저 네트워크 설정에서 RTSP URL을 입력하세요.");
+            CustomMessageBox msgBox(nullptr, "RTSP URL 누락", "먼저 네트워크 설정에서 RTSP URL을 입력하세요.");
+            msgBox.setFixedSize(300,150);
+            msgBox.exec();
         }
     });
 
@@ -303,7 +311,9 @@ void MainWindow::setupLiveVideoTab()
             m_videoStreamWidget->startStream(m_rtspUrl);
             stackedLayout->setCurrentWidget(m_videoStreamWidget);  // ⭐ 영상 보여주기
         } else {
-            QMessageBox::warning(this, "RTSP URL 누락", "먼저 네트워크 설정에서 RTSP URL을 입력하세요.");
+            CustomMessageBox msgBox(nullptr, "RTSP URL 누락", "먼저 네트워크 설정에서 RTSP URL을 입력하세요.");
+            msgBox.setFixedSize(300,150);
+            msgBox.exec();
         }
     });
     // event 연결
@@ -322,7 +332,9 @@ void MainWindow::setupLiveVideoTab()
 void MainWindow::onDrawButtonClicked()
 {
     if (!m_videoStreamWidget->isStreaming()) {
-        QMessageBox::information(this, "안내", "먼저 스트리밍을 시작해주세요.");
+        CustomMessageBox msgBox(nullptr, "안내", "먼저 스트리밍을 시작해주세요.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         return;
     }
 
@@ -346,7 +358,9 @@ void MainWindow::onDrawButtonClicked()
                         if (m_tcpCommunicator->sendPerpendicularLine(perpData)) {
                             qDebug() << "수직선 전송 성공";
                         } else {
-                            QMessageBox::warning(this, "전송 실패", "수직선 전송에 실패했습니다.");
+                            CustomMessageBox msgBox(nullptr, "전송 실패", "수직선 전송에 실패했습니다.");
+                            msgBox.setFixedSize(300,150);
+                            msgBox.exec();
                         }
                     }
                 });
@@ -574,9 +588,13 @@ void MainWindow::setupNetworkConnection()
                     qDebug() << "수직선 서버 응답 - 성공:" << success << "메시지:" << message;
 
                     if (success) {
-                        QMessageBox::information(this, "수직선 전송 완료", "수직선이 성공적으로 서버에 전송되었습니다.");
+                        CustomMessageBox msgBox(nullptr, "수직선 전송 완료", "수직선이 성공적으로 서버에 전송되었습니다.");
+                        msgBox.setFixedSize(300,150);
+                        msgBox.exec();
                     } else {
-                        QMessageBox::warning(this, "수직선 전송 실패", "수직선 전송에 실패했습니다: " + message);
+                        CustomMessageBox msgBox(nullptr, "수직선 전송 실패", "수직선 전송에 실패했습니다: " + message);
+                        msgBox.setFixedSize(300,150);
+                        msgBox.exec();
                     }
                 });
     }
@@ -636,7 +654,7 @@ void MainWindow::displayImages(const QList<ImageData> &images)
 
         QLabel *timeLabel = new QLabel(imageData.timestamp);
         timeLabel->setAlignment(Qt::AlignCenter);
-        timeLabel->setStyleSheet("background-color: rgba(0,0,0,0.7); color: white; padding: 5px; border-radius: 3px; font-size: 12px;");
+        timeLabel->setStyleSheet("background-color: rgba(0,0,0,0.7); color: white; padding: 5px; font-size: 12px;");
 
         QWidget *container = new QWidget();
         container->setFixedSize(320, 240);
@@ -690,7 +708,9 @@ void MainWindow::onNetworkConfigClicked()
 void MainWindow::onVideoStreamClicked()
 {
     if (!m_videoStreamWidget->isStreaming()) {
-        QMessageBox::information(this, "안내", "먼저 스트리밍을 시작해주세요.");
+        CustomMessageBox msgBox(nullptr, "안내", "먼저 스트리밍을 시작해주세요.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         return;
     }
 
@@ -698,7 +718,7 @@ void MainWindow::onVideoStreamClicked()
         // TcpCommunicator를 직접 전달
         m_lineDrawingDialog = new LineDrawingDialog(m_rtspUrl, m_tcpCommunicator, this);
         m_lineDrawingDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
-        
+
         // 기존 시그널 연결
         connect(m_lineDrawingDialog, &LineDrawingDialog::lineCoordinatesReady,
                 this, [this](int x1, int y1, int x2, int y2) {
@@ -726,10 +746,14 @@ void MainWindow::onVideoStreamClicked()
                                      << "y = " << a << "x + " << b;
                         } else {
                             qDebug() << "수직선 전송 실패";
-                            QMessageBox::warning(this, "전송 실패", "수직선 데이터 전송에 실패했습니다.");
+                            CustomMessageBox msgBox(nullptr, "전송 실패", "수직선 데이터 전송에 실패했습니다.");
+                            msgBox.setFixedSize(300,150);
+                            msgBox.exec();
                         }
                     } else {
-                        QMessageBox::warning(this, "연결 오류", "서버에 연결되어 있지 않습니다.");
+                        CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되어 있지 않습니다.");
+                        msgBox.setFixedSize(300,150);
+                        msgBox.exec();
                     }
                 });
     }
@@ -746,11 +770,15 @@ void MainWindow::sendMultipleLineCoordinates(const QList<QPair<QPoint, QPoint>> 
             qDebug() << QString("기준선 %1 좌표 전송 성공:").arg(i + 1) << line.first << "to" << line.second;
         }
 
-        QMessageBox::information(this, "전송 완료",
-                                 QString("%1개의 기준선 좌표가 서버로 전송되었습니다.").arg(lines.size()));
+        CustomMessageBox msgBox(nullptr, "전송 완료",
+                                QString("%1개의 기준선 좌표가 서버로 전송되었습니다.").arg(lines.size()));
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
     } else {
         qDebug() << "TCP 연결이 없어 좌표 전송 실패";
-        QMessageBox::warning(this, "전송 실패", "서버에 연결되어 있지 않습니다.");
+        CustomMessageBox msgBox(nullptr, "전송 실패", "서버에 연결되어 있지 않습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
     }
 }
 
@@ -762,14 +790,15 @@ void MainWindow::sendSingleLineCoordinates(int x1, int y1, int x2, int y2)
 
     } else {
         qDebug() << "TCP 연결이 없어 좌표 전송 실패";
-        QMessageBox::warning(this, "전송 실패", "서버에 연결되어 있지 않습니다.");
+        CustomMessageBox msgBox(nullptr, "전송 실패", "서버에 연결되어 있지 않습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
     }
 }
 
 void MainWindow::onDateChanged(const QDate &date)
 {
     qDebug() << "날짜 변경:" << date.toString("yyyy-MM-dd");
-   // m_statusLabel->setText(QString("선택된 날짜: %1").arg(date.toString("yyyy-MM-dd")));
 }
 
 void MainWindow::onHourChanged(int hour)
@@ -795,7 +824,6 @@ void MainWindow::onCalendarDateSelected(const QDate &date)
     m_calendarDialog->accept();
 
     qDebug() << "달력에서 날짜 선택:" << date.toString("yyyy-MM-dd");
-   // m_statusLabel->setText(QString("선택된 날짜: %1").arg(date.toString("yyyy-MM-dd")));
 }
 
 void MainWindow::onHourComboChanged(int index)
@@ -814,7 +842,9 @@ void MainWindow::onStreamingButtonClicked()
                                              "QPushButton:hover { background-color: #f37321; }");
         } else {
             if (m_rtspUrl.isEmpty()) {
-                QMessageBox::warning(this, "설정 오류", "먼저 네트워크 설정에서 RTSP URL을 설정해주세요.");
+                CustomMessageBox msgBox(nullptr, "설정 오류", "먼저 네트워크 설정에서 RTSP URL을 설정해주세요.");
+                msgBox.setFixedSize(300,150);
+                msgBox.exec();
                 return;
             }
 
@@ -829,14 +859,15 @@ void MainWindow::onStreamingButtonClicked()
 void MainWindow::onRequestImagesClicked()
 {
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
-        QMessageBox::warning(this, "연결 오류", "서버에 연결되어 있지 않습니다.\n네트워크 설정을 확인해주세요.");
+        CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되어 있지 않습니다.\n네트워크 설정을 확인해주세요.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
         return;
     }
 
     int selectedHour = m_hourComboBox->currentData().toInt();
     QString dateString = m_selectedDate.toString("yyyy-MM-dd");
 
-    //m_statusLabel->setText("이미지 요청 중... (60초 후 타임아웃)");
     m_requestButton->setEnabled(false);
 
     // 타임아웃을 60초로 증가
@@ -858,11 +889,10 @@ void MainWindow::onTcpConnected()
         m_requestButton->setEnabled(true);
     }
 
-    //if (m_statusLabel) {
-    //    m_statusLabel->setText("서버 연결됨. 이미지를 요청할 수 있습니다.");
-    //}
 
-    QMessageBox::information(this, "연결 성공", "TCP 서버에 성공적으로 연결되었습니다.");
+    CustomMessageBox msgBox(nullptr, "연결 성공", "TCP 서버에 성공적으로 연결되었습니다.");
+    msgBox.setFixedSize(300,150);
+    msgBox.exec();
 }
 
 void MainWindow::onTcpDisconnected()
@@ -874,9 +904,7 @@ void MainWindow::onTcpDisconnected()
         m_requestButton->setEnabled(false);
     }
 
-    //if (m_statusLabel) {
-    //    m_statusLabel->setText("서버 연결이 끊어졌습니다.");
-    //}
+
 }
 
 void MainWindow::onTcpError(const QString &error)
@@ -887,11 +915,10 @@ void MainWindow::onTcpError(const QString &error)
         m_requestButton->setEnabled(false);
     }
 
-    //if (m_statusLabel) {
-    //    m_statusLabel->setText("연결 오류: " + error);
-    //}
 
-    QMessageBox::warning(this, "TCP 연결 오류", error);
+    CustomMessageBox msgBox(nullptr, "TCP 연결 오류", error);
+    msgBox.setFixedSize(300,150);
+    msgBox.exec();
 }
 
 void MainWindow::onTcpDataReceived(const QString &data)
@@ -914,7 +941,6 @@ void MainWindow::onImagesReceived(const QList<ImageData> &images)
 
     displayImages(images);
 
-    //m_statusLabel->setText(QString("이미지 %1개를 불러왔습니다.").arg(images.size()));
     m_requestButton->setEnabled(true);
 }
 
@@ -925,7 +951,9 @@ void MainWindow::onImageClicked(const QString &imagePath, const QString &timesta
         m_imageViewerDialog->setImage(pixmap, timestamp, logText);
         m_imageViewerDialog->exec();
     } else {
-        QMessageBox::warning(this, "이미지 로드 오류", "이미지를 불러올 수 없습니다.");
+        CustomMessageBox msgBox(nullptr, "이미지 로드 오류", "이미지를 불러올 수 없습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
     }
 }
 
@@ -938,18 +966,22 @@ void MainWindow::onRequestTimeout()
 {
     qDebug() << "이미지 요청 타임아웃 (60초)";
 
-    //m_statusLabel->setText("이미지 요청 타임아웃. 서버가 응답하지 않습니다.");
+
     m_requestButton->setEnabled(m_isConnected);
 
-    QMessageBox::warning(this, "요청 타임아웃",
-                         "서버에서 60초 내에 응답이 없습니다.\n"
-                         "서버 상태와 네트워크 연결을 확인하고 다시 시도해주세요.");
+    CustomMessageBox msgBox(nullptr, "요청 타임아웃",
+                            "서버에서 60초 내에 응답이 없습니다.\n"
+                            "서버 상태와 네트워크 연결을 확인하고 다시 시도해주세요.");
+    msgBox.setFixedSize(300,150);
+    msgBox.exec();
 }
 
 void MainWindow::onStreamError(const QString &error)
 {
     qDebug() << "스트림 오류:" << error;
-    QMessageBox::warning(this, "스트림 오류", error);
+    CustomMessageBox msgBox(nullptr, "스트림 오류", error);
+    msgBox.setFixedSize(300,150);
+    msgBox.exec();
 
     if (m_streamingButton) {
         m_streamingButton->setText("Start Streaming");
@@ -963,9 +995,13 @@ void MainWindow::onCoordinatesConfirmed(bool success, const QString &message)
     qDebug() << "좌표 전송 확인 - 성공:" << success << "메시지:" << message;
 
     if (success) {
-        QMessageBox::information(this, "전송 완료", "좌표가 성공적으로 전송되었습니다.");
+        CustomMessageBox msgBox(nullptr, "전송 완료", "좌표가 성공적으로 전송되었습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
     } else {
-        QMessageBox::warning(this, "전송 실패", "좌표 전송에 실패했습니다: " + message);
+        CustomMessageBox msgBox(nullptr, "전송 실패", "좌표 전송에 실패했습니다: " + message);
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
     }
 }
 
@@ -973,9 +1009,7 @@ void MainWindow::onStatusUpdated(const QString &status)
 {
     qDebug() << "상태 업데이트:" << status;
 
-    //if (m_statusLabel) {
-    //    m_statusLabel->setText(status);
-    //}
+
 }
 
 void MainWindow::sendCategorizedCoordinates(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines)
@@ -1000,6 +1034,8 @@ void MainWindow::sendCategorizedCoordinates(const QList<RoadLineData> &roadLines
         qDebug() << "카테고리별 좌표 전송 완료 - 도로선:" << roadLines.size() << "개, 감지선:" << detectionLines.size() << "개";
     } else {
         qDebug() << "TCP 연결이 없어 좌표 전송 실패";
-        QMessageBox::warning(this, "전송 실패", "서버에 연결되어 있지 않습니다.");
+        CustomMessageBox msgBox(nullptr, "전송 실패", "서버에 연결되어 있지 않습니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
     }
 }

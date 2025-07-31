@@ -651,8 +651,6 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     , m_clearLinesButton(nullptr)
     , m_sendCoordinatesButton(nullptr)
     , m_closeButton(nullptr)
-    // , m_statusLabel(nullptr)
-    // , m_frameCountLabel(nullptr)
     , m_logTextEdit(nullptr)
     , m_logCountLabel(nullptr)
     , m_clearLogButton(nullptr)
@@ -661,8 +659,6 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     , m_rtspUrl(rtspUrl)
     , m_drawnLines()
     , m_isDrawingMode(false)
-    // , m_frameTimer(nullptr)
-    // , m_frameCount(0)
     , m_currentCategory(LineCategory::ROAD_DEFINITION)
     , m_selectedRoadLineIndex(-1)
     , m_roadLineSelectionMode(false)
@@ -674,6 +670,7 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     setWindowTitle("기준선 그리기");
     setModal(true);
     resize(1200, 700);
+
 
     setupUI();
     setupMediaPlayer();
@@ -700,8 +697,6 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, TcpCommunicator* tc
     , m_clearLinesButton(nullptr)
     , m_sendCoordinatesButton(nullptr)
     , m_closeButton(nullptr)
-    // , m_statusLabel(nullptr)
-    // , m_frameCountLabel(nullptr)
     , m_logTextEdit(nullptr)
     , m_logCountLabel(nullptr)
     , m_clearLogButton(nullptr)
@@ -710,8 +705,6 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, TcpCommunicator* tc
     , m_rtspUrl(rtspUrl)
     , m_drawnLines()
     , m_isDrawingMode(false)
-    // , m_frameTimer(nullptr)
-    // , m_frameCount(0)
     , m_currentCategory(LineCategory::ROAD_DEFINITION)
     , m_selectedRoadLineIndex(-1)
     , m_roadLineSelectionMode(false)

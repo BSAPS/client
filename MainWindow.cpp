@@ -195,8 +195,8 @@ void MainWindow::setupUI()
     headerBar->setStyleSheet("background-color: #2d3040;");
 
     QGridLayout *headerLayout = new QGridLayout(headerBar);
-    headerLayout->setContentsMargins(0, 0, 20, 0);
-    headerLayout->setHorizontalSpacing(20);
+    headerLayout->setContentsMargins(0, 0, 5, 0);
+    headerLayout->setHorizontalSpacing(5);
 
     // 왼쪽 빈 공간 (혹시 버튼 들어갈 수도 있음)
     QWidget *leftSpacer = new QWidget();

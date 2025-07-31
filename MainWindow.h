@@ -99,6 +99,7 @@ private:
     QWidget *m_centralWidget;
     QTabWidget *m_tabWidget;
 
+
     // Live Video Tab
     QWidget *m_liveVideoTab;
     VideoStreamWidget *m_videoStreamWidget;
@@ -121,7 +122,7 @@ private:
     // 사이드바
     QComboBox *m_modeComboBox;
     QPushButton *m_networkButton;
-    QList<QPushButton*> m_warningButtons;
+    QPushButton *m_closeButton;
 
     // 네트워크 설정
     QString m_rtspUrl;

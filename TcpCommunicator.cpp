@@ -832,15 +832,6 @@ void TcpCommunicator::processJsonMessage(const QJsonObject &jsonObj)
 
     qDebug() << "[TCP] JSON 메시지 처리 - request_id/response_id:" << requestId;
 
-    // 로그인 관련 응답 처리 (request_id: 8-12)
-    // if (requestId >= 8 && requestId <= 12) {
-    //     // LoginWindow에서 처리하도록 원본 JSON 문자열 전달
-    //     QJsonDocument doc(jsonObj);
-    //     QString jsonString = doc.toJson(QJsonDocument::Compact);
-    //     emit messageReceived(jsonString);
-    //     return;
-    // }
-
     // 기타 응답 처리
     switch (requestId) {
     case 10: // 이미지 요청 응답
@@ -1213,21 +1204,6 @@ void TcpCommunicator::handleSavedDetectionLinesResponse(const QJsonObject &jsonO
     // 두 종류의 선이 모두 수신되었는지 확인
     // checkAndEmitAllLinesReceived();
 }
-
-// 모든 선 데이터가 수신되었는지 확인하고 통합 시그널 발생
-// void TcpCommunicator::checkAndEmitAllLinesReceived()
-// {
-//     // 현재는 각각 따로 처리하므로 이 함수는 필요시 확장 가능
-//     if (m_roadLinesReceived && m_detectionLinesReceived) {
-//         qDebug() << "[TCP] 모든 저장된 선 데이터 수신 완료";
-//         emit statusUpdated(QString("저장된 선 데이터 로드 완료 - 도로선: %1개, 감지선: %2개")
-//                                .arg(m_receivedRoadLines.size()).arg(m_receivedDetectionLines.size()));
-
-//         // 상태 초기화
-//         m_roadLinesReceived = false;
-//         m_detectionLinesReceived = false;
-//     }
-// }
 
 void TcpCommunicator::handleCategorizedCoordinatesResponse(const QJsonObject &jsonObj)
 {

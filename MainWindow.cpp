@@ -46,6 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_centralWidget(nullptr)
     , m_tabWidget(nullptr)
+    , m_closeButton(nullptr)
     , m_liveVideoTab(nullptr)
     , m_videoStreamWidget(nullptr)
     , m_streamingButton(nullptr)
@@ -60,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_dateEdit(nullptr)
     , m_hourSpinBox(nullptr)
     , m_requestButton(nullptr)
-    , m_statusLabel(nullptr)
+    //, m_statusLabel(nullptr)
     , m_networkButton(nullptr)
     , m_rtspUrl("")  // 빈 문자열로 초기화
     , m_tcpHost("")  // 빈 문자열로 초기화
@@ -186,44 +187,59 @@ void MainWindow::setupUI()
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
 
+
     QVBoxLayout *mainLayout = new QVBoxLayout(m_centralWidget);
     // 헤더 영역
     QWidget *headerBar = new QWidget();
-    headerBar->setFixedHeight(40);
+    headerBar->setFixedHeight(50);
     headerBar->setStyleSheet("background-color: #2d3040;");
 
+
     QGridLayout *headerLayout = new QGridLayout(headerBar);
-    headerLayout->setContentsMargins(0, 0, 20, 0);
+    headerLayout->setContentsMargins(0, 0, 5, 0);
+    headerLayout->setHorizontalSpacing(5);
 
-    // 왼쪽 빈 공간 (혹시 버튼 들어갈 수도 있음)
-    QWidget *leftSpacer = new QWidget();
-    headerLayout->addWidget(leftSpacer, 0, 0, Qt::AlignLeft);
 
-    // 가운데 타이틀
-    QLabel *titleLabel = new QLabel("CCTV Monitoring System");
+    QLabel* titleLabel = new QLabel("CCTV Monitoring System");
     titleLabel->setAlignment(Qt::AlignCenter);
     titleLabel->setStyleSheet("color: white; font-size: 24px; font-weight: bold;");
-    headerLayout->addWidget(titleLabel, 0, 1, Qt::AlignCenter);
 
-    // 오른쪽 버튼
-    headerLayout->addWidget(m_networkButton, 0, 2, Qt::AlignRight);
+
+
+    // 네트워크 버튼
+    m_networkButton = new QPushButton();
+    m_networkButton->setIcon(QIcon(":/icons/NetworkConnect.png")); // 아이콘 리소스 확인
+    m_networkButton->setIconSize(QSize(25, 25));
+    m_networkButton->setFixedSize(40, 40);
+    m_networkButton->setStyleSheet(
+        "QPushButton { background-color: transparent; border: none; } "
+        "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 20px; }");
+
+    //닫기 버튼
+    m_closeButton = new QPushButton();
+    m_closeButton->setIcon(QIcon(":/icons/close.png"));
+    m_closeButton->setIconSize(QSize(35,35));
+    m_closeButton->setFixedSize(40, 40);
+    m_closeButton->setStyleSheet("QPushButton { background-color: transparent; border: none; } "
+                                 "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 20px; }");
+
+
+    // 버튼 컨테이너 (수평 배치)
+    QHBoxLayout *rightButtonsLayout = new QHBoxLayout();
+    rightButtonsLayout->setSpacing(5);
+    rightButtonsLayout->addWidget(m_networkButton);
+    rightButtonsLayout->addWidget(m_closeButton);
+
+    // 오른쪽 영역 위젯으로 감싸기
+    QWidget *rightButtonsWidget = new QWidget();
+    rightButtonsWidget->setLayout(rightButtonsLayout);
+    headerLayout->addWidget(rightButtonsWidget, 0, 2, Qt::AlignRight);
 
     // 열 너비 균형
     headerLayout->setColumnStretch(0, 1);
     headerLayout->setColumnStretch(1, 2); // 가운데 강조
     headerLayout->setColumnStretch(2, 1);
 
-    // 오른쪽 버튼
-    m_networkButton = new QPushButton();
-    m_networkButton->setIcon(QIcon(":/icons/NetworkConnect.png")); // 아이콘 리소스 확인
-    m_networkButton->setIconSize(QSize(24, 24));
-    m_networkButton->setFixedSize(40, 40);
-    m_networkButton->setStyleSheet(
-        "QPushButton { background-color: transparent; border: none; } "
-        "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 20px; }");
-    headerLayout->addWidget(m_networkButton, 0, Qt::AlignRight);
-
-    // headerLayout 자동 적용
     mainLayout->addWidget(headerBar);
 
     // 콘텐츠 영역
@@ -251,9 +267,10 @@ void MainWindow::setupUI()
     sidebarLayout->addWidget(m_modeComboBox);
 
     mainLayout->addLayout(contentLayout);
-    connect(m_networkButton,&QPushButton::clicked,this,&MainWindow::onNetworkConfigClicked);
 
-}
+    connect(m_networkButton,&QPushButton::clicked,this,&MainWindow::onNetworkConfigClicked);
+    connect(m_closeButton, &QPushButton::clicked, this, &MainWindow::close);
+
 
 void MainWindow::setupLiveVideoTab()
 {
@@ -307,7 +324,7 @@ void MainWindow::setupLiveVideoTab()
     connect(m_videoStreamWidget, &VideoStreamWidget::clicked, this, [=]() {
         if (m_videoStreamWidget->isStreaming()) {
             m_videoStreamWidget->stopStream();
-            stackedLayout->setCurrentWidget(overlayWidget);  // ⬅ 오버레이를 다시 위로
+            stackedLayout->setCurrentWidget(overlayWidget);  // 오버레이를 다시 위로
         }
     });
 
@@ -318,7 +335,7 @@ void MainWindow::setupLiveVideoTab()
     connect(playOverlayButton, &QPushButton::clicked, this, [=]() {
         if (!m_rtspUrl.isEmpty()) {
             m_videoStreamWidget->startStream(m_rtspUrl);
-            stackedLayout->setCurrentWidget(m_videoStreamWidget);  // ⭐ 영상 보여주기
+            stackedLayout->setCurrentWidget(m_videoStreamWidget);  // 영상 보여주기
         } else {
             CustomMessageBox msgBox(nullptr, "RTSP URL 누락", "먼저 네트워크 설정에서 RTSP URL을 입력하세요.");
             msgBox.setFixedSize(300,150);
@@ -671,12 +688,20 @@ void MainWindow::displayImages(const QList<ImageData> &images)
 
         QLabel *timeLabel = new QLabel(imageData.timestamp);
         timeLabel->setAlignment(Qt::AlignCenter);
-        timeLabel->setStyleSheet("background-color: rgba(0,0,0,0.7); color: white; padding: 5px; font-size: 12px;");
+        timeLabel->setStyleSheet("background-color: #383A41; color: white; padding: 5px; font-size: 12px;");
 
         QWidget *container = new QWidget();
         container->setFixedSize(320, 240);
+
+        // 이미지 스타일 적용
+        container->setStyleSheet(
+            "background-color: #383A41;"
+            "border-radius: 10px;"
+            "padding: 5px;"
+            );
         QVBoxLayout *containerLayout = new QVBoxLayout(container);
-        containerLayout->setContentsMargins(0, 0, 0, 0);
+        containerLayout->setContentsMargins(5, 5, 5, 5);
+        containerLayout->setSpacing(8);
         containerLayout->addWidget(imageLabel);
         containerLayout->addWidget(timeLabel);
 
@@ -816,7 +841,6 @@ void MainWindow::sendSingleLineCoordinates(int x1, int y1, int x2, int y2)
 void MainWindow::onDateChanged(const QDate &date)
 {
     qDebug() << "날짜 변경:" << date.toString("yyyy-MM-dd");
-    // m_statusLabel->setText(QString("선택된 날짜: %1").arg(date.toString("yyyy-MM-dd")));
 }
 
 void MainWindow::onHourChanged(int hour)
@@ -842,7 +866,6 @@ void MainWindow::onCalendarDateSelected(const QDate &date)
     m_calendarDialog->accept();
 
     qDebug() << "달력에서 날짜 선택:" << date.toString("yyyy-MM-dd");
-    // m_statusLabel->setText(QString("선택된 날짜: %1").arg(date.toString("yyyy-MM-dd")));
 }
 
 void MainWindow::onHourComboChanged(int index)
@@ -909,9 +932,6 @@ void MainWindow::onTcpConnected()
         m_requestButton->setEnabled(true);
     }
 
-    // if (m_statusLabel) {
-    //     m_statusLabel->setText("서버 연결됨. 이미지를 요청할 수 있습니다.");
-    // }
 
     CustomMessageBox msgBox(nullptr, "연결 성공", "TCP 서버에 성공적으로 연결되었습니다.");
     msgBox.setFixedSize(300,150);
@@ -927,9 +947,7 @@ void MainWindow::onTcpDisconnected()
         m_requestButton->setEnabled(false);
     }
 
-    // if (m_statusLabel) {
-    //     m_statusLabel->setText("서버 연결이 끊어졌습니다.");
-    // }
+
 }
 
 void MainWindow::onTcpError(const QString &error)
@@ -940,9 +958,6 @@ void MainWindow::onTcpError(const QString &error)
         m_requestButton->setEnabled(false);
     }
 
-    // if (m_statusLabel) {
-    //     m_statusLabel->setText("연결 오류: " + error);
-    // }
 
     CustomMessageBox msgBox(nullptr, "TCP 연결 오류", error);
     msgBox.setFixedSize(300,150);
@@ -969,7 +984,6 @@ void MainWindow::onImagesReceived(const QList<ImageData> &images)
 
     displayImages(images);
 
-    // m_statusLabel->setText(QString("이미지 %1개를 불러왔습니다.").arg(images.size()));
     m_requestButton->setEnabled(true);
 }
 
@@ -995,7 +1009,7 @@ void MainWindow::onRequestTimeout()
 {
     qDebug() << "이미지 요청 타임아웃 (60초)";
 
-    // m_statusLabel->setText("이미지 요청 타임아웃. 서버가 응답하지 않습니다.");
+
     m_requestButton->setEnabled(m_isConnected);
 
     CustomMessageBox msgBox(nullptr, "요청 타임아웃",
@@ -1038,9 +1052,7 @@ void MainWindow::onStatusUpdated(const QString &status)
 {
     qDebug() << "상태 업데이트:" << status;
 
-    // if (m_statusLabel) {
-    //     m_statusLabel->setText(status);
-    // }
+
 }
 
 void MainWindow::sendCategorizedCoordinates(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines)

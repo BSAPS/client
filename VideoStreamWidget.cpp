@@ -304,7 +304,6 @@ void VideoStreamWidget::onErrorOccurred(QMediaPlayer::Error error, const QString
     
     showConnectionStatus("에러 발생", "#f44336");
     emit streamError(errorMsg);
-    //QMessageBox::warning(this, "RTSP 연결 실패", errorMsg);
     CustomMessageBox msgBox(nullptr, "RTSP 연결 실패", errorMsg);
     msgBox.setFixedSize(300,150);
     msgBox.exec();

@@ -29,5 +29,6 @@
         <file>icons/squares_clicked.png</file>
         <file>icons/left.png</file>
         <file>icons/right.png</file>
+        <file>icons/close.png</file>
     </qresource>
 </RCC>

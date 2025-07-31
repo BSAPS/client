@@ -192,7 +192,7 @@ void MainWindow::setupUI()
     // 헤더 영역
     QWidget *headerBar = new QWidget();
     headerBar->setFixedHeight(50);
-    headerBar->setStyleSheet("background-color: #353B55;");
+    headerBar->setStyleSheet("background-color: #292d41;");
 
 
     QGridLayout *headerLayout = new QGridLayout(headerBar);
@@ -235,7 +235,7 @@ void MainWindow::setupUI()
     // 오른쪽 영역 위젯으로 감싸기
     QWidget *rightButtonsWidget = new QWidget();
     rightButtonsWidget->setLayout(rightButtonsLayout);
-    headerLayout->addWidget(rightButtonsWidget, 0, 2, Qt::AlignRight);
+    headerLayout->addWidget(rightButtonsWidget, 0, 2, Qt::AlignRight | Qt::AlignVCenter);
 
     // 열 너비 균형
     headerLayout->setColumnStretch(0, 1);

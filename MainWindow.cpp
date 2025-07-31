@@ -192,18 +192,20 @@ void MainWindow::setupUI()
     // 헤더 영역
     QWidget *headerBar = new QWidget();
     headerBar->setFixedHeight(50);
-    headerBar->setStyleSheet("background-color: #2d3040;");
+    headerBar->setStyleSheet("background-color: #353B55;");
 
 
     QGridLayout *headerLayout = new QGridLayout(headerBar);
-    headerLayout->setContentsMargins(0, 0, 5, 0);
+    headerLayout->setContentsMargins(5, 0, 5, 0);
     headerLayout->setHorizontalSpacing(5);
 
 
     QLabel* titleLabel = new QLabel("CCTV Monitoring System");
     titleLabel->setAlignment(Qt::AlignCenter);
     titleLabel->setStyleSheet("color: white; font-size: 24px; font-weight: bold;");
+    // headerLayout->addWidget(titleLabel);
 
+    headerLayout->addWidget(titleLabel, 0, 0, 1, 3, Qt::AlignHCenter);
 
 
     // 네트워크 버튼
@@ -218,7 +220,7 @@ void MainWindow::setupUI()
     //닫기 버튼
     m_closeButton = new QPushButton();
     m_closeButton->setIcon(QIcon(":/icons/close.png"));
-    m_closeButton->setIconSize(QSize(25,25));
+    m_closeButton->setIconSize(QSize(20,20));
     m_closeButton->setFixedSize(40, 40);
     m_closeButton->setStyleSheet("QPushButton { background-color: transparent; border: none; } "
                                  "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 20px; }");

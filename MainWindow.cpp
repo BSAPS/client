@@ -654,12 +654,20 @@ void MainWindow::displayImages(const QList<ImageData> &images)
 
         QLabel *timeLabel = new QLabel(imageData.timestamp);
         timeLabel->setAlignment(Qt::AlignCenter);
-        timeLabel->setStyleSheet("background-color: rgba(0,0,0,0.7); color: white; padding: 5px; font-size: 12px;");
+        timeLabel->setStyleSheet("background-color: #383A41; color: white; padding: 5px; font-size: 12px;");
 
         QWidget *container = new QWidget();
         container->setFixedSize(320, 240);
+
+        // 이미지 스타일 적용
+        container->setStyleSheet(
+            "background-color: #383A41;"
+            "border-radius: 10px;"
+            "padding: 5px;"
+            );
         QVBoxLayout *containerLayout = new QVBoxLayout(container);
-        containerLayout->setContentsMargins(0, 0, 0, 0);
+        containerLayout->setContentsMargins(5, 5, 5, 5);
+        containerLayout->setSpacing(8);
         containerLayout->addWidget(imageLabel);
         containerLayout->addWidget(timeLabel);
 

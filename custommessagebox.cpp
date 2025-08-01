@@ -30,7 +30,9 @@ CustomMessageBox::CustomMessageBox(QWidget *parent, const QString &title, const 
     QLabel *messageLabel = new QLabel(message);
     messageLabel->setStyleSheet("color: white; font-size: 14px;");
     messageLabel->setWordWrap(true);
-    //messageLabel->setMinimumWidth(300);
+    messageLabel->setMaximumWidth(300);
+    messageLabel->setMinimumWidth(150);
+
     messageLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(messageLabel);
 
@@ -65,10 +67,22 @@ CustomMessageBox::CustomMessageBox(QWidget *parent, const QString &title, const 
 
     outerLayout->addWidget(popup);
 
-    // 중앙 배치
-    QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
-    move(screen.center() - QPoint(width() / 2, height() / 2));
+    layout()->activate();
+
     adjustSize();
+
+    // 중앙 배치
+    if (parent) {
+        QRect parentGeometry = parent->geometry();
+        int x = parentGeometry.x() + (parentGeometry.width() - width()) / 2;
+        int y = parentGeometry.y() + (parentGeometry.height() - height()) / 2;
+        move(x, y);
+    } else {
+        // 부모 없을 경우 화면 기준 중앙 배치
+        QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
+        move(screen.center() - QPoint(width() / 2, height() / 2));
+    }
+
 }
 
 
@@ -94,14 +108,15 @@ void CustomMessageBox::mouseReleaseEvent(QMouseEvent *event)
 }
 
 
+
 //--- 너비와 높이를 정수 값으로 설정하는 함수
 void CustomMessageBox::setFixedSize(int width, int height) {
-    QDialog::setFixedSize(width, height);
+   // QDialog::setFixedSize(width, height);
 }
 
 //--- QSize 객체로 너비와 높이를 설정하는 함수
 void CustomMessageBox::setFixedSize(const QSize &size) {
-    QDialog::setFixedSize(size);
+    //QDialog::setFixedSize(size);
 }
 
 // 필요하다면 여기에 CustomMessageBox::~CustomMessageBox() 소멸자를 구현합니다.

@@ -11,6 +11,10 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
+    // 애플리케이션 아이콘 설정
+    QIcon app_icon(":/icons/CCTV.png");
+    app.setWindowIcon(app_icon);
+
 
     // 애플리케이션 정보 설정
     app.setApplicationName("CCTV Monitoring System");

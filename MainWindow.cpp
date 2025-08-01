@@ -293,8 +293,8 @@ void MainWindow::setupLiveVideoTab()
 
     // 재생 버튼 (아이콘 이미지 사용)
     QPushButton *playOverlayButton = new QPushButton();
-    playOverlayButton->setIcon(QIcon(":/icons/play1.png"));  //재생 이미지
-    playOverlayButton->setIconSize(QSize(48, 48));
+    playOverlayButton->setIcon(QIcon(":/icons/play.svg"));  //재생 이미지
+    playOverlayButton->setIconSize(QSize(15, 15));
     playOverlayButton->setFixedSize(64, 48);
     playOverlayButton->setCursor(Qt::PointingHandCursor);
     playOverlayButton->setStyleSheet(
@@ -643,6 +643,7 @@ void MainWindow::setupNetworkConnection()
     connect(m_requestTimeoutTimer, &QTimer::timeout, this, &MainWindow::onRequestTimeout);
 
     m_imageViewerDialog = new ImageViewerDialog(this);
+    m_imageViewerDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
 }
 
 void MainWindow::applyStyles()

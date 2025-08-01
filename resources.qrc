@@ -30,5 +30,7 @@
         <file>icons/left.png</file>
         <file>icons/right.png</file>
         <file>icons/close.png</file>
+        <file>icons/CCTV.png</file>
+        <file>icons/play.svg</file>
     </qresource>
 </RCC>

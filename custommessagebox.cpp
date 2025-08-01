@@ -2,39 +2,97 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QScreen>
 #include <QApplication> // main 함수가 다른 곳에 있다면 필요 없을 수 있습니다.
+#include <QGraphicsDropShadowEffect>
+#include <QMouseEvent>
 
 CustomMessageBox::CustomMessageBox(QWidget *parent, const QString &title, const QString &message)
-    : QDialog(parent) {
-    // 윈도우 플래그 설정:
-    // Qt::FramelessWindowHint - 프레임(테두리, 상단바)을 없앰
-    // Qt::Popup - 팝업 윈도우처럼 동작 (옵션)
-    // Qt::WindowStaysOnTopHint - 항상 위에 있도록 (옵션)
-    setWindowFlags(Qt::FramelessWindowHint | Qt::Popup); // | Qt::WindowStaysOnTopHint);
+    : QDialog(parent), m_dragging(false)
+{
+    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::CustomizeWindowHint);
+    setAttribute(Qt::WA_TranslucentBackground);
 
-    // 레이아웃 초기화 및 설정
-    mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(20, 20, 20, 20); // 그림자 공간 확보
 
-    // 메시지 라벨 초기화 및 설정
-    messageLabel = new QLabel(message);
-    messageLabel->setAlignment(Qt::AlignCenter); // 텍스트 중앙 정렬
+    QFrame *popup = new QFrame(this);
+    popup->setObjectName("popupFrame");
+    popup->setStyleSheet(R"(
+        QFrame#popupFrame {
+            background-color: #3c405c;
+            border-radius: 12px;
+        })");
+
+    QVBoxLayout *mainLayout = new QVBoxLayout(popup);
+    mainLayout->setContentsMargins(24, 24, 24, 24);
+
+    QLabel *messageLabel = new QLabel(message);
+    messageLabel->setStyleSheet("color: white; font-size: 14px;");
+    messageLabel->setWordWrap(true);
+    //messageLabel->setMinimumWidth(300);
+    messageLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(messageLabel);
 
-    // 확인 버튼 초기화 및 설정
-    okButton = new QPushButton("확인");
-    mainLayout->addWidget(okButton);
+    QPushButton *okButton = new QPushButton("확인");
+    okButton->setFixedSize(100, 36);
+    okButton->setStyleSheet(R"(
+        QPushButton {
+            background-color: #5d6075;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: #6f728a;
+        }
+        QPushButton:pressed {
+            background-color: #4b4e65;
+        })");
+    // 메시지 아래 간격 추가 (예: 16px)
+    mainLayout->addSpacing(16);
+    mainLayout->addWidget(okButton, 0, Qt::AlignCenter);
 
-    // 확인 버튼 클릭 시 다이얼로그 닫기
-    connect(okButton, &QPushButton::clicked, this, &CustomMessageBox::accept);
+    connect(okButton, &QPushButton::clicked, this, &QDialog::accept);
 
-    // 다이얼로그 크기 조절
+    // 그림자 효과
+    QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect(popup);
+    shadow->setBlurRadius(24);
+    shadow->setOffset(0, 6);
+    shadow->setColor(QColor(0, 0, 0, 160));
+    popup->setGraphicsEffect(shadow);
+
+    outerLayout->addWidget(popup);
+
+    // 중앙 배치
+    QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
+    move(screen.center() - QPoint(width() / 2, height() / 2));
     adjustSize();
-
-    // 타이틀은 QDialog의 setWindowTitle 함수를 통해 설정할 수 있지만,
-    // Qt::FramelessWindowHint 플래그가 설정되어 있으면 타이틀바가 보이지 않으므로
-    // 시각적으로 큰 의미는 없습니다. 하지만 내부적으로는 설정됩니다.
-    setWindowTitle(title);
 }
+
+
+void CustomMessageBox::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) {
+        m_dragging = true;
+        m_dragPos = event->globalPosition().toPoint() - frameGeometry().topLeft();
+    }
+}
+
+void CustomMessageBox::mouseMoveEvent(QMouseEvent *event)
+{
+    if (m_dragging && event->buttons() & Qt::LeftButton) {
+        move(event->globalPosition().toPoint() - m_dragPos);
+    }
+}
+
+void CustomMessageBox::mouseReleaseEvent(QMouseEvent *event)
+{
+    Q_UNUSED(event);
+    m_dragging = false;
+}
+
 
 //--- 너비와 높이를 정수 값으로 설정하는 함수
 void CustomMessageBox::setFixedSize(int width, int height) {

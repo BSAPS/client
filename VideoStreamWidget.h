@@ -9,7 +9,6 @@
 #include <QMouseEvent>
 #include <QMediaPlayer>
 #include <QVideoWidget>
-#include <QAudioOutput>
 
 class VideoStreamWidget : public QWidget
 {
@@ -54,7 +53,6 @@ private:
 
     // 미디어 플레이어
     QMediaPlayer *m_mediaPlayer;
-    QAudioOutput *m_audioOutput;
 
     // 타이머
     QTimer *m_connectionTimer;

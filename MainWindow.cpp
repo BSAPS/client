@@ -86,7 +86,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_dateEdit(nullptr)
     , m_hourSpinBox(nullptr)
     , m_requestButton(nullptr)
-    //, m_statusLabel(nullptr)
     , m_networkButton(nullptr)
     , m_rtspUrl("")  // 빈 문자열로 초기화
     , m_tcpHost("")  // 빈 문자열로 초기화

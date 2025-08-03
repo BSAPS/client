@@ -16,7 +16,6 @@ VideoStreamWidget::VideoStreamWidget(QWidget *parent)
     , m_liveIndicator(nullptr)
     , m_layout(nullptr)
     , m_mediaPlayer(nullptr)
-    , m_audioOutput(nullptr)
     , m_connectionTimer(nullptr)
     , m_liveBlinkTimer(nullptr)
     , m_statusUpdateTimer(nullptr)
@@ -33,9 +32,6 @@ VideoStreamWidget::~VideoStreamWidget()
     stopStream();
     if (m_mediaPlayer) {
         delete m_mediaPlayer;
-    }
-    if (m_audioOutput) {
-        delete m_audioOutput;
     }
 }
 
@@ -96,9 +92,7 @@ void VideoStreamWidget::setupUI()
 void VideoStreamWidget::setupMediaPlayer()
 {
     m_mediaPlayer = new QMediaPlayer(this);
-    m_audioOutput = new QAudioOutput(this);
-    
-    m_mediaPlayer->setAudioOutput(m_audioOutput);
+
     m_mediaPlayer->setVideoOutput(m_videoWidget);
     
     // 미디어 플레이어 시그널 연결

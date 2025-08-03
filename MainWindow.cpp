@@ -33,12 +33,37 @@ void ClickableImageLabel::setImageData(const QString &imagePath, const QString &
     m_logText = logText;
 }
 
-void ClickableImageLabel::mousePressEvent(QMouseEvent *event)
+void MainWindow::mousePressEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton) {
-        emit clicked(m_imagePath, m_timestamp, m_logText);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QPoint globalPos = event->globalPosition().toPoint();
+#else
+    QPoint globalPos = event->globalPos();
+#endif
+    // 헤더 영역에서만 이동 가능하게 하고 싶으면 여기서 위치 필터링
+    if (event->button() == Qt::LeftButton && event->pos().y() <= 40) { // 상단 40px
+        m_dragging = true;
+        m_dragPosition = event->globalPos() - frameGeometry().topLeft();
+        event->accept();
     }
-    QLabel::mousePressEvent(event);
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent *event)
+{
+    if (m_dragging && (event->buttons() & Qt::LeftButton)) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QPoint globalPos = event->globalPosition().toPoint();
+#else
+        QPoint globalPos = event->globalPos();
+#endif
+        move(event->globalPos() - m_dragPosition);
+        event->accept();
+    }
+}
+
+void MainWindow::mouseReleaseEvent(QMouseEvent *event)
+{
+    m_dragging = false;
 }
 
 // MainWindow 구현

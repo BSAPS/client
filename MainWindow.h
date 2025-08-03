@@ -36,8 +36,7 @@ public:
 
 signals:
     void clicked(const QString &imagePath, const QString &timestamp, const QString &logText);
-protected:
-    void mousePressEvent(QMouseEvent *event) override;
+
 
 private:
     QString m_imagePath;
@@ -55,6 +54,11 @@ public:
 
     // TCP 통신기 설정 메서드
     void setTcpCommunicator(TcpCommunicator* communicator);
+
+protected:
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
 
 private slots:
     void onNetworkConfigClicked();
@@ -94,6 +98,10 @@ private:
     void sendMultipleLineCoordinates(const QList<QPair<QPoint, QPoint>> &lines);
     void sendSingleLineCoordinates(int x1, int y1, int x2, int y2);
     void sendCategorizedCoordinates(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines);
+
+
+    QPoint m_dragPosition;
+    bool m_dragging = false;
 
     // UI 컴포넌트
     QWidget *m_centralWidget;

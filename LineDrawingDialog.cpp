@@ -156,7 +156,7 @@ void VideoGraphicsView::loadSavedRoadLines(const QList<RoadLineData> &roadLines)
     m_lines.clear();
     m_categorizedLines.clear();
 
-    // 도로선 데이터 처리 - 원래 얇은 선으로
+    // 도로선 데이터 처리 - 얇은 선으로
     for (int i = 0; i < roadLines.size(); ++i) {
         const auto &roadLine = roadLines[i];
         qDebug() << QString("도로선 %1: index=%2, (%3,%4) → (%5,%6), matrix1=%7, matrix2=%8")
@@ -798,13 +798,13 @@ void LineDrawingDialog::requestSavedLinesFromServer()
         bool detectionSuccess = m_tcpCommunicator->requestSavedDetectionLines();
 
         if (roadSuccess && detectionSuccess) {
-            addLogMessage("서버에 저장된 도로선과 감지선 데이터를 자동으로 요청했습니다.", "INFO");
-            // m_statusLabel->setText("저장된 선 데이터를 불러오는 중...");
+            addLogMessage("서버에 저장된 도로선과 감지선 데이터를 자동으로 요청", "INFO");
+
         } else {
-            addLogMessage("저장된 선 데이터 요청에 실패했습니다.", "ERROR");
+            addLogMessage("저장된 선 데이터 요청 실패", "ERROR");
         }
     } else {
-        addLogMessage("서버에 연결되어 있지 않아 저장된 선을 불러올 수 없습니다.", "WARNING");
+        addLogMessage("서버에 연결되어 있지 않아 저장된 선을 불러올 수 없음", "WARNING");
         // 연결이 안 되어 있으면 재시도
         QTimer::singleShot(2000, this, &LineDrawingDialog::requestSavedLinesFromServer);
     }
@@ -994,7 +994,7 @@ void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordin
         msgBox.setFixedSize(300,150);
         msgBox.exec();
     } else {
-        addLogMessage("Matrix 선택이 취소되었습니다.", "INFO");
+        addLogMessage("Matrix 선택 취소됨", "INFO");
         m_videoView->clearHighlight(); // 하이라이트 제거
     }
 }
@@ -1296,14 +1296,14 @@ void LineDrawingDialog::setupUI()
     m_mainLayout->addLayout(m_buttonLayout);
 
     // 초기 로그 메시지
-    //addLogMessage("기준선 그리기 다이얼로그 시작", "SYSTEM");
     addLogMessage("저장된 선 데이터 불러오기", "INFO");
-    addLogMessage("감지선을 그리면 수직선이 자동으로 계산되고 전송됨", "INFO");
+
 
     qDebug() << "UI 설정 완료";
 }
 void LineDrawingDialog::onStartDrawingClicked()
 {
+    addLogMessage("감지선을 그리면 수직선이 자동으로 계산되고 전송됨", "INFO");
     m_startDrawingButton->hide();
     m_stopDrawingButton->show();
 
@@ -1547,14 +1547,11 @@ void LineDrawingDialog::onPlayerStateChanged(QMediaPlayer::PlaybackState state)
 {
     switch (state) {
     case QMediaPlayer::PlayingState:
-        // m_statusLabel->setText("비디오 스트림 재생 중");
         addLogMessage("비디오 스트림 연결됨", "SUCCESS");
         break;
     case QMediaPlayer::PausedState:
-        // m_statusLabel->setText("비디오 스트림 일시정지");
         break;
     case QMediaPlayer::StoppedState:
-        // m_statusLabel->setText("비디오 스트림 중지됨");
         break;
     }
 }
@@ -1562,7 +1559,6 @@ void LineDrawingDialog::onPlayerStateChanged(QMediaPlayer::PlaybackState state)
 void LineDrawingDialog::onPlayerError(QMediaPlayer::Error error, const QString &errorString)
 {
     QString errorMsg = QString("비디오 스트림 오류: %1").arg(errorString);
-    // m_statusLabel->setText(errorMsg);
     addLogMessage(errorMsg, "ERROR");
     qDebug() << "미디어 플레이어 오류:" << error << errorString;
 }
@@ -1610,7 +1606,7 @@ void LineDrawingDialog::addLogMessage(const QString &message, const QString &typ
     } else if (type == "SYSTEM") {
         coloredMessage = QString("<span style='color: #ffffff; font-weight: bold;'>️ %1 %2</span>").arg(timestamp, message);
     } else {
-        coloredMessage = QString("<span style='color: #ffffff;'>️ %1 %2</span>").arg(timestamp, message);
+        coloredMessage = QString("<span style='color: #ffffff; font-weight: bold;'>️ %1 %2</span>").arg(timestamp, message);
     }
 
     m_logTextEdit->append(coloredMessage);
@@ -1630,7 +1626,7 @@ void LineDrawingDialog::clearLog()
 {
     m_logTextEdit->clear();
     m_logCountLabel->setText("로그: 0개");
-    addLogMessage("로그가 지워졌습니다.", "SYSTEM");
+    addLogMessage("로그 삭제됨", "SYSTEM");
 }
 
 void LineDrawingDialog::updateButtonStates()
@@ -1875,7 +1871,7 @@ void LineDrawingDialog::onBBoxesReceived(const QList<BBox> &bboxes, qint64 times
         
         // 로그 메시지 추가
         if (bboxes.isEmpty()) {
-            //addLogMessage("Bounding Box 업데이트 - 감지된 객체 없음.", "Bounding Box");
+
         } else {
             QString objectList;
             int filteredCount = 0;

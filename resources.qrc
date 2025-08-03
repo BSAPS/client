@@ -31,5 +31,6 @@
         <file>icons/close.png</file>
         <file>icons/CCTV.png</file>
         <file>icons/play.svg</file>
+        <file>ca-cert.crt</file>
     </qresource>
 </RCC>

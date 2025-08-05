@@ -62,7 +62,21 @@
      │   └── UI에 사용되는 아이콘 리소스
      └── README.md
 
-
+## 빌드 방법
+1. Win + R 누르기 → cmd 입력 → Enter
+2. git clone https://github.com/veda-team3-final-project/client
+3. cd client
+후,
+     1) qmake로 빌드
+          a. 빌드할 디렉토리로 이동 (ex: cd /d C:\client)
+          b. qmake 실행
+               qmake CCTVMonitoring.pro
+          c. mingw32-make
+          d. release\CCTVMonitoring.exe (또는 debug\CCTVMonitoring.exe) 실행
+          
+     2) Qt Creator로 빌드
+          a. QtCreator로 CCTVMonitoring.pro open
+          b. Build 버튼(또는 Ctrl+R) push
 
 ## 사용법
 

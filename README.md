@@ -46,9 +46,6 @@
 | 클라이언트 앱   | Qt (C++) |
 | 영상 수신       | RTSP 프로토콜 |
 | 통신 방식       | TCP Socket |
-| 객체 인식       | YOLO 등 (※ 서버 측 구현 기준) |
-| 메시지 디스플레이 | Dot Matrix |
-| 이미지 저장/조회 | DB (서버 측 구현 기준) |
 
 
 ## 프로젝트 구조
@@ -63,20 +60,38 @@
      └── README.md
 
 ## 빌드 방법
-1. Win + R 누르기 → cmd 입력 → Enter
-2. git clone https://github.com/veda-team3-final-project/client
-3. cd client
-후,
-     1) qmake로 빌드
-          a. 빌드할 디렉토리로 이동 (ex: cd /d C:\client)
-          b. qmake 실행
-               qmake CCTVMonitoring.pro
-          c. mingw32-make
-          d. release\CCTVMonitoring.exe (또는 debug\CCTVMonitoring.exe) 실행
-          
-     2) Qt Creator로 빌드
-          a. QtCreator로 CCTVMonitoring.pro open
-          b. Build 버튼(또는 Ctrl+R) push
+
+### 1. 프로젝트 클론 및 이동
+
+```bash
+git clone https://github.com/veda-team3-final-project/client
+cd client
+```
+
+---
+
+### 2. 빌드 방법 선택
+
+#### 방법 A: 명령어로 빌드 (qmake + mingw)
+
+```bash
+cd /d C:\client  # 또는 프로젝트 루트 경로로 이동
+qmake CCTVMonitoring.pro
+mingw32-make
+```
+
+- 빌드 완료 후 `release\CCTVMonitoring.exe` 또는 `debug\CCTVMonitoring.exe` 실행
+
+---
+
+#### 방법 B: Qt Creator에서 빌드
+
+1. Qt Creator 실행  
+2. `CCTVMonitoring.pro` 열기  
+3. 상단의 Build 버튼 클릭 (또는 Ctrl + R)  
+4. 실행 파일이 `release\` 또는 `debug\` 폴더에 생성됨
+
+
 
 ## 사용법
 
@@ -84,21 +99,23 @@
 2. 클라이언트(Qt) 실행
 3. 로그인 후 실시간 CCTV 영상 확인
 4. 도로선과 기준선을 설정
-5. 경고 발생 시 서버가 캡처 및 저장
-6. 캡처 이미지 조회 탭에서 원하는 날짜/시간 선택하여 확인
+5. 도로선의 끝점들을 각 도트 매트릭스에 매핑
+6. 업로드 버튼을 클릭해 서버에 선 데이터를 전송
+7. 경고 발생 시 서버가 캡처 및 저장
+8. 캡처 이미지 조회 탭에서 원하는 날짜/시간 선택하여 확인
 
 
 ## 개발/테스트 환경
 
-- Windows 10 / 11
-- Qt 5.x / 6.x
+- Windows 10
+- Qt 6.9
 - Visual Studio or Qt Creator
-- 테스트용 RTSP: `rtsp://your_test_stream_url`
 
 
 ## 참고사항
 
-- 서버 코드와 Dot Matrix 제어는 별도 제공
+- 서버 코드 리포지터리 (https://github.com/veda-team3-final-project/server)
+- STM-32 코드 리포지터리 (https://github.com/veda-team3-final-project/stm-32)
 - 이 프로젝트는 실시간 영상처리와 IoT 제어 시스템의 융합 예시입니다
 - 개인정보 및 보안 관련 고려 필요 (실제 운영 시)
 

@@ -111,7 +111,6 @@ mingw32-make
 - Windows 10 / 11
 - Qt 5.x / 6.x
 - Visual Studio or Qt Creator
-- 테스트용 RTSP: `rtsp://your_test_stream_url`
 
 
 ## 참고사항

@@ -63,20 +63,38 @@
      └── README.md
 
 ## 빌드 방법
-1. Win + R 누르기 → cmd 입력 → Enter
-2. git clone https://github.com/veda-team3-final-project/client
-3. cd client
-후,
-1) qmake로 빌드
- a. 빌드할 디렉토리로 이동 (ex: cd /d C:\client)
- b. qmake 실행
-    qmake CCTVMonitoring.pro
- c. mingw32-make
- d. release\CCTVMonitoring.exe (또는 debug\CCTVMonitoring.exe) 실행
-          
-2) Qt Creator로 빌드
- a. QtCreator로 CCTVMonitoring.pro open
- b. Build 버튼(또는 Ctrl+R) push
+
+### 1. 프로젝트 클론 및 이동
+
+```bash
+git clone https://github.com/veda-team3-final-project/client
+cd client
+```
+
+---
+
+### 2. 빌드 방법 선택
+
+#### 방법 A: 명령어로 빌드 (qmake + mingw)
+
+```bash
+cd /d C:\client  # 또는 프로젝트 루트 경로로 이동
+qmake CCTVMonitoring.pro
+mingw32-make
+```
+
+- 빌드 완료 후 `release\CCTVMonitoring.exe` 또는 `debug\CCTVMonitoring.exe` 실행
+
+---
+
+#### 방법 B: Qt Creator에서 빌드
+
+1. Qt Creator 실행  
+2. `CCTVMonitoring.pro` 열기  
+3. 상단의 Build 버튼 클릭 (또는 Ctrl + R)  
+4. 실행 파일이 `release\` 또는 `debug\` 폴더에 생성됨
+
+
 
 ## 사용법
 

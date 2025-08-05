@@ -76,7 +76,6 @@ public:
     // 저장된 선 데이터를 화면에 그리는 함수
     void loadSavedDetectionLines(const QList<DetectionLineData> &detectionLines);
     void loadSavedRoadLines(const QList<RoadLineData> &roadLines);
-    // void loadSavedLines(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines);
     QGraphicsScene* scene() { return m_scene; }
 
     // 즉시 테스트 선 그리기 함수
@@ -149,7 +148,6 @@ private slots:
     void onPlayerStateChanged(QMediaPlayer::PlaybackState state);
     void onPlayerError(QMediaPlayer::Error error, const QString &errorString);
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
-    // void updateFrameCount();
     void onCategoryChanged();
     void onClearCategoryClicked();
     void updateCategoryInfo();

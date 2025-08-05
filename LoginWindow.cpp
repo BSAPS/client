@@ -534,8 +534,6 @@ void LoginWindow::handleSubmitOtpSignUp()
         return;
     }
 
-    // OTP 회원가입 요청 전송
-    // sendOtpSignUpRequest(otpCode);
 }
 
 void LoginWindow::sendLoginRequest(const QString &id, const QString &password)

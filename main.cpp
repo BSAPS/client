@@ -29,7 +29,6 @@ int main(int argc, char *argv[])
     QString family = QFontDatabase::applicationFontFamilies(fontId).at(0);
     QFont customFont(family);
     customFont.setPointSize(10);
-    // customFont.setBold(true);
     app.setFont(customFont);
 
     // 다크 테마 스타일 적용

@@ -119,8 +119,3 @@ void CustomMessageBox::setFixedSize(const QSize &size) {
     //QDialog::setFixedSize(size);
 }
 
-// 필요하다면 여기에 CustomMessageBox::~CustomMessageBox() 소멸자를 구현합니다.
-// CustomMessageBox::~CustomMessageBox() {
-//     // 동적으로 할당된 위젯들은 부모-자식 관계에 의해 자동으로 삭제되므로
-//     // 특별히 해제할 것이 없다면 비워두거나 구현하지 않아도 됩니다.
-// }

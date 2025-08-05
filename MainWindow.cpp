@@ -227,7 +227,6 @@ void MainWindow::setupUI()
     QLabel* titleLabel = new QLabel("CCTV Monitoring System");
     titleLabel->setAlignment(Qt::AlignCenter);
     titleLabel->setStyleSheet("background-color: #292D41; color: white; font-size: 24px; font-weight: bold;");
-    // headerLayout->addWidget(titleLabel);
 
     headerLayout->addWidget(titleLabel, 0, 0, 1, 3, Qt::AlignHCenter);
 
@@ -371,7 +370,6 @@ void MainWindow::setupLiveVideoTab()
     // event 연결
     connect(m_videoStreamWidget, &VideoStreamWidget::clicked, this, &MainWindow::onVideoStreamClicked);
     connect(m_videoStreamWidget, &VideoStreamWidget::streamError, this, &MainWindow::onStreamError);
-    //drawButton
     connect(m_videoStreamWidget, &VideoStreamWidget::drawButtonClicked,
             this, &MainWindow::onDrawButtonClicked);
 
@@ -626,9 +624,6 @@ void MainWindow::setupNetworkConnection()
     m_updateTimer = new QTimer(this);
     connect(m_updateTimer, &QTimer::timeout, this, &MainWindow::updateLogDisplay);
     m_updateTimer->start(5000);
-
-    // TcpCommunicator는 외부에서 설정되므로 여기서 생성하지 않음
-    // m_tcpCommunicator = new TcpCommunicator(this);
 
     // 이미 설정된 TcpCommunicator가 있는 경우에만 시그널 연결
     if (m_tcpCommunicator) {
@@ -941,13 +936,6 @@ void MainWindow::onRequestImagesClicked()
 
     int selectedHour = m_hourComboBox->currentData().toInt();
     QString dateString = m_selectedDate.toString("yyyy-MM-dd");
-
-    // m_statusLabel->setText("이미지 요청 중... (60초 후 타임아웃)");
-    // m_requestButton->setEnabled(false);
-
-    // 타임아웃을 60초로 증가
-    // m_requestTimeoutTimer->setInterval(60000);
-    // m_requestTimeoutTimer->start();
 
     // JSON 기반 이미지 요청
     m_tcpCommunicator->requestImageData(dateString, selectedHour);

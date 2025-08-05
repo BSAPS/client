@@ -682,7 +682,6 @@ void TcpCommunicator::onError(QAbstractSocket::SocketError error)
     qDebug() << "[TCP] Socket error:" << errorString;
     emit errorOccurred(errorString);
 
-    // Attempt reconnection
     if (m_reconnectEnabled && m_reconnectAttempts < m_maxReconnectAttempts) {
         m_reconnectTimer->setInterval(m_reconnectDelayMs);
         m_reconnectTimer->start();
@@ -1158,8 +1157,6 @@ void TcpCommunicator::handleSavedRoadLinesResponse(const QJsonObject &jsonObj)
     m_roadLinesReceived = true;
     emit savedRoadLinesReceived(m_receivedRoadLines);
 
-    // 두 종류의 선이 모두 수신되었는지 확인
-    // checkAndEmitAllLinesReceived();
 }
 
 // 저장된 감지선 데이터 응답 처리 함수 (request_id: 3)
@@ -1184,8 +1181,6 @@ void TcpCommunicator::handleSavedDetectionLinesResponse(const QJsonObject &jsonO
             detectionLine.y2 = detectionLineObj["y2"].toInt();
             detectionLine.name = detectionLineObj["name"].toString();
             detectionLine.mode = detectionLineObj["mode"].toString();
-            // detectionLine.leftMatrixNum = detectionLineObj["leftMatrixNum"].toInt();
-            // detectionLine.rightMatrixNum = detectionLineObj["rightMatrixNum"].toInt();
 
             m_receivedDetectionLines.append(detectionLine);
 
@@ -1201,8 +1196,6 @@ void TcpCommunicator::handleSavedDetectionLinesResponse(const QJsonObject &jsonO
     m_detectionLinesReceived = true;
     emit savedDetectionLinesReceived(m_receivedDetectionLines);
 
-    // 두 종류의 선이 모두 수신되었는지 확인
-    // checkAndEmitAllLinesReceived();
 }
 
 void TcpCommunicator::handleCategorizedCoordinatesResponse(const QJsonObject &jsonObj)

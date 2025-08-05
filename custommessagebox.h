@@ -14,8 +14,7 @@ class CustomMessageBox : public QDialog {
 
 public:
     explicit CustomMessageBox(QWidget *parent = nullptr, const QString &title = "", const QString &message = "");
-    // 소멸자가 필요한 경우 여기에 선언할 수 있습니다.
-    // ~CustomMessageBox();
+
 
     // 다이얼로그의 너비와 높이를 설정하는 함수 추가
     void setFixedSize(int width, int height);

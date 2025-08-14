@@ -13,6 +13,8 @@
 #include <QMessageBox>
 #include <QDebug>
 
+class QVBoxLayout;
+class CustomTitleBar;
 class TcpCommunicator;
 
 QT_BEGIN_NAMESPACE
@@ -109,6 +111,8 @@ private:
     void resetOtpLoginButton();
     void clearSignUpFields();
     void clearLoginFields();
+
+    CustomTitleBar *titleBar;
 };
 
 #endif // LOGINWINDOW_H

@@ -3,6 +3,7 @@
 #include "MainWindow.h"
 #include "TcpCommunicator.h"
 #include "EnvConfig.h"
+#include "customtitlebar.h"
 #include <QApplication>
 #include <QMessageBox>
 #include <QDebug>
@@ -31,7 +32,28 @@ LoginWindow::LoginWindow(QWidget *parent)
     , m_connectionStatusLabel(nullptr)
     , m_connectionTimer(nullptr)
 {
+    ui->setupUi(this);
     qDebug() << "[LoginWindow] 생성자 시작";
+
+    // 기본 타이틀바 숨기기
+    setWindowFlags(Qt::FramelessWindowHint);
+
+    titleBar = new CustomTitleBar(this);
+    titleBar->setTitle("CCTV Monitoring System");
+
+    // 시그널과 슬롯 연결
+    connect(titleBar, &CustomTitleBar::minimizeClicked, this, &MainWindow::showMinimized);
+    connect(titleBar, &CustomTitleBar::closeClicked, this, &QMainWindow::close);
+
+    // 전체 레이아웃 설정
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
+    mainLayout->addWidget(titleBar);
+
+    mainLayout->addWidget(ui->stackedWidget); // 기존 ui 파일의 최상위 위젯을 레이아웃에 추가
+
+    setLayout(mainLayout); // 다이얼로그에 레이아웃 적용
 
     // .env 파일 로드
     EnvConfig::loadFromFile();
@@ -41,8 +63,6 @@ LoginWindow::LoginWindow(QWidget *parent)
     m_tcpPort = EnvConfig::getValue("TCP_PORT", "8080").toUInt();
     
     qDebug() << "[LoginWindow] .env 설정 로드 - TCP_HOST:" << m_tcpHost << "TCP_PORT:" << m_tcpPort;
-
-    ui->setupUi(this);
 
     // 초기화 메서드 호출
     setupPasswordFields();
@@ -71,7 +91,7 @@ LoginWindow::LoginWindow(QWidget *parent)
     setWindowTitle("CCTV 모니터링 시스템 - 로그인");
 
     // 연결 상태 확인 타이머 설정
-    setupConnectionTimer();
+    // setupConnectionTimer(); // 서버 구동시 주석해제
 
     qDebug() << "[LoginWindow] 생성자 완료";
 }

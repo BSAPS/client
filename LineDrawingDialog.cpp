@@ -1,5 +1,6 @@
 #include "LineDrawingDialog.h"
 #include "custommessagebox.h"
+#include "customtitlebar.h"
 #include <QApplication>
 #include <QMessageBox>
 #include <QDebug>
@@ -1012,7 +1013,18 @@ LineDrawingDialog::~LineDrawingDialog()
 
 void LineDrawingDialog::setupUI()
 {
+    setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
     m_mainLayout = new QVBoxLayout(this);
+
+    titleBar = new CustomTitleBar(this);
+    titleBar->setTitle("CCTV Monitoring System");
+
+    // 시그널과 슬롯 연결
+    connect(titleBar, &CustomTitleBar::minimizeClicked, this, &LineDrawingDialog::showMinimized);
+    connect(titleBar, &CustomTitleBar::closeClicked, this, &QDialog::close);
+
+    // 전체 레이아웃 설정
+    m_mainLayout->addWidget(titleBar);
 
     // 컴팩트한 헤더와 카테고리 선택 영역
     QWidget *headerWidget = new QWidget();

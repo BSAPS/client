@@ -91,7 +91,7 @@ LoginWindow::LoginWindow(QWidget *parent)
     setWindowTitle("CCTV 모니터링 시스템 - 로그인");
 
     // 연결 상태 확인 타이머 설정
-    // setupConnectionTimer(); // 서버 구동시 주석해제
+    setupConnectionTimer(); // 서버 구동시 주석해제
 
     qDebug() << "[LoginWindow] 생성자 완료";
 }

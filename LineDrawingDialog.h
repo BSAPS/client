@@ -34,6 +34,8 @@
 #include "TcpCommunicator.h"
 #include <QInputDialog>
 
+class CustomTitleBar;
+
 // 선 카테고리 열거형
 enum class LineCategory {
     ROAD_DEFINITION,    // 도로 명시선
@@ -228,6 +230,8 @@ private:
     QList<DetectionLineData> m_loadedDetectionLines;
     bool m_roadLinesLoaded;
     bool m_detectionLinesLoaded;
+
+    CustomTitleBar *titleBar;
 
 private:
     void updateMappingInfo();

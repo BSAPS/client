@@ -45,14 +45,14 @@ void CustomTitleBar::setTitle(const QString &title) {
 
 void CustomTitleBar::mousePressEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton) {
-        mousePressPosition = event->globalPosition().toPoint() - parentWidget()->frameGeometry().topLeft();
+        mousePressPosition = event->globalPosition().toPoint() - window()->frameGeometry().topLeft();
         event->accept();
     }
 }
 
 void CustomTitleBar::mouseMoveEvent(QMouseEvent *event) {
     if (event->buttons() & Qt::LeftButton) {
-        parentWidget()->move(event->globalPosition().toPoint() - mousePressPosition);
+        window()->move(event->globalPosition().toPoint() - mousePressPosition);
         event->accept();
     }
 }

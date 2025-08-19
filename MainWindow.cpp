@@ -3,6 +3,7 @@
 #include "NetworkConfigDialog.h"
 #include "EnvConfig.h"
 #include "custommessagebox.h"
+#include "customtitlebar.h"
 #include <QApplication>
 #include <QStackedLayout>
 #include <QMessageBox>
@@ -33,45 +34,45 @@ void ClickableImageLabel::setImageData(const QString &imagePath, const QString &
     m_logText = logText;
 }
 
-void MainWindow::mousePressEvent(QMouseEvent *event)
-{
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    QPoint globalPos = event->globalPosition().toPoint();
-#else
-    QPoint globalPos = event->globalPos();
-#endif
-    // 헤더 영역에서만 이동 가능하게 하고 싶으면 여기서 위치 필터링
-    if (event->button() == Qt::LeftButton && event->pos().y() <= 40) { // 상단 40px
-        m_dragging = true;
-        m_dragPosition = event->globalPos() - frameGeometry().topLeft();
-        event->accept();
-    }
-}
+// void MainWindow::mousePressEvent(QMouseEvent *event)
+// {
+// #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+//     QPoint globalPos = event->globalPosition().toPoint();
+// #else
+//     QPoint globalPos = event->globalPos();
+// #endif
+//     // 헤더 영역에서만 이동 가능하게 하고 싶으면 여기서 위치 필터링
+//     if (event->button() == Qt::LeftButton && event->pos().y() <= 40) { // 상단 40px
+//         m_dragging = true;
+//         m_dragPosition = event->globalPos() - frameGeometry().topLeft();
+//         event->accept();
+//     }
+// }
 
-void MainWindow::mouseMoveEvent(QMouseEvent *event)
-{
-    if (m_dragging && (event->buttons() & Qt::LeftButton)) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        QPoint globalPos = event->globalPosition().toPoint();
-#else
-        QPoint globalPos = event->globalPos();
-#endif
-        move(event->globalPos() - m_dragPosition);
-        event->accept();
-    }
-}
+// void MainWindow::mouseMoveEvent(QMouseEvent *event)
+// {
+//     if (m_dragging && (event->buttons() & Qt::LeftButton)) {
+// #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+//         QPoint globalPos = event->globalPosition().toPoint();
+// #else
+//         QPoint globalPos = event->globalPos();
+// #endif
+//         move(event->globalPos() - m_dragPosition);
+//         event->accept();
+//     }
+// }
 
-void MainWindow::mouseReleaseEvent(QMouseEvent *event)
-{
-    m_dragging = false;
-}
+// void MainWindow::mouseReleaseEvent(QMouseEvent *event)
+// {
+//     m_dragging = false;
+// }
 
 // MainWindow 구현
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_centralWidget(nullptr)
     , m_tabWidget(nullptr)
-    , m_closeButton(nullptr)
+    // , m_closeButton(nullptr)
     , m_liveVideoTab(nullptr)
     , m_videoStreamWidget(nullptr)
     , m_streamingButton(nullptr)
@@ -99,6 +100,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_networkDialog(nullptr)
     , m_lineDrawingDialog(nullptr)
 {
+    setWindowFlags(Qt::Window | Qt::FramelessWindowHint); // 기존 플래그에 추가
+
     // .env 파일 로드
     EnvConfig::loadFromFile(".env");
 
@@ -210,65 +213,39 @@ void MainWindow::setupUI()
 {
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
-
-
     QVBoxLayout *mainLayout = new QVBoxLayout(m_centralWidget);
+    mainLayout->setContentsMargins(0, 0, 0, 0); // 프레임리스 윈도우를 위해 마진 제거
+    mainLayout->setSpacing(0); // 레이아웃 간격 제거
+
+    // ----------------------------------------------------
     // 헤더 영역
-    QWidget *headerBar = new QWidget();
-    headerBar->setFixedHeight(50);
-    headerBar->setStyleSheet("background-color: #292d41;");
+    // 기존의 헤더 영역을 CustomTitleBar로 대체합니다.
+    CustomTitleBar *titleBar = new CustomTitleBar(this);
+    titleBar->setTitle("CCTV Monitoring System");
+    mainLayout->addWidget(titleBar);
 
-
-    QGridLayout *headerLayout = new QGridLayout(headerBar);
-    headerLayout->setContentsMargins(5, 0, 5, 0);
-    headerLayout->setHorizontalSpacing(5);
-
-
-    QLabel* titleLabel = new QLabel("CCTV Monitoring System");
-    titleLabel->setAlignment(Qt::AlignCenter);
-    titleLabel->setStyleSheet("background-color: #292D41; color: white; font-size: 24px; font-weight: bold;");
-
-    headerLayout->addWidget(titleLabel, 0, 0, 1, 3, Qt::AlignHCenter);
-
-
-    // 네트워크 버튼
-    m_networkButton = new QPushButton();
-    m_networkButton->setIcon(QIcon(":/icons/NetworkConnect.png")); // 아이콘 리소스 확인
-    m_networkButton->setIconSize(QSize(25, 25));
-    m_networkButton->setFixedSize(40, 40);
-    m_networkButton->setStyleSheet(
-        "QPushButton { background-color: transparent; border: none; } "
-        "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 20px; }");
-
-    //닫기 버튼
-    m_closeButton = new QPushButton();
-    m_closeButton->setIcon(QIcon(":/icons/close.png"));
-    m_closeButton->setIconSize(QSize(20,20));
-    m_closeButton->setFixedSize(40, 40);
-    m_closeButton->setStyleSheet("QPushButton { background-color: transparent; border: none; } "
-                                 "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 20px; }");
-
-
-    // 버튼 컨테이너 (수평 배치)
-    QHBoxLayout *rightButtonsLayout = new QHBoxLayout();
-    rightButtonsLayout->setSpacing(5);
-    rightButtonsLayout->addWidget(m_networkButton);
-    rightButtonsLayout->addWidget(m_closeButton);
-
-    // 오른쪽 영역 위젯으로 감싸기
-    QWidget *rightButtonsWidget = new QWidget();
-    rightButtonsWidget->setLayout(rightButtonsLayout);
-    headerLayout->addWidget(rightButtonsWidget, 0, 2, Qt::AlignRight | Qt::AlignVCenter);
-
-    // 열 너비 균형
-    headerLayout->setColumnStretch(0, 1);
-    headerLayout->setColumnStretch(1, 2); // 가운데 강조
-    headerLayout->setColumnStretch(2, 1);
-
-    mainLayout->addWidget(headerBar);
+    // ----------------------------------------------------
 
     // 콘텐츠 영역
     QHBoxLayout *contentLayout = new QHBoxLayout();
+    contentLayout->setContentsMargins(10, 10, 10, 10); // 콘텐츠 영역에 여백 추가
+    contentLayout->setSpacing(10); // 콘텐츠 레이아웃 간격 설정
+
+    // 이제 기존 헤더에 있던 버튼들을 CustomTitleBar에 추가하거나 연결합니다.
+    // CustomTitleBar는 닫기, 최소화, 최대화 버튼을 기본으로 포함합니다.
+
+    // (선택 사항) 네트워크 버튼을 타이틀바에 추가하려면 CustomTitleBar를 수정해야 합니다.
+    // 여기서는 간단하게 기존 networkButton의 시그널을 유지하고,
+    // titleBar의 닫기 버튼을 MainWindow의 close 슬롯에 연결하겠습니다.
+
+    // CustomTitleBar의 닫기 버튼 슬롯 연결
+    connect(titleBar, &CustomTitleBar::closeClicked, this, &MainWindow::close);
+    connect(titleBar, &CustomTitleBar::minimizeClicked, this, &MainWindow::showMinimized);
+
+    // m_networkButton은 그대로 사용하고, titleBar 옆에 배치하거나
+    // titleBar 내부로 옮기는 방식으로 수정할 수 있습니다.
+    // 여기서는 가장 간단한 방법으로 기존 코드를 그대로 유지하고,
+    // titleBar를 추가하는 방식으로만 수정합니다.
 
     m_tabWidget = new QTabWidget();
 
@@ -287,14 +264,19 @@ void MainWindow::setupUI()
     sidebarWidget->setStyleSheet("background-color: #292d41;");
 
     QVBoxLayout *sidebarLayout = new QVBoxLayout(sidebarWidget);
-
     m_modeComboBox = new QComboBox();
     sidebarLayout->addWidget(m_modeComboBox);
 
+    contentLayout->addWidget(m_tabWidget, 3);
+    contentLayout->addWidget(sidebarWidget);
+
     mainLayout->addLayout(contentLayout);
 
-    connect(m_networkButton,&QPushButton::clicked,this,&MainWindow::onNetworkConfigClicked);
-    connect(m_closeButton, &QPushButton::clicked, this, &MainWindow::close);
+    connect(m_networkButton, &QPushButton::clicked, this, &MainWindow::onNetworkConfigClicked);
+    // 닫기 버튼은 이제 CustomTitleBar에서 처리하므로 이 줄은 삭제합니다.
+    // connect(m_closeButton, &QPushButton::clicked, this, &MainWindow::close);
+
+    setLayout(mainLayout);
 }
 
 void MainWindow::setupLiveVideoTab()
@@ -390,7 +372,6 @@ void MainWindow::onDrawButtonClicked()
 
     if (!m_lineDrawingDialog) {
         m_lineDrawingDialog = new LineDrawingDialog(m_rtspUrl, m_tcpCommunicator, this);
-        m_lineDrawingDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
 
         connect(m_lineDrawingDialog, &LineDrawingDialog::lineCoordinatesReady,
                 this, [this](int x1, int y1, int x2, int y2) {

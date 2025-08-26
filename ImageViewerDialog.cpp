@@ -1,4 +1,5 @@
 #include "ImageViewerDialog.h"
+#include "customtitlebar.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QScrollArea>
@@ -37,6 +38,18 @@ ImageViewerDialog::~ImageViewerDialog()
 void ImageViewerDialog::setupUI()
 {
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(0, 0, 0, 0); // 프레임리스 윈도우를 위해 마진 제거
+    mainLayout->setSpacing(0); // 레이아웃 간격 제거
+
+    titleBar = new CustomTitleBar(this);
+    titleBar->setTitle("Image Viewer Window");
+
+    // 시그널과 슬롯 연결
+    connect(titleBar, &CustomTitleBar::minimizeClicked, this, &ImageViewerDialog::showMinimized);
+    connect(titleBar, &CustomTitleBar::closeClicked, this, &QDialog::close);
+
+    // 전체 레이아웃 설정
+    mainLayout->addWidget(titleBar);
 
     setStyleSheet("background-color: #2e2e3a; color: white;");
 
@@ -48,21 +61,21 @@ void ImageViewerDialog::setupUI()
 
     headerLayout->addStretch();
 
-    m_closeButton = new QPushButton("닫기");
-    m_closeButton->setStyleSheet(R"(
-        QPushButton {
-            background-color: #f44336;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        QPushButton:hover {
-            background-color: #d32f2f;
-        })");
-    connect(m_closeButton, &QPushButton::clicked, this, &QDialog::close);
-    headerLayout->addWidget(m_closeButton);
+    // m_closeButton = new QPushButton("닫기");
+    // m_closeButton->setStyleSheet(R"(
+    //     QPushButton {
+    //         background-color: #f44336;
+    //         color: white;
+    //         padding: 8px 16px;
+    //         border: none;
+    //         border-radius: 4px;
+    //         font-weight: bold;
+    //     }
+    //     QPushButton:hover {
+    //         background-color: #d32f2f;
+    //     })");
+    // connect(m_closeButton, &QPushButton::clicked, this, &QDialog::close);
+    // headerLayout->addWidget(m_closeButton);
 
     mainLayout->addLayout(headerLayout);
 

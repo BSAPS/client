@@ -39,7 +39,7 @@ LoginWindow::LoginWindow(QWidget *parent)
     setWindowFlags(Qt::FramelessWindowHint);
 
     titleBar = new CustomTitleBar(this);
-    titleBar->setTitle("CCTV Monitoring System");
+    titleBar->setTitle("Login & SignUp Window");
 
     // 시그널과 슬롯 연결
     connect(titleBar, &CustomTitleBar::minimizeClicked, this, &MainWindow::showMinimized);

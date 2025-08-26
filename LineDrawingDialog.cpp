@@ -1015,9 +1015,11 @@ void LineDrawingDialog::setupUI()
 {
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
     m_mainLayout = new QVBoxLayout(this);
+    m_mainLayout->setContentsMargins(0, 0, 0, 0); // 프레임리스 윈도우를 위해 마진 제거
+    m_mainLayout->setSpacing(0); // 레이아웃 간격 제거
 
     titleBar = new CustomTitleBar(this);
-    titleBar->setTitle("CCTV Monitoring System");
+    titleBar->setTitle("Line Drawing Window");
 
     // 시그널과 슬롯 연결
     connect(titleBar, &CustomTitleBar::minimizeClicked, this, &LineDrawingDialog::showMinimized);
@@ -1289,20 +1291,20 @@ void LineDrawingDialog::setupUI()
 
 
     //닫기 버튼
-    m_closeButton = new QPushButton();
-    m_closeButton->setIcon(QIcon(":/icons/exit.png"));
-    m_closeButton->setIconSize(QSize(30,30));
-    m_closeButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; padding: 15px 20px;} "
-                                  "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
-    m_closeButton->setToolTip("닫기");
-    qApp->setStyleSheet("QToolTip { "
-                        "color: black; "          // 글씨색
-                        "background-color: #ffffff; "  // 밝은 배경색
-                        "border: 1px solid gray; "
-                        "padding: 3px; "
-                        "}");
-    connect(m_closeButton, &QPushButton::clicked, this, &QDialog::reject);
-    m_buttonLayout->addWidget(m_closeButton);
+    // m_closeButton = new QPushButton();
+    // m_closeButton->setIcon(QIcon(":/icons/exit.png"));
+    // m_closeButton->setIconSize(QSize(30,30));
+    // m_closeButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; padding: 15px 20px;} "
+    //                               "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
+    // m_closeButton->setToolTip("닫기");
+    // qApp->setStyleSheet("QToolTip { "
+    //                     "color: black; "          // 글씨색
+    //                     "background-color: #ffffff; "  // 밝은 배경색
+    //                     "border: 1px solid gray; "
+    //                     "padding: 3px; "
+    //                     "}");
+    // connect(m_closeButton, &QPushButton::clicked, this, &QDialog::reject);
+    // m_buttonLayout->addWidget(m_closeButton);
 
 
     m_mainLayout->addLayout(m_buttonLayout);

@@ -12,7 +12,7 @@ CustomTitleBar::CustomTitleBar(QWidget *parent)
 
 void CustomTitleBar::setupUi() {
     setFixedHeight(30);
-    setStyleSheet("background-color: #2c2c2c;");
+    setStyleSheet("background-color: #474B5C;"); // 원래 배경색 : #272f42
 
     titleLayout = new QHBoxLayout(this);
     titleLayout->setContentsMargins(0, 0, 0, 0);
@@ -21,7 +21,7 @@ void CustomTitleBar::setupUi() {
     titleLabel = new QLabel("Custom Window", this);
     titleLabel->setStyleSheet("color: white; font-weight: bold; padding-left: 10px;");
     titleLayout->addWidget(titleLabel);
-    titleLayout->addStretch();
+    // titleLayout->addStretch(); // 이 코드를 사용하면 글자랑 버튼 사이에 늘리기만 하고 스타일시트가 적용이 안됨
 
     minimizeButton = new QPushButton("-", this);
     closeButton = new QPushButton("X", this);
@@ -29,8 +29,8 @@ void CustomTitleBar::setupUi() {
     minimizeButton->setFixedSize(30, 30);
     closeButton->setFixedSize(30, 30);
 
-    minimizeButton->setStyleSheet("QPushButton { border: none; background-color: transparent; color: white; } QPushButton:hover { background-color: #555555; }");
-    closeButton->setStyleSheet("QPushButton { border: none; background-color: transparent; color: white; } QPushButton:hover { background-color: #e51400; }");
+    minimizeButton->setStyleSheet("QPushButton { border: none; color: white; } QPushButton:hover { background-color: #555555; }");
+    closeButton->setStyleSheet("QPushButton { border: none; color: white; } QPushButton:hover { background-color: #e51400; }");
 
     titleLayout->addWidget(minimizeButton);
     titleLayout->addWidget(closeButton);

@@ -8,6 +8,8 @@
 #include <QScrollArea>
 #include <QPixmap>
 
+class CustomTitleBar;
+
 class ImageViewerDialog : public QDialog
 {
     Q_OBJECT
@@ -29,6 +31,8 @@ private:
     QTextEdit *m_logTextEdit;
     QPushButton *m_closeButton;
     QScrollArea *m_scrollArea;
+
+    CustomTitleBar *titleBar;
 };
 
 #endif // IMAGEVIEWERDIALOG_H

@@ -44,6 +44,9 @@ private:
     QString m_imagePath;
     QString m_timestamp;
     QString m_logText;
+
+protected:
+    void mousePressEvent(QMouseEvent *event) override;
 };
 
 class MainWindow : public QMainWindow

@@ -55,8 +55,6 @@ int main(int argc, char *argv[])
     // 로그인 창 생성 및 표시
     LoginWindow loginWindow;
 
-    loginWindow.setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
-
     
     // LoginWindow에 공유 TcpCommunicator 설정
     loginWindow.setTcpCommunicator(sharedTcpCommunicator);
@@ -66,8 +64,6 @@ int main(int argc, char *argv[])
         qDebug() << "로그인 성공 - 메인 창 표시";
 
         MainWindow *mainWindow = new MainWindow();
-
-        mainWindow->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
 
         // MainWindow에도 동일한 TcpCommunicator 설정
         mainWindow->setTcpCommunicator(sharedTcpCommunicator);

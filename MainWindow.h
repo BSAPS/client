@@ -25,6 +25,8 @@
 #include "NetworkConfigDialog.h"
 #include "LineDrawingDialog.h"
 
+class CustomTitleBar;
+
 // 클릭 가능한 이미지 라벨 클래스
 class ClickableImageLabel : public QLabel
 {
@@ -42,6 +44,9 @@ private:
     QString m_imagePath;
     QString m_timestamp;
     QString m_logText;
+
+protected:
+    void mousePressEvent(QMouseEvent *event) override;
 };
 
 class MainWindow : public QMainWindow
@@ -56,9 +61,9 @@ public:
     void setTcpCommunicator(TcpCommunicator* communicator);
 
 protected:
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseMoveEvent(QMouseEvent *event) override;
-    void mouseReleaseEvent(QMouseEvent *event) override;
+    // void mousePressEvent(QMouseEvent *event) override;
+    // void mouseMoveEvent(QMouseEvent *event) override;
+    // void mouseReleaseEvent(QMouseEvent *event) override;
 
 private slots:
     void onNetworkConfigClicked();
@@ -152,6 +157,8 @@ private:
     // 상태 관리
     QList<bool> m_warningStates;
     QDate m_selectedDate;
+
+    CustomTitleBar *titleBar;
 };
 
 #endif // MAINWINDOW_H

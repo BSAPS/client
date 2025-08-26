@@ -3,6 +3,7 @@
 #include "NetworkConfigDialog.h"
 #include "EnvConfig.h"
 #include "custommessagebox.h"
+#include "customtitlebar.h"
 #include <QApplication>
 #include <QStackedLayout>
 #include <QMessageBox>
@@ -33,37 +34,12 @@ void ClickableImageLabel::setImageData(const QString &imagePath, const QString &
     m_logText = logText;
 }
 
-void MainWindow::mousePressEvent(QMouseEvent *event)
+void ClickableImageLabel::mousePressEvent(QMouseEvent *event)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    QPoint globalPos = event->globalPosition().toPoint();
-#else
-    QPoint globalPos = event->globalPos();
-#endif
-    // 헤더 영역에서만 이동 가능하게 하고 싶으면 여기서 위치 필터링
-    if (event->button() == Qt::LeftButton && event->pos().y() <= 40) { // 상단 40px
-        m_dragging = true;
-        m_dragPosition = event->globalPos() - frameGeometry().topLeft();
-        event->accept();
+    if (event->button() == Qt::LeftButton) {
+        emit clicked(m_imagePath, m_timestamp, m_logText);
     }
-}
-
-void MainWindow::mouseMoveEvent(QMouseEvent *event)
-{
-    if (m_dragging && (event->buttons() & Qt::LeftButton)) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        QPoint globalPos = event->globalPosition().toPoint();
-#else
-        QPoint globalPos = event->globalPos();
-#endif
-        move(event->globalPos() - m_dragPosition);
-        event->accept();
-    }
-}
-
-void MainWindow::mouseReleaseEvent(QMouseEvent *event)
-{
-    m_dragging = false;
+    QLabel::mousePressEvent(event);
 }
 
 // MainWindow 구현
@@ -71,7 +47,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_centralWidget(nullptr)
     , m_tabWidget(nullptr)
-    , m_closeButton(nullptr)
+    // , m_closeButton(nullptr)
     , m_liveVideoTab(nullptr)
     , m_videoStreamWidget(nullptr)
     , m_streamingButton(nullptr)
@@ -99,6 +75,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_networkDialog(nullptr)
     , m_lineDrawingDialog(nullptr)
 {
+    setWindowFlags(Qt::Window | Qt::FramelessWindowHint); // 기존 플래그에 추가
+
     // .env 파일 로드
     EnvConfig::loadFromFile(".env");
 
@@ -210,65 +188,28 @@ void MainWindow::setupUI()
 {
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
-
-
     QVBoxLayout *mainLayout = new QVBoxLayout(m_centralWidget);
+    mainLayout->setContentsMargins(0, 0, 0, 0); // 프레임리스 윈도우를 위해 마진 제거
+    mainLayout->setSpacing(0); // 레이아웃 간격 제거
+
+    // ----------------------------------------------------
     // 헤더 영역
-    QWidget *headerBar = new QWidget();
-    headerBar->setFixedHeight(50);
-    headerBar->setStyleSheet("background-color: #292d41;");
+    // 기존의 헤더 영역을 CustomTitleBar로 대체합니다.
+    CustomTitleBar *titleBar = new CustomTitleBar(this);
+    titleBar->setTitle("Main Window");
+    mainLayout->addWidget(titleBar);
 
-
-    QGridLayout *headerLayout = new QGridLayout(headerBar);
-    headerLayout->setContentsMargins(5, 0, 5, 0);
-    headerLayout->setHorizontalSpacing(5);
-
-
-    QLabel* titleLabel = new QLabel("CCTV Monitoring System");
-    titleLabel->setAlignment(Qt::AlignCenter);
-    titleLabel->setStyleSheet("background-color: #292D41; color: white; font-size: 24px; font-weight: bold;");
-
-    headerLayout->addWidget(titleLabel, 0, 0, 1, 3, Qt::AlignHCenter);
-
-
-    // 네트워크 버튼
-    m_networkButton = new QPushButton();
-    m_networkButton->setIcon(QIcon(":/icons/NetworkConnect.png")); // 아이콘 리소스 확인
-    m_networkButton->setIconSize(QSize(25, 25));
-    m_networkButton->setFixedSize(40, 40);
-    m_networkButton->setStyleSheet(
-        "QPushButton { background-color: transparent; border: none; } "
-        "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 20px; }");
-
-    //닫기 버튼
-    m_closeButton = new QPushButton();
-    m_closeButton->setIcon(QIcon(":/icons/close.png"));
-    m_closeButton->setIconSize(QSize(20,20));
-    m_closeButton->setFixedSize(40, 40);
-    m_closeButton->setStyleSheet("QPushButton { background-color: transparent; border: none; } "
-                                 "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 20px; }");
-
-
-    // 버튼 컨테이너 (수평 배치)
-    QHBoxLayout *rightButtonsLayout = new QHBoxLayout();
-    rightButtonsLayout->setSpacing(5);
-    rightButtonsLayout->addWidget(m_networkButton);
-    rightButtonsLayout->addWidget(m_closeButton);
-
-    // 오른쪽 영역 위젯으로 감싸기
-    QWidget *rightButtonsWidget = new QWidget();
-    rightButtonsWidget->setLayout(rightButtonsLayout);
-    headerLayout->addWidget(rightButtonsWidget, 0, 2, Qt::AlignRight | Qt::AlignVCenter);
-
-    // 열 너비 균형
-    headerLayout->setColumnStretch(0, 1);
-    headerLayout->setColumnStretch(1, 2); // 가운데 강조
-    headerLayout->setColumnStretch(2, 1);
-
-    mainLayout->addWidget(headerBar);
+    // ----------------------------------------------------
 
     // 콘텐츠 영역
     QHBoxLayout *contentLayout = new QHBoxLayout();
+    contentLayout->setContentsMargins(10, 10, 10, 10); // 콘텐츠 영역에 여백 추가
+    contentLayout->setSpacing(10); // 콘텐츠 레이아웃 간격 설정
+
+    // CustomTitleBar의 닫기 버튼 슬롯 연결
+    connect(titleBar, &CustomTitleBar::closeClicked, this, &MainWindow::close);
+    connect(titleBar, &CustomTitleBar::minimizeClicked, this, &MainWindow::showMinimized);
+
 
     m_tabWidget = new QTabWidget();
 
@@ -278,23 +219,13 @@ void MainWindow::setupUI()
 
     setupLiveVideoTab();
     setupCapturedImageTab();
+
+
     contentLayout->addWidget(m_tabWidget, 3);
-
-    // 사이드바
-    QWidget *sidebarWidget = new QWidget();
-    sidebarWidget->setMinimumWidth(250);
-    sidebarWidget->setMaximumWidth(350);
-    sidebarWidget->setStyleSheet("background-color: #292d41;");
-
-    QVBoxLayout *sidebarLayout = new QVBoxLayout(sidebarWidget);
-
-    m_modeComboBox = new QComboBox();
-    sidebarLayout->addWidget(m_modeComboBox);
 
     mainLayout->addLayout(contentLayout);
 
-    connect(m_networkButton,&QPushButton::clicked,this,&MainWindow::onNetworkConfigClicked);
-    connect(m_closeButton, &QPushButton::clicked, this, &MainWindow::close);
+    setLayout(mainLayout);
 }
 
 void MainWindow::setupLiveVideoTab()
@@ -390,7 +321,6 @@ void MainWindow::onDrawButtonClicked()
 
     if (!m_lineDrawingDialog) {
         m_lineDrawingDialog = new LineDrawingDialog(m_rtspUrl, m_tcpCommunicator, this);
-        m_lineDrawingDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
 
         connect(m_lineDrawingDialog, &LineDrawingDialog::lineCoordinatesReady,
                 this, [this](int x1, int y1, int x2, int y2) {
@@ -451,14 +381,14 @@ void MainWindow::setupCapturedImageTab()
         " color: white;"
         " padding: 6px 12px;"
         " border: none;"
-        " border-radius: 15px;"
+        // " border-radius: 15px;"
         "}"
         "QDateEdit::drop-down {"
         " background-color: #383A41;"
         " width: 24px;"
         " border: none;"
-        " border-top-right-radius: 15px;"
-        " border-bottom-right-radius: 15px;"
+        // " border-top-right-radius: 15px;"
+        // " border-bottom-right-radius: 15px;"
         "}"
         "QDateEdit::down-arrow {"
         " image: url(:/icons/up_down.png);"  // 너가 넣은 화살표 아이콘 경로
@@ -613,6 +543,9 @@ void MainWindow::setupCapturedImageTab()
     mainLayout->addWidget(m_imageScrollArea);
 
     m_tabWidget->addTab(m_capturedImageTab, "Captured Images");
+
+    m_imageViewerDialog = new ImageViewerDialog(this);
+    m_imageViewerDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
 }
 
 
@@ -661,8 +594,6 @@ void MainWindow::setupNetworkConnection()
     m_requestTimeoutTimer->setInterval(30000);
     connect(m_requestTimeoutTimer, &QTimer::timeout, this, &MainWindow::onRequestTimeout);
 
-    m_imageViewerDialog = new ImageViewerDialog(this);
-    m_imageViewerDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
 }
 
 void MainWindow::applyStyles()
@@ -1009,6 +940,7 @@ void MainWindow::onImagesReceived(const QList<ImageData> &images)
 
 void MainWindow::onImageClicked(const QString &imagePath, const QString &timestamp, const QString &logText)
 {
+
     QPixmap pixmap;
     if (pixmap.load(imagePath)) {
         m_imageViewerDialog->setImage(pixmap, timestamp, logText);

@@ -1,4 +1,6 @@
 #include <QApplication>
+#include <QLocalServer>
+#include <QLocalSocket>
 #include <QStyleFactory>
 #include <QDir>
 #include <QDebug>
@@ -6,10 +8,46 @@
 #include "LoginWindow.h"
 #include "MainWindow.h"
 #include "TcpCommunicator.h"
+#include "custommessagebox.h"
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+
+    //폰트 적용
+    int fontId = QFontDatabase::addApplicationFont(":/font/05HanwhaGothicR.ttf");
+    QString family = QFontDatabase::applicationFontFamilies(fontId).at(0);
+    QFont customFont(family);
+    customFont.setPointSize(10);
+    app.setFont(customFont);
+
+    // 고유한 서버 이름 설정 (한 PC에 하나의 프로그램만 실행 가능하게 하기 위해)
+    const QString serverName = "com.bsaps.cctvmonitoring-v1.0.lock";
+
+    QLocalSocket socket;
+    socket.connectToServer(serverName, QIODevice::WriteOnly);
+
+    // 이미 서버가 실행 중인지 먼저 확인
+    if (socket.waitForConnected(500)) {
+        CustomMessageBox msgBox(nullptr, "연결 오류", "프로그램이 이미 실행 중입니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
+        return 0; // 즉시 종료
+    }
+
+    QLocalServer localServer;
+
+    // 이전 실행에서 남은 서버 소켓 파일이 있다면 제거
+    QLocalServer::removeServer(serverName);
+
+    // 1. 서버 시작 시도
+    if (!localServer.listen(serverName)) {
+        // 서버를 시작하지 못했다면 (다른 인스턴스 존재)
+        CustomMessageBox msgBox(nullptr, "연결 오류", "프로그램이 이미 실행 중입니다.");
+        msgBox.setFixedSize(300,150);
+        msgBox.exec();
+        return 0;
+    }
 
     // 애플리케이션 아이콘 설정
     QIcon app_icon(":/icons/CCTV.png");
@@ -23,13 +61,6 @@ int main(int argc, char *argv[])
 
     // 스타일 설정
     app.setStyle(QStyleFactory::create("Fusion"));
-
-    //폰트 적용
-    int fontId = QFontDatabase::addApplicationFont(":/font/05HanwhaGothicR.ttf");
-    QString family = QFontDatabase::applicationFontFamilies(fontId).at(0);
-    QFont customFont(family);
-    customFont.setPointSize(10);
-    app.setFont(customFont);
 
     // 다크 테마 스타일 적용
     app.setStyle(QStyleFactory::create("Fusion"));

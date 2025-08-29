@@ -32,5 +32,6 @@
         <file>icons/CCTV.png</file>
         <file>icons/play.svg</file>
         <file>ca-cert.crt</file>
+        <file>docs/index.html</file>
     </qresource>
 </RCC>

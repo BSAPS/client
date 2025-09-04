@@ -23,10 +23,8 @@ int main(int argc, char *argv[])
 
     // 고유한 서버 이름 설정 (한 PC에 하나의 프로그램만 실행 가능하게 하기 위해)
     const QString serverName = "com.bsaps.cctvmonitoring-v1.0.lock";
-
     QLocalSocket socket;
     socket.connectToServer(serverName, QIODevice::WriteOnly);
-
     // 이미 서버가 실행 중인지 먼저 확인
     if (socket.waitForConnected(500)) {
         CustomMessageBox msgBox(nullptr, "연결 오류", "프로그램이 이미 실행 중입니다.");
@@ -40,7 +38,7 @@ int main(int argc, char *argv[])
     // 이전 실행에서 남은 서버 소켓 파일이 있다면 제거
     QLocalServer::removeServer(serverName);
 
-    // 1. 서버 시작 시도
+    // 서버 시작 시도
     if (!localServer.listen(serverName)) {
         // 서버를 시작하지 못했다면 (다른 인스턴스 존재)
         CustomMessageBox msgBox(nullptr, "연결 오류", "프로그램이 이미 실행 중입니다.");
@@ -58,9 +56,6 @@ int main(int argc, char *argv[])
     app.setApplicationName("CCTV Monitoring System");
     app.setApplicationVersion("2.0");
     app.setOrganizationName("CCTV Solutions");
-
-    // 스타일 설정
-    app.setStyle(QStyleFactory::create("Fusion"));
 
     // 다크 테마 스타일 적용
     app.setStyle(QStyleFactory::create("Fusion"));
@@ -82,32 +77,17 @@ int main(int argc, char *argv[])
 
     // 공유 TcpCommunicator 생성
     TcpCommunicator *sharedTcpCommunicator = new TcpCommunicator();
-
     // 로그인 창 생성 및 표시
     LoginWindow loginWindow;
-
-    
     // LoginWindow에 공유 TcpCommunicator 설정
     loginWindow.setTcpCommunicator(sharedTcpCommunicator);
-
-    // 로그인 성공 시 메인 창으로 전환
-    QObject::connect(&loginWindow, &LoginWindow::loginSuccessful, [&]() {
-        qDebug() << "로그인 성공 - 메인 창 표시";
-
-        MainWindow *mainWindow = new MainWindow();
-
-        // MainWindow에도 동일한 TcpCommunicator 설정
-        mainWindow->setTcpCommunicator(sharedTcpCommunicator);
-        
-
-        mainWindow->show();
-
-        qDebug() << "메인 창이 표시되었습니다.";
-    });
 
     // 로그인 창 표시
     if (loginWindow.exec() == QDialog::Accepted) {
         qDebug() << "로그인 다이얼로그가 성공적으로 완료되었습니다.";
+        MainWindow *mainWindow = new MainWindow();
+        mainWindow->setTcpCommunicator(sharedTcpCommunicator);
+        mainWindow->show();
         return app.exec();
     } else {
         qDebug() << "로그인이 취소되었습니다.";

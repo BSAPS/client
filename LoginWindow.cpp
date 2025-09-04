@@ -4,11 +4,12 @@
 #include "TcpCommunicator.h"
 #include "EnvConfig.h"
 #include "customtitlebar.h"
+#include "custommessagebox.h"
+
 #include <QApplication>
-#include <QMessageBox>
 #include <QDebug>
 #include <QJsonDocument>
-#include <QJsonObject>
+#include <QJsonArray>
 #include <QJsonParseError>
 #include <QTimer>
 #include <QPixmap>
@@ -18,19 +19,12 @@
 #include <QtSvg/QSvgRenderer>
 #include <QPainter>
 #include <QLabel>
-#include "custommessagebox.h"
 
 
 
 LoginWindow::LoginWindow(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui_LoginWindow)
-    , m_tcpCommunicator(nullptr)
-    , m_passwordErrorLabel(nullptr)
-    , m_closeSignUpButton(nullptr)
-    , m_closeOtpSignUpButton(nullptr)
-    , m_connectionStatusLabel(nullptr)
-    , m_connectionTimer(nullptr)
 {
     ui->setupUi(this);
     qDebug() << "[LoginWindow] 생성자 시작";
@@ -50,7 +44,6 @@ LoginWindow::LoginWindow(QWidget *parent)
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
     mainLayout->addWidget(titleBar);
-
     mainLayout->addWidget(ui->stackedWidget); // 기존 ui 파일의 최상위 위젯을 레이아웃에 추가
 
     setLayout(mainLayout); // 다이얼로그에 레이아웃 적용
@@ -824,7 +817,6 @@ void LoginWindow::handleLoginResponse(const QJsonObject &response)
             CustomMessageBox msgBox(nullptr, "로그인 성공", "로그인에 성공했습니다.");
             msgBox.setFixedSize(300,150);
             msgBox.exec();
-            emit loginSuccessful();
             accept();
         }
     } else {
@@ -881,7 +873,6 @@ void LoginWindow::handleOtpLoginResponse(const QJsonObject &response)
         CustomMessageBox msgBox(nullptr, "로그인 성공", message);
         msgBox.setFixedSize(300,150);
         msgBox.exec();
-        emit loginSuccessful();
         accept();
     } else {
         CustomMessageBox msgBox(nullptr, "OTP 인증 실패", message.isEmpty() ? "OTP 인증에 실패했습니다." : message);

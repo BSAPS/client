@@ -161,15 +161,7 @@ void LoginWindow::setTcpCommunicator(TcpCommunicator* communicator)
 void LoginWindow::setupConnectionStatusLabel()
 {
     // 연결 상태 표시 라벨 생성 (로그인 페이지 하단에)
-    m_connectionStatusLabel = new QLabel(ui->LgoinPage);
-    m_connectionStatusLabel->setText("서버 연결 중...");
-    m_connectionStatusLabel->setStyleSheet(
-        "QLabel {"
-        "    color: #ff6b35;"
-        "    font-size: 11px;"
-        "    background-color: transparent;"
-        "}"
-        );
+    m_connectionStatusLabel = new QLabel(ui->LoginPage);
     m_connectionStatusLabel->setGeometry(40, 285, 200, 15); // 로그인 버튼 아래
     m_connectionStatusLabel->show();
 }
@@ -364,7 +356,7 @@ void LoginWindow::handleCloseSignUp()
 
     // 회원가입 창을 닫고 로그인 페이지로 돌아가기
     ui->stackedWidget->setCurrentIndex(0); // page_3 (로그인 페이지)
-    ui->OTPLoginWidget->setCurrentIndex(0); // LgoinPage
+    ui->OTPLoginWidget->setCurrentIndex(0); // LoginPage
     clearSignUpFields();
 }
 
@@ -412,7 +404,6 @@ void LoginWindow::handleLogin()
 
     if (id.isEmpty() || password.isEmpty()) {
         CustomMessageBox msgBox(nullptr, "입력 오류", "아이디와 패스워드를 모두 입력해주세요.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec(); // 모달(modal)로 띄워서 사용자의 응답을 기다림
         return;
     }
@@ -420,7 +411,6 @@ void LoginWindow::handleLogin()
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
         CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.\n잠시 후 다시 시도해주세요.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
 
         // 재연결 시도
@@ -468,7 +458,6 @@ void LoginWindow::handleSubmitSignUp()
     // 입력 유효성 검사
     if (id.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
         CustomMessageBox msgBox(nullptr, "입력 오류", "모든 필드를 입력해주세요.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         return;
     }
@@ -477,7 +466,6 @@ void LoginWindow::handleSubmitSignUp()
     if (password != confirmPassword) {
         m_passwordErrorLabel->show();
         CustomMessageBox msgBox(nullptr, "비밀번호 오류", "비밀번호가 일치하지 않습니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         return;
     }
@@ -485,7 +473,6 @@ void LoginWindow::handleSubmitSignUp()
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
         CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.\n잠시 후 다시 시도해주세요.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
 
         // 재연결 시도
@@ -507,7 +494,6 @@ void LoginWindow::handleSubmitOtpLogin()
 
     if (otpCode.isEmpty()) {
         CustomMessageBox msgBox(nullptr, "입력 오류", "OTP 코드를 입력해주세요.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         return;
     }
@@ -515,7 +501,6 @@ void LoginWindow::handleSubmitOtpLogin()
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
         CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         resetOtpLoginButton();
         return;
@@ -535,14 +520,13 @@ void LoginWindow::handleSubmitOtpSignUp()
 
     // 로그인 페이지로 돌아가기
     ui->stackedWidget->setCurrentIndex(0); // page_3 (로그인 페이지)
-    ui->OTPLoginWidget->setCurrentIndex(0); // LgoinPage
+    ui->OTPLoginWidget->setCurrentIndex(0); // LoginPage
     clearSignUpFields();
     clearLoginFields();
 
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
         CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         return;
     }
@@ -556,7 +540,6 @@ void LoginWindow::sendLoginRequest(const QString &id, const QString &password)
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
         CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         resetLoginButton();
         return;
@@ -581,7 +564,6 @@ void LoginWindow::sendLoginRequest(const QString &id, const QString &password)
     bool success = m_tcpCommunicator->sendJsonMessage(loginMessage);
     if (!success) {
         CustomMessageBox msgBox(nullptr, "전송 오류", "로그인 정보 전송에 실패했습니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         resetLoginButton();
     } else {
@@ -596,7 +578,6 @@ void LoginWindow::sendSignUpRequest(const QString &id, const QString &password, 
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
         CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         return;
     }
@@ -617,7 +598,6 @@ void LoginWindow::sendSignUpRequest(const QString &id, const QString &password, 
     bool success = m_tcpCommunicator->sendJsonMessage(signUpMessage);
     if (!success) {
         CustomMessageBox msgBox(nullptr, "전송 오류", "회원가입 정보 전송에 실패했습니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
     } else {
         qDebug() << "[LoginWindow] 회원가입 요청 전송 성공";
@@ -631,7 +611,6 @@ void LoginWindow::sendOtpLoginRequest(const QString &otpCode)
     // TCP 연결 확인
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
         CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되지 않았습니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         resetOtpLoginButton();
         return;
@@ -649,7 +628,6 @@ void LoginWindow::sendOtpLoginRequest(const QString &otpCode)
     bool success = m_tcpCommunicator->sendJsonMessage(otpLoginMessage);
     if (!success) {
         CustomMessageBox msgBox(nullptr, "전송 오류", "OTP 인증 정보 전송에 실패했습니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         resetOtpLoginButton();
     }
@@ -720,7 +698,6 @@ void LoginWindow::onTcpDisconnected()
     static bool disconnectNotified = false;
     if (!disconnectNotified && this->isVisible()) {
         CustomMessageBox msgBox(nullptr, "전송 오류", "OTP 인증 정보 전송에 실패했습니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         disconnectNotified = true;
 
@@ -810,18 +787,15 @@ void LoginWindow::handleLoginResponse(const QJsonObject &response)
             ui->OTPLoginWidget->setCurrentIndex(1); // OTPLoginPage
             ui->idLineEdit_2->setFocus();
             CustomMessageBox msgBox(nullptr, "OTP 인증", "OTP 인증번호를 입력해주세요.");
-            msgBox.setFixedSize(300,150);
             msgBox.exec();
         } else {
             // 일반 사용자인 경우 로그인 성공
             CustomMessageBox msgBox(nullptr, "로그인 성공", "로그인에 성공했습니다.");
-            msgBox.setFixedSize(300,150);
             msgBox.exec();
             accept();
         }
     } else {
         CustomMessageBox msgBox(nullptr, "로그인 실패", message.isEmpty() ? "로그인에 실패했습니다." : message);
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         clearLoginFields();
     }
@@ -837,7 +811,6 @@ void LoginWindow::handleSignUpResponse(const QJsonObject &response)
 
     if (success != 0) {
         CustomMessageBox msgBox(nullptr, "회원가입 성공", "회원가입이 완료되었습니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         if(otpURI != ""){
             handleOtpSignupSwitch();
@@ -846,7 +819,6 @@ void LoginWindow::handleSignUpResponse(const QJsonObject &response)
         }
     } else {
         CustomMessageBox msgBox(nullptr, "회원가입 실패", message.isEmpty() ? "회원가입에 실패했습니다." : message);
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
     }
 
@@ -871,37 +843,13 @@ void LoginWindow::handleOtpLoginResponse(const QJsonObject &response)
 
     if (success == 1) {
         CustomMessageBox msgBox(nullptr, "로그인 성공", message);
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         accept();
     } else {
         CustomMessageBox msgBox(nullptr, "OTP 인증 실패", message.isEmpty() ? "OTP 인증에 실패했습니다." : message);
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         ui->idLineEdit_2->clear();
         ui->idLineEdit_2->setFocus();
-    }
-}
-
-void LoginWindow::handleOtpSignUpResponse(const QJsonObject &response)
-{
-    bool success = response["success"].toBool();
-    QString message = response["message"].toString();
-    
-
-    if (success) {
-        CustomMessageBox msgBox(nullptr, "회원가입 성공", "OTP 회원가입이 완료되었습니다.");
-        msgBox.setFixedSize(300,150);
-        msgBox.exec();
-        // 로그인 페이지로 돌아가기
-        ui->stackedWidget->setCurrentIndex(0); // page_3 (로그인 페이지)
-        ui->OTPLoginWidget->setCurrentIndex(0); // LoginPage
-        clearSignUpFields();
-        clearLoginFields();
-    } else {
-        CustomMessageBox msgBox(nullptr, "OTP 회원가입 실패", message.isEmpty() ? "OTP 회원가입에 실패했습니다." : message);
-        msgBox.setFixedSize(300,150);
-        msgBox.exec();
     }
 }
 
@@ -966,13 +914,10 @@ void LoginWindow::handleQrCodeResponse(const QJsonObject &response)
         scrollArea->setWidget(recoveryEdit);
         scrollArea->show();
 
-        //QMessageBox::information(this, "OTP 설정", "QR코드를 OTP 앱으로 스캔하고, 복구 코드를 안전하게 보관하세요. \n복구 코드는 계정당 5개 주어지며, 한 번 사용한 코드는 다시 사용할 수 없습니다.");
         CustomMessageBox msgBox(nullptr, "OTP 설정", "QR코드를 OTP 앱으로 스캔하고, \n복구 코드를 안전하게 보관하세요. \n복구 코드는 계정당 5개 주어지며, \n한 번 사용한 코드는 다시 사용할 수 없습니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
     } else {
         CustomMessageBox msgBox(nullptr, "QR 코드 생성 실패", "QR 코드 생성에 실패했습니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         ui->OTPLoginWidget_3->setCurrentIndex(0); // SignUpPage로 복귀
     }

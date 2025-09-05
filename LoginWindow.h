@@ -97,7 +97,6 @@ private:
     void handleLoginResponse(const QJsonObject &response);
     void handleSignUpResponse(const QJsonObject &response);
     void handleOtpLoginResponse(const QJsonObject &response);
-    void handleOtpSignUpResponse(const QJsonObject &response);
     void handleQrCodeResponse(const QJsonObject &response);
 
     // 유틸리티 메서드

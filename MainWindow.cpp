@@ -47,7 +47,6 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_centralWidget(nullptr)
     , m_tabWidget(nullptr)
-    // , m_closeButton(nullptr)
     , m_liveVideoTab(nullptr)
     , m_videoStreamWidget(nullptr)
     , m_streamingButton(nullptr)
@@ -173,11 +172,11 @@ void MainWindow::setTcpCommunicator(TcpCommunicator* communicator)
                     qDebug() << "수직선 서버 응답 - 성공:" << success << "메시지:" << message;
                     if (success) {
                         CustomMessageBox msgBox(nullptr, "수직선 전송 완료", "수직선이 성공적으로 서버에 전송되었습니다.");
-                        msgBox.setFixedSize(300,150);
+
                         msgBox.exec();
                     } else {
                         CustomMessageBox msgBox(nullptr, "수직선 전송 실패", "수직선 전송에 실패했습니다: " + message);
-                        msgBox.setFixedSize(300,150);
+
                         msgBox.exec();
                     }
                 });
@@ -271,7 +270,7 @@ void MainWindow::setupLiveVideoTab()
             stackedLayout->setCurrentWidget(m_videoStreamWidget);
         } else {
             CustomMessageBox msgBox(nullptr, "RTSP URL 누락", "먼저 네트워크 설정에서 RTSP URL을 입력하세요.");
-            msgBox.setFixedSize(300,150);
+
             msgBox.exec();
         }
     });
@@ -294,7 +293,7 @@ void MainWindow::setupLiveVideoTab()
             stackedLayout->setCurrentWidget(m_videoStreamWidget);  // 영상 보여주기
         } else {
             CustomMessageBox msgBox(nullptr, "RTSP URL 누락", "먼저 네트워크 설정에서 RTSP URL을 입력하세요.");
-            msgBox.setFixedSize(300,150);
+
             msgBox.exec();
         }
     });
@@ -314,7 +313,7 @@ void MainWindow::onDrawButtonClicked()
 {
     if (!m_videoStreamWidget->isStreaming()) {
         CustomMessageBox msgBox(nullptr, "안내", "먼저 스트리밍을 시작해주세요.");
-        msgBox.setFixedSize(300,150);
+
         msgBox.exec();
         return;
     }
@@ -340,7 +339,7 @@ void MainWindow::onDrawButtonClicked()
                             qDebug() << "수직선 전송 성공";
                         } else {
                             CustomMessageBox msgBox(nullptr, "전송 실패", "수직선 전송에 실패했습니다.");
-                            msgBox.setFixedSize(300,150);
+
                             msgBox.exec();
                         }
                     }
@@ -391,7 +390,7 @@ void MainWindow::setupCapturedImageTab()
         // " border-bottom-right-radius: 15px;"
         "}"
         "QDateEdit::down-arrow {"
-        " image: url(:/icons/up_down.png);"  // 너가 넣은 화살표 아이콘 경로
+        " image: url(:/icons/up_down.png);"
         " width: 20px;"
         " height: 20px;"
         "}"
@@ -410,63 +409,6 @@ void MainWindow::setupCapturedImageTab()
         m_selectedDate = newDate;
         // 다른 UI 업데이트나 로직을 여기에 추가할 수 있습니다.
     });
-
-    // 달력 다이얼로그 설정
-    m_calendarDialog = new QDialog(this);
-    m_calendarDialog->setWindowTitle("날짜 선택");
-    m_calendarDialog->setModal(true);
-    m_calendarDialog->setFixedSize(380, 350);
-    m_calendarDialog->setStyleSheet(R"(
-    QCalendarWidget QToolButton {
-        background-color: #444857;
-        color: white;
-        font-weight: bold;
-        border: none;
-        margin: 5px;
-        height: 30px;
-    }
-
-    QCalendarWidget QToolButton::left-arrow {
-        image: url(:/icons/left.png);  /* 왼쪽 화살표 이미지 */
-        width: 50px;
-        height: 50px;
-    }
-
-    QCalendarWidget QToolButton::right-arrow {
-        image: QIcon(":/icons/right.png");  /* 오른쪽 화살표 이미지 */
-        width: 24px;
-        height: 24px;
-    }
-
-
-    QCalendarWidget QToolButton:hover {
-        background-color: #5a5e6e;
-    }
-
-    QCalendarWidget QHeaderView::section {
-        background-color: #3d4251;
-        color: #cfcfcf;
-        font-weight: bold;
-        border: none;
-        padding: 5px;
-    }
-
-    QCalendarWidget QTableView {
-        background-color: #2c2f38;
-        color: white;
-        selection-background-color: #F37321;
-        selection-color: black;
-        gridline-color: #888;
-    }
-)");
-
-    QVBoxLayout *calendarLayout = new QVBoxLayout(m_calendarDialog);
-
-    m_calendarWidget = new QCalendarWidget();
-    m_calendarWidget->setSelectedDate(m_selectedDate);
-    m_calendarWidget->setStyleSheet("background-color:#292D41;");
-    connect(m_calendarWidget, &QCalendarWidget::clicked, this, &MainWindow::onCalendarDateSelected);
-    calendarLayout->addWidget(m_calendarWidget);
 
     // 시간 라벨
     QLabel *timeLabel = new QLabel("시간:");
@@ -578,11 +520,11 @@ void MainWindow::setupNetworkConnection()
 
                     if (success) {
                         CustomMessageBox msgBox(nullptr, "수직선 전송 완료", "수직선이 성공적으로 서버에 전송되었습니다.");
-                        msgBox.setFixedSize(300,150);
+
                         msgBox.exec();
                     } else {
                         CustomMessageBox msgBox(nullptr, "수직선 전송 실패", "수직선 전송에 실패했습니다: " + message);
-                        msgBox.setFixedSize(300,150);
+
                         msgBox.exec();
                     }
                 });
@@ -709,7 +651,7 @@ void MainWindow::onVideoStreamClicked()
 {
     if (!m_videoStreamWidget->isStreaming()) {
         CustomMessageBox msgBox(nullptr, "안내", "먼저 스트리밍을 시작해주세요.");
-        msgBox.setFixedSize(300,150);
+
         msgBox.exec();
         return;
     }
@@ -747,12 +689,12 @@ void MainWindow::onVideoStreamClicked()
                         } else {
                             qDebug() << "수직선 전송 실패";
                             CustomMessageBox msgBox(nullptr, "전송 실패", "수직선 데이터 전송에 실패했습니다.");
-                            msgBox.setFixedSize(300,150);
+
                             msgBox.exec();
                         }
                     } else {
                         CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되어 있지 않습니다.");
-                        msgBox.setFixedSize(300,150);
+
                         msgBox.exec();
                     }
                 });
@@ -772,12 +714,12 @@ void MainWindow::sendMultipleLineCoordinates(const QList<QPair<QPoint, QPoint>> 
 
         CustomMessageBox msgBox(nullptr, "전송 완료",
                                 QString("%1개의 기준선 좌표가 서버로 전송되었습니다.").arg(lines.size()));
-        msgBox.setFixedSize(300,150);
+
         msgBox.exec();
     } else {
         qDebug() << "TCP 연결이 없어 좌표 전송 실패";
         CustomMessageBox msgBox(nullptr, "전송 실패", "서버에 연결되어 있지 않습니다.");
-        msgBox.setFixedSize(300,150);
+
         msgBox.exec();
     }
 }
@@ -791,7 +733,7 @@ void MainWindow::sendSingleLineCoordinates(int x1, int y1, int x2, int y2)
     } else {
         qDebug() << "TCP 연결이 없어 좌표 전송 실패";
         CustomMessageBox msgBox(nullptr, "전송 실패", "서버에 연결되어 있지 않습니다.");
-        msgBox.setFixedSize(300,150);
+
         msgBox.exec();
     }
 }
@@ -843,7 +785,7 @@ void MainWindow::onStreamingButtonClicked()
         } else {
             if (m_rtspUrl.isEmpty()) {
                 CustomMessageBox msgBox(nullptr, "설정 오류", "먼저 네트워크 설정에서 RTSP URL을 설정해주세요.");
-                msgBox.setFixedSize(300,150);
+
                 msgBox.exec();
                 return;
             }
@@ -860,7 +802,7 @@ void MainWindow::onRequestImagesClicked()
 {
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
         CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되어 있지 않습니다.\n네트워크 설정을 확인해주세요.");
-        msgBox.setFixedSize(300,150);
+
         msgBox.exec();
         return;
     }
@@ -885,7 +827,7 @@ void MainWindow::onTcpConnected()
 
 
     CustomMessageBox msgBox(nullptr, "연결 성공", "TCP 서버에 성공적으로 연결되었습니다.");
-    msgBox.setFixedSize(300,150);
+
     msgBox.exec();
 }
 
@@ -911,7 +853,7 @@ void MainWindow::onTcpError(const QString &error)
 
 
     CustomMessageBox msgBox(nullptr, "TCP 연결 오류", error);
-    msgBox.setFixedSize(300,150);
+
     msgBox.exec();
 }
 
@@ -947,7 +889,7 @@ void MainWindow::onImageClicked(const QString &imagePath, const QString &timesta
         m_imageViewerDialog->exec();
     } else {
         CustomMessageBox msgBox(nullptr, "이미지 로드 오류", "이미지를 불러올 수 없습니다.");
-        msgBox.setFixedSize(300,150);
+
         msgBox.exec();
     }
 }
@@ -967,7 +909,7 @@ void MainWindow::onRequestTimeout()
     CustomMessageBox msgBox(nullptr, "요청 타임아웃",
                             "서버에서 60초 내에 응답이 없습니다.\n"
                             "서버 상태와 네트워크 연결을 확인하고 다시 시도해주세요.");
-    msgBox.setFixedSize(300,150);
+
     msgBox.exec();
 }
 
@@ -975,7 +917,7 @@ void MainWindow::onStreamError(const QString &error)
 {
     qDebug() << "스트림 오류:" << error;
     CustomMessageBox msgBox(nullptr, "스트림 오류", error);
-    msgBox.setFixedSize(300,150);
+
     msgBox.exec();
 
     if (m_streamingButton) {
@@ -991,11 +933,11 @@ void MainWindow::onCoordinatesConfirmed(bool success, const QString &message)
 
     if (success) {
         CustomMessageBox msgBox(nullptr, "전송 완료", "좌표가 성공적으로 전송되었습니다.");
-        msgBox.setFixedSize(300,150);
+
         msgBox.exec();
     } else {
         CustomMessageBox msgBox(nullptr, "전송 실패", "좌표 전송에 실패했습니다: " + message);
-        msgBox.setFixedSize(300,150);
+
         msgBox.exec();
     }
 }
@@ -1030,7 +972,7 @@ void MainWindow::sendCategorizedCoordinates(const QList<RoadLineData> &roadLines
     } else {
         qDebug() << "TCP 연결이 없어 좌표 전송 실패";
         CustomMessageBox msgBox(nullptr, "전송 실패", "서버에 연결되어 있지 않습니다.");
-        msgBox.setFixedSize(300,150);
+
         msgBox.exec();
     }
 }

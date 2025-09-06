@@ -15,7 +15,6 @@ SOURCES += \
     VideoStreamWidget.cpp \
     TcpCommunicator.cpp \
     ImageViewerDialog.cpp \
-    NetworkConfigDialog.cpp \
     LineDrawingDialog.cpp \
     EnvConfig.cpp
 
@@ -26,7 +25,6 @@ HEADERS += \
     VideoStreamWidget.h \
     TcpCommunicator.h \
     ImageViewerDialog.h \
-    NetworkConfigDialog.h \
     LineDrawingDialog.h \
     EnvConfig.h \
     custommessagebox.h \

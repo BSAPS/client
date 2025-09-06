@@ -12,7 +12,6 @@ ImageViewerDialog::ImageViewerDialog(QWidget *parent)
     , m_imageLabel(nullptr)
     , m_timestampLabel(nullptr)
     , m_logTextEdit(nullptr)
-    , m_closeButton(nullptr)
     , m_scrollArea(nullptr)
 {
     setupUI();
@@ -29,10 +28,6 @@ ImageViewerDialog::ImageViewerDialog(QWidget *parent)
     // 화면 중앙에 배치
     move((screenGeometry.width() - width) / 2,
          (screenGeometry.height() - height) / 2);
-}
-
-ImageViewerDialog::~ImageViewerDialog()
-{
 }
 
 void ImageViewerDialog::setupUI()
@@ -61,22 +56,6 @@ void ImageViewerDialog::setupUI()
 
     headerLayout->addStretch();
 
-    // m_closeButton = new QPushButton("닫기");
-    // m_closeButton->setStyleSheet(R"(
-    //     QPushButton {
-    //         background-color: #f44336;
-    //         color: white;
-    //         padding: 8px 16px;
-    //         border: none;
-    //         border-radius: 4px;
-    //         font-weight: bold;
-    //     }
-    //     QPushButton:hover {
-    //         background-color: #d32f2f;
-    //     })");
-    // connect(m_closeButton, &QPushButton::clicked, this, &QDialog::close);
-    // headerLayout->addWidget(m_closeButton);
-
     mainLayout->addLayout(headerLayout);
 
     m_scrollArea = new QScrollArea();
@@ -87,7 +66,6 @@ void ImageViewerDialog::setupUI()
     m_imageLabel = new QLabel();
     m_imageLabel->setAlignment(Qt::AlignCenter);
     m_imageLabel->setStyleSheet("background-color: transparent;");
-    //m_imageLabel->setScaledContents(true);  // 크기 자동 조절
 
     m_scrollArea->setWidget(m_imageLabel);
     mainLayout->addWidget(m_scrollArea, 3);
@@ -158,14 +136,4 @@ void ImageViewerDialog::setImage(const QPixmap &pixmap, const QString &timestamp
 
     m_timestampLabel->setText(QString("촬영 시간: %1").arg(timestamp));
     m_logTextEdit->setPlainText(logText);
-}
-
-
-void ImageViewerDialog::keyPressEvent(QKeyEvent *event)
-{
-    if (event->key() == Qt::Key_Escape) {
-        close();
-    } else {
-        QDialog::keyPressEvent(event);
-    }
 }

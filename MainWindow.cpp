@@ -49,14 +49,11 @@ MainWindow::MainWindow(QWidget *parent)
     , m_tabWidget(nullptr)
     , m_liveVideoTab(nullptr)
     , m_videoStreamWidget(nullptr)
-    , m_streamingButton(nullptr)
     , m_capturedImageTab(nullptr)
     , m_imageScrollArea(nullptr)
     , m_imageGridWidget(nullptr)
     , m_imageGridLayout(nullptr)
     , m_dateButton(nullptr)
-    , m_calendarWidget(nullptr)
-    , m_calendarDialog(nullptr)
     , m_hourComboBox(nullptr)
     , m_dateEdit(nullptr)
     , m_hourSpinBox(nullptr)
@@ -80,7 +77,7 @@ MainWindow::MainWindow(QWidget *parent)
     EnvConfig::loadFromFile(".env");
 
     // .env에서 네트워크 설정 로드
-    m_rtspUrl = EnvConfig::getValue("RTSP_URL", "rtsp://192.168.0.81:8554/original");
+    m_rtspUrl = EnvConfig::getValue("RTSP_URL", "rtsp://192.168.0.81:8554/original"); // 2번째 인자는 기본값
     m_tcpHost = EnvConfig::getValue("TCP_HOST", "192.168.0.81");
     m_tcpPort = EnvConfig::getValue("TCP_PORT", "8080").toInt();
 
@@ -120,9 +117,6 @@ MainWindow::~MainWindow()
     }
     if (m_requestTimeoutTimer) {
         m_requestTimeoutTimer->stop();
-    }
-    if (m_calendarDialog) {
-        delete m_calendarDialog;
     }
 }
 
@@ -330,20 +324,6 @@ void MainWindow::onDrawButtonClicked()
                 this, [this](const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines) {
                     this->sendCategorizedCoordinates(roadLines, detectionLines);
                 });
-
-        connect(m_lineDrawingDialog, &LineDrawingDialog::perpendicularLineGenerated,
-                this, [this](int detectionLineIndex, double a, double b) {
-                    if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
-                        PerpendicularLineData perpData{detectionLineIndex, a, b};
-                        if (m_tcpCommunicator->sendPerpendicularLine(perpData)) {
-                            qDebug() << "수직선 전송 성공";
-                        } else {
-                            CustomMessageBox msgBox(nullptr, "전송 실패", "수직선 전송에 실패했습니다.");
-
-                            msgBox.exec();
-                        }
-                    }
-                });
     }
 
     m_lineDrawingDialog->exec();
@@ -497,7 +477,6 @@ void MainWindow::setupNetworkConnection()
     m_networkManager = new QNetworkAccessManager(this);
 
     m_updateTimer = new QTimer(this);
-    connect(m_updateTimer, &QTimer::timeout, this, &MainWindow::updateLogDisplay);
     m_updateTimer->start(5000);
 
     // 이미 설정된 TcpCommunicator가 있는 경우에만 시그널 연결
@@ -619,34 +598,6 @@ void MainWindow::displayImages(const QList<ImageData> &images)
     m_imageGridWidget->adjustSize();
 }
 
-
-void MainWindow::onNetworkConfigClicked()
-{
-    if (!m_networkDialog) {
-        m_networkDialog = new NetworkConfigDialog(this);
-        m_networkDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
-        m_networkDialog->setRtspUrl(m_rtspUrl);
-        m_networkDialog->setTcpHost(m_tcpHost);
-        m_networkDialog->setTcpPort(m_tcpPort);
-    }
-
-    if (m_networkDialog->exec() == QDialog::Accepted) {
-        m_rtspUrl = m_networkDialog->getRtspUrl();
-        m_tcpHost = m_networkDialog->getTcpHost();
-        m_tcpPort = m_networkDialog->getTcpPort();
-
-        if (m_videoStreamWidget) {
-            m_videoStreamWidget->setStreamUrl(m_rtspUrl);
-        }
-
-        if (m_tcpCommunicator) {
-            m_tcpCommunicator->connectToServer(m_tcpHost, m_tcpPort);
-        }
-
-        qDebug() << "네트워크 설정 업데이트:" << m_rtspUrl << m_tcpHost << m_tcpPort;
-    }
-}
-
 void MainWindow::onVideoStreamClicked()
 {
     if (!m_videoStreamWidget->isStreaming()) {
@@ -671,32 +622,6 @@ void MainWindow::onVideoStreamClicked()
         connect(m_lineDrawingDialog, &LineDrawingDialog::categorizedLinesReady,
                 this, [this](const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines) {
                     this->sendCategorizedCoordinates(roadLines, detectionLines);
-                });
-
-        // 수직선 생성 시그널 연결 추가
-        connect(m_lineDrawingDialog, &LineDrawingDialog::perpendicularLineGenerated,
-                this, [this](int detectionLineIndex, double a, double b) {
-                    if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
-                        PerpendicularLineData perpData;
-                        perpData.index = detectionLineIndex;
-                        perpData.a = a;
-                        perpData.b = b;
-
-                        bool success = m_tcpCommunicator->sendPerpendicularLine(perpData);
-                        if (success) {
-                            qDebug() << "수직선 전송 성공 - index:" << detectionLineIndex
-                                     << "y = " << a << "x + " << b;
-                        } else {
-                            qDebug() << "수직선 전송 실패";
-                            CustomMessageBox msgBox(nullptr, "전송 실패", "수직선 데이터 전송에 실패했습니다.");
-
-                            msgBox.exec();
-                        }
-                    } else {
-                        CustomMessageBox msgBox(nullptr, "연결 오류", "서버에 연결되어 있지 않습니다.");
-
-                        msgBox.exec();
-                    }
                 });
     }
 
@@ -751,23 +676,6 @@ void MainWindow::onHourChanged(int hour)
     qDebug() << "시간 변경:" << QString("%1시~%2시").arg(hour).arg(hour + 1);
 }
 
-void MainWindow::onDateButtonClicked()
-{
-    if (m_calendarDialog) {
-        m_calendarWidget->setSelectedDate(m_selectedDate);
-        m_calendarDialog->exec();
-    }
-}
-
-void MainWindow::onCalendarDateSelected(const QDate &date)
-{
-    m_selectedDate = date;
-    m_dateButton->setText(date.toString("yyyy-MM-dd (dddd)"));
-    m_calendarDialog->accept();
-
-    qDebug() << "달력에서 날짜 선택:" << date.toString("yyyy-MM-dd");
-}
-
 void MainWindow::onHourComboChanged(int index)
 {
     int selectedHour = m_hourComboBox->itemData(index).toInt();
@@ -779,9 +687,6 @@ void MainWindow::onStreamingButtonClicked()
     if (m_videoStreamWidget) {
         if (m_videoStreamWidget->isStreaming()) {
             m_videoStreamWidget->stopStream();
-            m_streamingButton->setText("Start Streaming");
-            m_streamingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt} "
-                                             "QPushButton:hover { background-color: #f37321; }");
         } else {
             if (m_rtspUrl.isEmpty()) {
                 CustomMessageBox msgBox(nullptr, "설정 오류", "먼저 네트워크 설정에서 RTSP URL을 설정해주세요.");
@@ -791,9 +696,6 @@ void MainWindow::onStreamingButtonClicked()
             }
 
             m_videoStreamWidget->startStream(m_rtspUrl);
-            m_streamingButton->setText("Stop Streaming");
-            m_streamingButton->setStyleSheet("QPushButton { background-color: #A5A09E; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt} "
-                                             "QPushButton:hover { background-color: #A5A09E; }");
         }
     }
 }
@@ -839,8 +741,6 @@ void MainWindow::onTcpDisconnected()
     if (m_requestButton) {
         m_requestButton->setEnabled(false);
     }
-
-
 }
 
 void MainWindow::onTcpError(const QString &error)
@@ -894,11 +794,6 @@ void MainWindow::onImageClicked(const QString &imagePath, const QString &timesta
     }
 }
 
-void MainWindow::updateLogDisplay()
-{
-    // 주기적으로 로그 업데이트 (필요시 구현)
-}
-
 void MainWindow::onRequestTimeout()
 {
     qDebug() << "이미지 요청 타임아웃 (60초)";
@@ -919,12 +814,6 @@ void MainWindow::onStreamError(const QString &error)
     CustomMessageBox msgBox(nullptr, "스트림 오류", error);
 
     msgBox.exec();
-
-    if (m_streamingButton) {
-        m_streamingButton->setText("Start Streaming");
-        m_streamingButton->setStyleSheet("QPushButton { background-color: #f37321; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size:10pt} "
-                                         "QPushButton:hover { background-color: #f37321; }");
-    }
 }
 
 void MainWindow::onCoordinatesConfirmed(bool success, const QString &message)

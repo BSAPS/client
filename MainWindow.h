@@ -60,18 +60,10 @@ public:
     // TCP 통신기 설정 메서드
     void setTcpCommunicator(TcpCommunicator* communicator);
 
-protected:
-    // void mousePressEvent(QMouseEvent *event) override;
-    // void mouseMoveEvent(QMouseEvent *event) override;
-    // void mouseReleaseEvent(QMouseEvent *event) override;
-
 private slots:
-    void onNetworkConfigClicked();
     void onVideoStreamClicked();
     void onDateChanged(const QDate &date);
     void onHourChanged(int hour);
-    void onDateButtonClicked();
-    void onCalendarDateSelected(const QDate &date);
     void onHourComboChanged(int index);
     void onStreamingButtonClicked();
     void onDrawButtonClicked();
@@ -83,7 +75,6 @@ private slots:
     void onTcpPacketReceived(int requestId, int success, const QString &data1, const QString &data2, const QString &data3);
     void onImagesReceived(const QList<ImageData> &images);
     void onImageClicked(const QString &imagePath, const QString &timestamp, const QString &logText);
-    void updateLogDisplay();
     void onRequestTimeout();
     void onStreamError(const QString &error);
     void onCoordinatesConfirmed(bool success, const QString &message);
@@ -124,8 +115,6 @@ private:
     QWidget *m_imageGridWidget;
     QGridLayout *m_imageGridLayout;
     QPushButton *m_dateButton;
-    QCalendarWidget *m_calendarWidget;
-    QDialog *m_calendarDialog;
     QComboBox *m_hourComboBox;
     QDateEdit *m_dateEdit;
     QSpinBox *m_hourSpinBox;

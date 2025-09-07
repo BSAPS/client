@@ -16,12 +16,8 @@ class ImageViewerDialog : public QDialog
 
 public:
     explicit ImageViewerDialog(QWidget *parent = nullptr);
-    ~ImageViewerDialog();
 
     void setImage(const QPixmap &pixmap, const QString &timestamp, const QString &logText);
-
-protected:
-    void keyPressEvent(QKeyEvent *event) override;
 
 private:
     void setupUI();
@@ -29,7 +25,6 @@ private:
     QLabel *m_imageLabel;
     QLabel *m_timestampLabel;
     QTextEdit *m_logTextEdit;
-    QPushButton *m_closeButton;
     QScrollArea *m_scrollArea;
 
     CustomTitleBar *titleBar;

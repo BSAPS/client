@@ -110,20 +110,6 @@ QList<CategorizedLine> VideoGraphicsView::getCategorizedLines() const
     return m_categorizedLines;
 }
 
-void VideoGraphicsView::clearCategoryLines(LineCategory category)
-{
-    // 해당 카테고리의 선들만 제거
-    for (int i = m_categorizedLines.size() - 1; i >= 0; --i) {
-        if (m_categorizedLines[i].category == category) {
-            m_categorizedLines.removeAt(i);
-        }
-    }
-
-    // 화면에서도 해당 카테고리 선들 제거 (전체 다시 그리기)
-    clearLines();
-    redrawAllLines();
-}
-
 int VideoGraphicsView::getCategoryLineCount(LineCategory category) const
 {
     int count = 0;
@@ -287,62 +273,6 @@ void VideoGraphicsView::loadSavedDetectionLines(const QList<DetectionLineData> &
     qDebug() << "=== loadSavedDetectionLines 완료 ===";
 }
 
-void VideoGraphicsView::redrawAllLines()
-{
-    qDebug() << "redrawAllLines 호출됨 - 그릴 선의 개수:" << m_categorizedLines.size();
-
-    // 모든 선을 다시 그리기 - 원래 얇은 선으로
-    for (int i = 0; i < m_categorizedLines.size(); ++i) {
-        const auto &catLine = m_categorizedLines[i];
-
-        // 선 그리기
-        QGraphicsLineItem *lineItem = new QGraphicsLineItem(QLineF(catLine.start, catLine.end));
-
-        // 카테고리별 색상 설정 - 원래 얇은 선
-        QPen linePen;
-        QColor pointColor;
-        if (catLine.category == LineCategory::ROAD_DEFINITION) {
-            linePen = QPen(Qt::blue, 2, Qt::SolidLine);  // 원래 얇은 선
-            pointColor = Qt::blue;
-        } else {
-            linePen = QPen(Qt::red, 2, Qt::SolidLine);   // 원래 얇은 선
-            pointColor = Qt::red;
-        }
-
-        lineItem->setPen(linePen);
-        lineItem->setZValue(1000); // 비디오 위에 표시
-        m_scene->addItem(lineItem);
-        m_lineItems.append(lineItem);
-
-        // 시작점과 끝점에 점 추가 (원래 작은 크기)
-        QGraphicsEllipseItem *startPoint = new QGraphicsEllipseItem(catLine.start.x() - 3, catLine.start.y() - 3, 6, 6);
-        startPoint->setBrush(pointColor);
-        startPoint->setPen(QPen(Qt::white, 1));
-        startPoint->setZValue(1001);
-        m_scene->addItem(startPoint);
-        m_pointItems.append(startPoint);
-
-        QGraphicsEllipseItem *endPoint = new QGraphicsEllipseItem(catLine.end.x() - 3, catLine.end.y() - 3, 6, 6);
-        endPoint->setBrush(pointColor);
-        endPoint->setPen(QPen(Qt::white, 1));
-        endPoint->setZValue(1001);
-        m_scene->addItem(endPoint);
-        m_pointItems.append(endPoint);
-
-        qDebug() << "선 그리기 완료:" << i << "번째 선," <<
-            (catLine.category == LineCategory::ROAD_DEFINITION ? "도로선" : "감지선") <<
-            catLine.start << "→" << catLine.end << "Z-Value:" << lineItem->zValue();
-    }
-
-    // 강제 업데이트
-    m_scene->update();
-    update();
-    viewport()->update();
-    repaint();
-
-    qDebug() << "총" << m_lineItems.size() << "개의 선과" << m_pointItems.size() << "개의 점이 그려짐";
-}
-
 void VideoGraphicsView::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() != Qt::LeftButton) {
@@ -395,33 +325,6 @@ void VideoGraphicsView::mousePressEvent(QMouseEvent *event)
     qDebug() << "선 그리기 시작:" << m_startPoint;
 }
 
-QGraphicsLineItem* VideoGraphicsView::findClickedRoadLine(const QPointF &clickPos)
-{
-    // 클릭 위치 근처의 도로선 찾기
-    for (int i = 0; i < m_lineItems.size(); ++i) {
-        QGraphicsLineItem* lineItem = m_lineItems[i];
-        if (lineItem) {
-            QLineF line = lineItem->line();
-
-            // 점과 선분 사이의 거리 계산
-            QPointF lineVec = line.p2() - line.p1();
-            QPointF pointVec = clickPos - line.p1();
-            qreal lineLength = QPointF::dotProduct(lineVec, lineVec);
-
-            if (lineLength > 0) {
-                qreal t = QPointF::dotProduct(pointVec, lineVec) / lineLength;
-                t = qMax(0.0, qMin(1.0, t));
-                QPointF closestPoint = line.p1() + t * lineVec;
-                qreal distance = QLineF(clickPos, closestPoint).length();
-
-                if (distance <= 5.0) { // 원래 작은 감지 범위
-                    return lineItem;
-                }
-            }
-        }
-    }
-    return nullptr;
-}
 
 void VideoGraphicsView::highlightRoadLine(int lineIndex)
 {
@@ -992,7 +895,6 @@ void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordin
                                     .arg(matrixNum)
                                     .arg(coordinate.x())
                                     .arg(coordinate.y()));
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
     } else {
         addLogMessage("Matrix 선택 취소됨", "INFO");
@@ -1289,24 +1191,6 @@ void LineDrawingDialog::setupUI()
     m_buttonLayout->addWidget(m_bboxOffButton);
     m_bboxOffButton->hide();
 
-
-    //닫기 버튼
-    // m_closeButton = new QPushButton();
-    // m_closeButton->setIcon(QIcon(":/icons/exit.png"));
-    // m_closeButton->setIconSize(QSize(30,30));
-    // m_closeButton->setStyleSheet("QPushButton { background-color: transparent; color: white; font-size: 20px; border: none; padding: 15px 20px;} "
-    //                               "QPushButton:hover { background-color: rgba(255,255,255,0.1); border-radius: 40px; }");
-    // m_closeButton->setToolTip("닫기");
-    // qApp->setStyleSheet("QToolTip { "
-    //                     "color: black; "          // 글씨색
-    //                     "background-color: #ffffff; "  // 밝은 배경색
-    //                     "border: 1px solid gray; "
-    //                     "padding: 3px; "
-    //                     "}");
-    // connect(m_closeButton, &QPushButton::clicked, this, &QDialog::reject);
-    // m_buttonLayout->addWidget(m_closeButton);
-
-
     m_mainLayout->addLayout(m_buttonLayout);
 
     // 초기 로그 메시지
@@ -1342,9 +1226,6 @@ void LineDrawingDialog::setupMediaPlayer()
 
     // QGraphicsVideoItem에 비디오 출력 설정
     m_mediaPlayer->setVideoOutput(m_videoView->getVideoItem());
-
-    // 볼륨 설정 (0으로 설정하여 소리 끄기)
-    m_audioOutput->setVolume(0.0);
 
     connect(m_mediaPlayer, &QMediaPlayer::playbackStateChanged, this, &LineDrawingDialog::onPlayerStateChanged);
     connect(m_mediaPlayer, &QMediaPlayer::errorOccurred, this, &LineDrawingDialog::onPlayerError);
@@ -1425,20 +1306,6 @@ void LineDrawingDialog::onCategoryChanged()
     }
 }
 
-
-void LineDrawingDialog::onClearCategoryClicked()
-{
-    // 현재 선택된 카테고리의 선들만 지우기
-    int beforeCount = m_videoView->getCategoryLineCount(m_currentCategory);
-    m_videoView->clearCategoryLines(m_currentCategory);
-
-    QString categoryName = (m_currentCategory == LineCategory::ROAD_DEFINITION) ? "도로 명시선" : "객체 감지선";
-    addLogMessage(QString("%1 %2개 삭제됨").arg(categoryName).arg(beforeCount), "ACTION");
-
-    updateCategoryInfo();
-    updateButtonStates();
-}
-
 void LineDrawingDialog::onLineDrawn(const QPoint &start, const QPoint &end, LineCategory category)
 {
     QString categoryName = (category == LineCategory::ROAD_DEFINITION) ? "도로 명시선" : "객체 감지선";
@@ -1468,7 +1335,6 @@ void LineDrawingDialog::onSendCoordinatesClicked()
     if (allLines.isEmpty()) {
         addLogMessage("전송할 선 없음", "WARNING");
         CustomMessageBox msgBox(nullptr, "알림", "전송할 선 없음. 먼저 선을 그려주세요.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         return;
     }
@@ -1650,10 +1516,6 @@ void LineDrawingDialog::updateButtonStates()
     m_sendCoordinatesButton->setEnabled(hasLines);
 }
 
-void LineDrawingDialog::resizeEvent(QResizeEvent *event)
-{
-    QDialog::resizeEvent(event);
-}
 
 // 좌표별 Matrix 매핑 관련 함수들
 void LineDrawingDialog::addCoordinateMapping(int lineIndex, const QPoint &coordinate, bool isStartPoint, int matrixNum)
@@ -1733,96 +1595,11 @@ QList<RoadLineData> LineDrawingDialog::getCoordinateMappingsAsRoadLines() const
     return roadLines;
 }
 
-// 수직선 계산 및 생성 함수들
-PerpendicularLineData LineDrawingDialog::calculatePerpendicularLine(const QPoint &start, const QPoint &end, int detectionLineIndex)
-{
-    PerpendicularLineData perpLine;
-    perpLine.index = detectionLineIndex;
-
-    // 감지선의 기울기 계산
-    double dx = end.x() - start.x();
-    double dy = end.y() - start.y();
-
-    if (qAbs(dx) < 0.001) {
-        // 수직선인 경우 (dx ≈ 0)
-        perpLine.a = 0;  // 수평선
-        perpLine.b = (start.y() + end.y()) / 2.0;  // 중점의 y좌표
-    } else {
-        // 일반적인 경우
-        double slope = dy / dx;
-        double perpSlope = -1.0 / slope;  // 수직선의 기울기
-
-        // 감지선의 중점 계산
-        double midX = (start.x() + end.x()) / 2.0;
-        double midY = (start.y() + end.y()) / 2.0;
-
-        // y = ax + b에서 a와 b 계산
-        perpLine.a = perpSlope;
-        perpLine.b = midY - perpSlope * midX;
-    }
-
-    return perpLine;
-}
-
-void LineDrawingDialog::generatePerpendicularLine(const CategorizedLine &detectionLine, int index)
-{
-    PerpendicularLineData perpLine = calculatePerpendicularLine(detectionLine.start, detectionLine.end, index);
-
-    addLogMessage(QString("감지선 #%1에 대한 수직선 생성됨: y = %2x + %3")
-                      .arg(index)
-                      .arg(perpLine.a, 0, 'f', 4)
-                      .arg(perpLine.b, 0, 'f', 4), "SUCCESS");
-
-    // 수직선 정보를 시그널로 전송
-    emit perpendicularLineGenerated(perpLine.index, perpLine.a, perpLine.b);
-
-    // 수직선을 화면에 그리기
-    int screenWidth = 960;
-    int screenHeight = 540;
-
-    QPoint perpStart, perpEnd;
-
-    if (qAbs(perpLine.a) < 0.001) {
-        // 수평선인 경우
-        perpStart = QPoint(0, static_cast<int>(perpLine.b));
-        perpEnd = QPoint(screenWidth, static_cast<int>(perpLine.b));
-    } else {
-        // 일반적인 경우 - 화면 경계에서의 교점 계산
-        double y1 = perpLine.a * 0 + perpLine.b;  // x=0일 때
-        double y2 = perpLine.a * screenWidth + perpLine.b;  // x=screenWidth일 때
-
-        perpStart = QPoint(0, static_cast<int>(y1));
-        perpEnd = QPoint(screenWidth, static_cast<int>(y2));
-
-        // 화면 범위를 벗어나는 경우 조정
-        if (y1 < 0 || y1 > screenHeight) {
-            double x1 = (0 - perpLine.b) / perpLine.a;  // y=0일 때
-            perpStart = QPoint(static_cast<int>(x1), 0);
-        }
-        if (y2 < 0 || y2 > screenHeight) {
-            double x2 = (screenHeight - perpLine.b) / perpLine.a;  // y=screenHeight일 때
-            perpEnd = QPoint(static_cast<int>(x2), screenHeight);
-        }
-    }
-
-    // 수직선을 화면에 그리기 (점선으로)
-    QGraphicsLineItem *perpLineItem = new QGraphicsLineItem(QLineF(perpStart, perpEnd));
-    QPen perpPen(Qt::green, 2, Qt::DashLine); // 원래 얇은 선
-    perpLineItem->setPen(perpPen);
-    perpLineItem->setZValue(1200);
-    m_videoView->scene()->addItem(perpLineItem);
-
-    addLogMessage(QString("수직선 표시 (녹색 점선): (%1,%2) → (%3,%4)")
-                      .arg(perpStart.x()).arg(perpStart.y())
-                      .arg(perpEnd.x()).arg(perpEnd.y()), "INFO");
-}
-
 void LineDrawingDialog::onLoadSavedLinesClicked()
 {
     if (!m_tcpCommunicator) {
         addLogMessage("TCP 통신이 설정되지 않음", "ERROR");
         CustomMessageBox msgBox(nullptr, "오류", "서버 연결이 설정되지 않음");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         return;
     }
@@ -1830,7 +1607,6 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
     if (!m_tcpCommunicator->isConnectedToServer()) {
         addLogMessage("서버에 연결되어 있지 않음", "ERROR");
         CustomMessageBox msgBox(nullptr, "오류", "서버에 연결되어 있지 않음");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         return;
     }
@@ -1863,7 +1639,6 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
     } else {
         addLogMessage("저장된 선 데이터 요청 실패", "ERROR");
         CustomMessageBox msgBox(nullptr, "오류", "저장된 선 데이터 요청 실패");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
     }
 }

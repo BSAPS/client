@@ -2,7 +2,6 @@
 #define TCPCOMMUNICATOR_H
 
 #include <QObject>
-// #include <QTcpSocket>
 #include <QTimer>
 #include <QJsonObject>
 #include <QJsonDocument>
@@ -95,17 +94,13 @@ public:
 
     // 메시지 전송
     bool sendJsonMessage(const QJsonObject &message);
-    bool sendMessage(const QString &message);
 
     // 데이터 전송 메서드들
-    bool sendLineCoordinates(int x1, int y1, int x2, int y2);
     bool sendDetectionLine(const DetectionLineData &lineData);
     bool sendMultipleDetectionLines(const QList<DetectionLineData> &detectionLines);
-    bool sendCategorizedLineCoordinates(const QList<CategorizedLineData> &roadLines, const QList<CategorizedLineData> &detectionLines);
 
     bool sendRoadLine(const RoadLineData &lineData);
     bool sendMultipleRoadLines(const QList<RoadLineData> &roadLines);
-    bool sendPerpendicularLine(const PerpendicularLineData &lineData);
     void requestImageData(const QString &date = QString(), int hour = -1);
 
     // 저장된 선 데이터 요청
@@ -147,7 +142,6 @@ private slots:
     void onError(QAbstractSocket::SocketError error);
 
     void onConnectionTimeout();
-    void attemptReconnection();
     void onSslEncrypted();
     void onSslErrors(const QList<QSslError> &errors);
 
@@ -161,9 +155,6 @@ private:
     // JSON 메시지 처리
     void processJsonMessage(const QJsonObject &jsonObj);
     void handleImagesResponse(const QJsonObject &jsonObj);
-    void handleCoordinatesResponse(const QJsonObject &jsonObj);
-    void handleDetectionLineResponse(const QJsonObject &jsonObj);
-    void handleCategorizedCoordinatesResponse(const QJsonObject &jsonObj);
     void handleStatusUpdate(const QJsonObject &jsonObj);
     void handleErrorResponse(const QJsonObject &jsonObj);
 
@@ -171,11 +162,9 @@ private:
     QString saveBase64Image(const QString &base64Data, const QString &timestamp);
 
     // 유틸리티 함수
-    QJsonObject createBaseMessage(const QString &type) const;
-    QString messageTypeToString(MessageType type) const;
-    MessageType stringToMessageType(const QString &typeStr) const;
+    // QString messageTypeToString(MessageType type) const;
+    // MessageType stringToMessageType(const QString &typeStr) const;
     void logJsonMessage(const QJsonObject &jsonObj, bool outgoing) const;
-    void setupSocket();
     void startReconnectTimer();
     void stopReconnectTimer();
 
@@ -200,14 +189,9 @@ private:
     int m_reconnectDelayMs;
 
     // private 섹션에 함수 선언 추가
-    void handleRoadLineResponse(const QJsonObject &jsonObj);
-    void handlePerpendicularLineResponse(const QJsonObject &jsonObj);
     void setupSslConfiguration();
 
     // 저장된 선 데이터 응답 처리 함수들
-    void handleSavedRoadLinesResponse(const QJsonObject &jsonObj);
-    void handleSavedDetectionLinesResponse(const QJsonObject &jsonObj);
-
     void handleDetectionLinesFromServer(const QJsonObject &jsonObj);
     void handleRoadLinesFromServer(const QJsonObject &jsonObj);
 

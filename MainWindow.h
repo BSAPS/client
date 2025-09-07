@@ -22,7 +22,6 @@
 #include "VideoStreamWidget.h"
 #include "TcpCommunicator.h"
 #include "ImageViewerDialog.h"
-#include "NetworkConfigDialog.h"
 #include "LineDrawingDialog.h"
 
 class CustomTitleBar;
@@ -60,18 +59,10 @@ public:
     // TCP 통신기 설정 메서드
     void setTcpCommunicator(TcpCommunicator* communicator);
 
-protected:
-    // void mousePressEvent(QMouseEvent *event) override;
-    // void mouseMoveEvent(QMouseEvent *event) override;
-    // void mouseReleaseEvent(QMouseEvent *event) override;
-
 private slots:
-    void onNetworkConfigClicked();
     void onVideoStreamClicked();
     void onDateChanged(const QDate &date);
     void onHourChanged(int hour);
-    void onDateButtonClicked();
-    void onCalendarDateSelected(const QDate &date);
     void onHourComboChanged(int index);
     void onStreamingButtonClicked();
     void onDrawButtonClicked();
@@ -83,7 +74,6 @@ private slots:
     void onTcpPacketReceived(int requestId, int success, const QString &data1, const QString &data2, const QString &data3);
     void onImagesReceived(const QList<ImageData> &images);
     void onImageClicked(const QString &imagePath, const QString &timestamp, const QString &logText);
-    void updateLogDisplay();
     void onRequestTimeout();
     void onStreamError(const QString &error);
     void onCoordinatesConfirmed(bool success, const QString &message);
@@ -100,8 +90,6 @@ private:
     void updateWarningButtonStyles();
     void clearImageGrid();
     void displayImages(const QList<ImageData> &images);
-    void sendMultipleLineCoordinates(const QList<QPair<QPoint, QPoint>> &lines);
-    void sendSingleLineCoordinates(int x1, int y1, int x2, int y2);
     void sendCategorizedCoordinates(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines);
 
 
@@ -124,8 +112,6 @@ private:
     QWidget *m_imageGridWidget;
     QGridLayout *m_imageGridLayout;
     QPushButton *m_dateButton;
-    QCalendarWidget *m_calendarWidget;
-    QDialog *m_calendarDialog;
     QComboBox *m_hourComboBox;
     QDateEdit *m_dateEdit;
     QSpinBox *m_hourSpinBox;
@@ -134,7 +120,6 @@ private:
 
     // 사이드바
     QComboBox *m_modeComboBox;
-    QPushButton *m_networkButton;
     QPushButton *m_closeButton;
 
     // 네트워크 설정
@@ -151,7 +136,6 @@ private:
 
     // 다이얼로그
     ImageViewerDialog *m_imageViewerDialog;
-    NetworkConfigDialog *m_networkDialog;
     LineDrawingDialog *m_lineDrawingDialog;
 
     // 상태 관리

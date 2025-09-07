@@ -2,16 +2,13 @@
 #define LOGINWINDOW_H
 
 #include <QDialog>
+#include <QObject>
 #include <QLabel>
 #include <QPushButton>
 #include <QLineEdit>
 #include <QStackedWidget>
 #include <QTimer>
 #include <QJsonObject>
-#include <QJsonDocument>
-#include <QJsonParseError>
-#include <QMessageBox>
-#include <QDebug>
 
 class QVBoxLayout;
 class CustomTitleBar;
@@ -37,9 +34,6 @@ public:
     // TCP 통신기 공유 메서드
     TcpCommunicator* getTcpCommunicator() const;
     void setTcpCommunicator(TcpCommunicator* communicator);
-
-signals:
-    void loginSuccessful();
 
 private slots:
     // UI 이벤트 핸들러
@@ -103,7 +97,6 @@ private:
     void handleLoginResponse(const QJsonObject &response);
     void handleSignUpResponse(const QJsonObject &response);
     void handleOtpLoginResponse(const QJsonObject &response);
-    void handleOtpSignUpResponse(const QJsonObject &response);
     void handleQrCodeResponse(const QJsonObject &response);
 
     // 유틸리티 메서드

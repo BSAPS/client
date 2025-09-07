@@ -1,16 +1,7 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="icons/NetworkConnect.png">icons/NetworkConnect.png</file>
-        <file>images/Login.png</file>
-        <file>images/Login_fin.png</file>
-        <file>images/OTP Login.png</file>
-        <file>images/OTP SignUp.png</file>
-        <file>images/SignUp.png</file>
         <file>images/SIGNUP_.png</file>
-        <file>images/SignUp_fin.png</file>
         <file>images/Background3.png</file>
-        <file>icons/file-import.png</file>
-        <file>icons/import-file.png</file>
         <file>icons/cil_pen.png</file>
         <file>icons/cil_pen_clicked.png</file>
         <file>icons/eraser.png</file>
@@ -20,18 +11,12 @@
         <file>icons/squares.png</file>
         <file>font/05HanwhaGothicR.ttf</file>
         <file>icons/draw.png</file>
-        <file>icons/play.png</file>
-        <file>icons/play1.png</file>
         <file>icons/up_down.png</file>
         <file>icons/download.png</file>
-        <file>icons/exit.png</file>
         <file>icons/squares_clicked.png</file>
-        <file>icons/left.png</file>
-        <file>icons/right.png</file>
-        <file>icons/close.png</file>
         <file>icons/CCTV.png</file>
-        <file>icons/play.svg</file>
         <file>ca-cert.crt</file>
         <file>docs/index.html</file>
+        <file>icons/play.svg</file>
     </qresource>
 </RCC>

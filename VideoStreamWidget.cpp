@@ -48,7 +48,7 @@ void VideoStreamWidget::setupUI()
     statusLayout->setContentsMargins(10, 4, 10, 4);
     statusLayout->setSpacing(10);
 
-    // LIVE Indicator
+    // LIVE Indicator 고치기
     m_liveIndicator = new QLabel("●");
     m_liveIndicator->setStyleSheet("color: red; font-size: 14px; font-weight: bold;");
     m_liveIndicator->setVisible(false);
@@ -212,7 +212,6 @@ void VideoStreamWidget::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
         m_liveBlinkTimer->start();
         m_reconnectAttempts = 0;
         CustomMessageBox msgBox(nullptr, "RTSP 연결", "RTSP 연결에 성공했습니다!");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         break;
     }
@@ -299,7 +298,6 @@ void VideoStreamWidget::onErrorOccurred(QMediaPlayer::Error error, const QString
     showConnectionStatus("에러 발생", "#f44336");
     emit streamError(errorMsg);
     CustomMessageBox msgBox(nullptr, "RTSP 연결 실패", errorMsg);
-    msgBox.setFixedSize(300,150);
     msgBox.exec();
 
     if (m_isStreaming) {

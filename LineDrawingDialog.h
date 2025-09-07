@@ -20,7 +20,6 @@
 #include <QPair>
 #include <QTextEdit>
 #include <QTime>
-#include <QResizeEvent>
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QGraphicsVideoItem>
@@ -71,7 +70,6 @@ public:
     QGraphicsVideoItem* getVideoItem() { return m_videoItem; }
     void setCurrentCategory(LineCategory category);
     QList<CategorizedLine> getCategorizedLines() const;
-    void clearCategoryLines(LineCategory category);
     int getCategoryLineCount(LineCategory category) const;
     void clearHighlight();
 
@@ -98,8 +96,6 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) override;
 
 private:
-    void redrawAllLines();
-    QGraphicsLineItem* findClickedRoadLine(const QPointF &clickPos);
     void highlightRoadLine(int lineIndex);
     void highlightCoordinate(int lineIndex, bool isStartPoint);
 
@@ -136,9 +132,7 @@ public:
     void setTcpCommunicator(TcpCommunicator* communicator);
 
 signals:
-    void lineCoordinatesReady(int x1, int y1, int x2, int y2);
     void categorizedLinesReady(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines);
-    void perpendicularLineGenerated(int detectionLineIndex, double a, double b);
 
 private slots:
     void onStartDrawingClicked();
@@ -151,7 +145,6 @@ private slots:
     void onPlayerError(QMediaPlayer::Error error, const QString &errorString);
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
     void onCategoryChanged();
-    void onClearCategoryClicked();
     void updateCategoryInfo();
     void onCoordinateClicked(int lineIndex, const QPoint &coordinate, bool isStartPoint);
     void onLoadSavedLinesClicked();
@@ -164,9 +157,6 @@ private slots:
     void onBBoxesReceived(const QList<BBox> &bboxes, qint64 timestamp);
     void onBBoxOnClicked();
     void onBBoxOffClicked();
-
-protected:
-    void resizeEvent(QResizeEvent *event) override;
 
 private:
     // 좌표별 Matrix 매핑 저장
@@ -202,8 +192,6 @@ private:
     QString m_rtspUrl;
     QList<QPair<QPoint, QPoint>> m_drawnLines;
     bool m_isDrawingMode;
-    // QTimer *m_frameTimer;
-    // int m_frameCount;
 
     // 카테고리 선택 UI
     QWidget *m_categoryWidget;
@@ -237,8 +225,6 @@ private:
     void updateMappingInfo();
     void addCoordinateMapping(int lineIndex, const QPoint &coordinate, bool isStartPoint, int matrixNum);
     void clearCoordinateMappings();
-    PerpendicularLineData calculatePerpendicularLine(const QPoint &start, const QPoint &end, int detectionLineIndex);
-    void generatePerpendicularLine(const CategorizedLine &detectionLine, int index);
     QList<RoadLineData> getCoordinateMappingsAsRoadLines() const;
 
     void setupUI();

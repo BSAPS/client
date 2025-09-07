@@ -1,9 +1,11 @@
 #include "MainWindow.h"
 #include "LineDrawingDialog.h"
-#include "NetworkConfigDialog.h"
 #include "EnvConfig.h"
 #include "custommessagebox.h"
 #include "customtitlebar.h"
+#include "ImageViewerDialog.h"
+#include "VideoStreamWidget.h"
+
 #include <QApplication>
 #include <QStackedLayout>
 #include <QMessageBox>
@@ -58,7 +60,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_dateEdit(nullptr)
     , m_hourSpinBox(nullptr)
     , m_requestButton(nullptr)
-    , m_networkButton(nullptr)
     , m_rtspUrl("")  // 빈 문자열로 초기화
     , m_tcpHost("")  // 빈 문자열로 초기화
     , m_tcpPort(0)   // 0으로 초기화
@@ -68,7 +69,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_updateTimer(nullptr)
     , m_requestTimeoutTimer(nullptr)
     , m_imageViewerDialog(nullptr)
-    , m_networkDialog(nullptr)
     , m_lineDrawingDialog(nullptr)
 {
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint); // 기존 플래그에 추가
@@ -314,11 +314,6 @@ void MainWindow::onDrawButtonClicked()
 
     if (!m_lineDrawingDialog) {
         m_lineDrawingDialog = new LineDrawingDialog(m_rtspUrl, m_tcpCommunicator, this);
-
-        connect(m_lineDrawingDialog, &LineDrawingDialog::lineCoordinatesReady,
-                this, [this](int x1, int y1, int x2, int y2) {
-                    this->sendSingleLineCoordinates(x1, y1, x2, y2);
-                });
 
         connect(m_lineDrawingDialog, &LineDrawingDialog::categorizedLinesReady,
                 this, [this](const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines) {
@@ -612,12 +607,6 @@ void MainWindow::onVideoStreamClicked()
         m_lineDrawingDialog = new LineDrawingDialog(m_rtspUrl, m_tcpCommunicator, this);
         m_lineDrawingDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
 
-        // 기존 시그널 연결
-        connect(m_lineDrawingDialog, &LineDrawingDialog::lineCoordinatesReady,
-                this, [this](int x1, int y1, int x2, int y2) {
-                    this->sendSingleLineCoordinates(x1, y1, x2, y2);
-                });
-
         // 새로운 카테고리별 좌표 시그널 연결 추가
         connect(m_lineDrawingDialog, &LineDrawingDialog::categorizedLinesReady,
                 this, [this](const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines) {
@@ -626,41 +615,6 @@ void MainWindow::onVideoStreamClicked()
     }
 
     m_lineDrawingDialog->exec();
-}
-
-void MainWindow::sendMultipleLineCoordinates(const QList<QPair<QPoint, QPoint>> &lines)
-{
-    if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
-        for (int i = 0; i < lines.size(); ++i) {
-            const auto &line = lines[i];
-            m_tcpCommunicator->sendLineCoordinates(line.first.x(), line.first.y(), line.second.x(), line.second.y());
-            qDebug() << QString("기준선 %1 좌표 전송 성공:").arg(i + 1) << line.first << "to" << line.second;
-        }
-
-        CustomMessageBox msgBox(nullptr, "전송 완료",
-                                QString("%1개의 기준선 좌표가 서버로 전송되었습니다.").arg(lines.size()));
-
-        msgBox.exec();
-    } else {
-        qDebug() << "TCP 연결이 없어 좌표 전송 실패";
-        CustomMessageBox msgBox(nullptr, "전송 실패", "서버에 연결되어 있지 않습니다.");
-
-        msgBox.exec();
-    }
-}
-
-void MainWindow::sendSingleLineCoordinates(int x1, int y1, int x2, int y2)
-{
-    if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
-        m_tcpCommunicator->sendLineCoordinates(x1, y1, x2, y2);
-        qDebug() << "기준선 좌표 전송 성공:" << x1 << y1 << x2 << y2;
-
-    } else {
-        qDebug() << "TCP 연결이 없어 좌표 전송 실패";
-        CustomMessageBox msgBox(nullptr, "전송 실패", "서버에 연결되어 있지 않습니다.");
-
-        msgBox.exec();
-    }
 }
 
 void MainWindow::onDateChanged(const QDate &date)

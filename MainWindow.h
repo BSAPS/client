@@ -22,7 +22,6 @@
 #include "VideoStreamWidget.h"
 #include "TcpCommunicator.h"
 #include "ImageViewerDialog.h"
-#include "NetworkConfigDialog.h"
 #include "LineDrawingDialog.h"
 
 class CustomTitleBar;
@@ -91,8 +90,6 @@ private:
     void updateWarningButtonStyles();
     void clearImageGrid();
     void displayImages(const QList<ImageData> &images);
-    void sendMultipleLineCoordinates(const QList<QPair<QPoint, QPoint>> &lines);
-    void sendSingleLineCoordinates(int x1, int y1, int x2, int y2);
     void sendCategorizedCoordinates(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines);
 
 
@@ -123,7 +120,6 @@ private:
 
     // 사이드바
     QComboBox *m_modeComboBox;
-    QPushButton *m_networkButton;
     QPushButton *m_closeButton;
 
     // 네트워크 설정
@@ -140,7 +136,6 @@ private:
 
     // 다이얼로그
     ImageViewerDialog *m_imageViewerDialog;
-    NetworkConfigDialog *m_networkDialog;
     LineDrawingDialog *m_lineDrawingDialog;
 
     // 상태 관리

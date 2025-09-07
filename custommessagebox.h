@@ -15,11 +15,6 @@ class CustomMessageBox : public QDialog {
 public:
     explicit CustomMessageBox(QWidget *parent = nullptr, const QString &title = "", const QString &message = "");
 
-
-    // 다이얼로그의 너비와 높이를 설정하는 함수 추가
-    void setFixedSize(int width, int height);
-    void setFixedSize(const QSize &size);
-
 protected:
     // 창 이동을 위한 마우스 이벤트
     void mousePressEvent(QMouseEvent *event) override;

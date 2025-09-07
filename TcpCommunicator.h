@@ -162,8 +162,8 @@ private:
     QString saveBase64Image(const QString &base64Data, const QString &timestamp);
 
     // 유틸리티 함수
-    QString messageTypeToString(MessageType type) const;
-    MessageType stringToMessageType(const QString &typeStr) const;
+    // QString messageTypeToString(MessageType type) const;
+    // MessageType stringToMessageType(const QString &typeStr) const;
     void logJsonMessage(const QJsonObject &jsonObj, bool outgoing) const;
     void startReconnectTimer();
     void stopReconnectTimer();

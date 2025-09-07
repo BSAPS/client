@@ -895,7 +895,6 @@ void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordin
                                     .arg(matrixNum)
                                     .arg(coordinate.x())
                                     .arg(coordinate.y()));
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
     } else {
         addLogMessage("Matrix 선택 취소됨", "INFO");
@@ -1336,7 +1335,6 @@ void LineDrawingDialog::onSendCoordinatesClicked()
     if (allLines.isEmpty()) {
         addLogMessage("전송할 선 없음", "WARNING");
         CustomMessageBox msgBox(nullptr, "알림", "전송할 선 없음. 먼저 선을 그려주세요.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         return;
     }
@@ -1602,7 +1600,6 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
     if (!m_tcpCommunicator) {
         addLogMessage("TCP 통신이 설정되지 않음", "ERROR");
         CustomMessageBox msgBox(nullptr, "오류", "서버 연결이 설정되지 않음");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         return;
     }
@@ -1610,7 +1607,6 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
     if (!m_tcpCommunicator->isConnectedToServer()) {
         addLogMessage("서버에 연결되어 있지 않음", "ERROR");
         CustomMessageBox msgBox(nullptr, "오류", "서버에 연결되어 있지 않음");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         return;
     }
@@ -1643,7 +1639,6 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
     } else {
         addLogMessage("저장된 선 데이터 요청 실패", "ERROR");
         CustomMessageBox msgBox(nullptr, "오류", "저장된 선 데이터 요청 실패");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
     }
 }

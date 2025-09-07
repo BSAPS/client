@@ -833,29 +833,29 @@ void TcpCommunicator::handleImagesResponse(const QJsonObject &jsonObj)
     emit statusUpdated(QString("Loaded %1 images.").arg(images.size()));
 }
 
-QString TcpCommunicator::messageTypeToString(MessageType type) const
-{
-    switch (type) {
-    case MessageType::REQUEST_IMAGES: return "request_images";
-    case MessageType::IMAGES_RESPONSE: return "images_response";
-    case MessageType::SEND_COORDINATES: return "send_coordinates";
-    case MessageType::COORDINATES_RESPONSE: return "coordinates_response";
-    case MessageType::STATUS_UPDATE: return "status_update";
-    case MessageType::ERROR_RESPONSE: return "error_response";
-    default: return "unknown";
-    }
-}
+// QString TcpCommunicator::messageTypeToString(MessageType type) const
+// {
+//     switch (type) {
+//     case MessageType::REQUEST_IMAGES: return "request_images";
+//     case MessageType::IMAGES_RESPONSE: return "images_response";
+//     case MessageType::SEND_COORDINATES: return "send_coordinates";
+//     case MessageType::COORDINATES_RESPONSE: return "coordinates_response";
+//     case MessageType::STATUS_UPDATE: return "status_update";
+//     case MessageType::ERROR_RESPONSE: return "error_response";
+//     default: return "unknown";
+//     }
+// }
 
-MessageType TcpCommunicator::stringToMessageType(const QString &typeStr) const
-{
-    if (typeStr == "request_images") return MessageType::REQUEST_IMAGES;
-    if (typeStr == "images_response") return MessageType::IMAGES_RESPONSE;
-    if (typeStr == "send_coordinates") return MessageType::SEND_COORDINATES;
-    if (typeStr == "coordinates_response") return MessageType::COORDINATES_RESPONSE;
-    if (typeStr == "status_update") return MessageType::STATUS_UPDATE;
-    if (typeStr == "error_response") return MessageType::ERROR_RESPONSE;
-    return MessageType::ERROR_RESPONSE; // Default
-}
+// MessageType TcpCommunicator::stringToMessageType(const QString &typeStr) const
+// {
+//     if (typeStr == "request_images") return MessageType::REQUEST_IMAGES;
+//     if (typeStr == "images_response") return MessageType::IMAGES_RESPONSE;
+//     if (typeStr == "send_coordinates") return MessageType::SEND_COORDINATES;
+//     if (typeStr == "coordinates_response") return MessageType::COORDINATES_RESPONSE;
+//     if (typeStr == "status_update") return MessageType::STATUS_UPDATE;
+//     if (typeStr == "error_response") return MessageType::ERROR_RESPONSE;
+//     return MessageType::ERROR_RESPONSE; // Default
+// }
 
 void TcpCommunicator::logJsonMessage(const QJsonObject &jsonObj, bool outgoing) const
 {

@@ -28,7 +28,6 @@ int main(int argc, char *argv[])
     // 이미 서버가 실행 중인지 먼저 확인
     if (socket.waitForConnected(500)) {
         CustomMessageBox msgBox(nullptr, "연결 오류", "프로그램이 이미 실행 중입니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         return 0; // 즉시 종료
     }
@@ -42,7 +41,6 @@ int main(int argc, char *argv[])
     if (!localServer.listen(serverName)) {
         // 서버를 시작하지 못했다면 (다른 인스턴스 존재)
         CustomMessageBox msgBox(nullptr, "연결 오류", "프로그램이 이미 실행 중입니다.");
-        msgBox.setFixedSize(300,150);
         msgBox.exec();
         return 0;
     }

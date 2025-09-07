@@ -3,7 +3,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QScreen>
-#include <QApplication> // main 함수가 다른 곳에 있다면 필요 없을 수 있습니다.
+// #include <QApplication> // main 함수가 다른 곳에 있다면 필요 없을 수 있습니다.
 #include <QGraphicsDropShadowEffect>
 #include <QMouseEvent>
 
@@ -105,17 +105,5 @@ void CustomMessageBox::mouseReleaseEvent(QMouseEvent *event)
 {
     Q_UNUSED(event);
     m_dragging = false;
-}
-
-
-
-//--- 너비와 높이를 정수 값으로 설정하는 함수
-void CustomMessageBox::setFixedSize(int width, int height) {
-   // QDialog::setFixedSize(width, height);
-}
-
-//--- QSize 객체로 너비와 높이를 설정하는 함수
-void CustomMessageBox::setFixedSize(const QSize &size) {
-    //QDialog::setFixedSize(size);
 }
 

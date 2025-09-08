@@ -1,9 +1,8 @@
-#include "custommessagebox.h" // 헤더 파일 포함
+#include "CustomMessageBox.h" // 헤더 파일 포함
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QScreen>
-// #include <QApplication> // main 함수가 다른 곳에 있다면 필요 없을 수 있습니다.
 #include <QGraphicsDropShadowEffect>
 #include <QMouseEvent>
 

@@ -1,5 +1,5 @@
 #include "ImageViewerDialog.h"
-#include "customtitlebar.h"
+#include "CustomTitleBar.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QScrollArea>

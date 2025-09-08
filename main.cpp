@@ -8,7 +8,7 @@
 #include "LoginWindow.h"
 #include "MainWindow.h"
 #include "TcpCommunicator.h"
-#include "custommessagebox.h"
+#include "CustomMessageBox.h"
 
 int main(int argc, char *argv[])
 {

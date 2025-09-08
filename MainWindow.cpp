@@ -1,8 +1,8 @@
 #include "MainWindow.h"
 #include "LineDrawingDialog.h"
 #include "EnvConfig.h"
-#include "custommessagebox.h"
-#include "customtitlebar.h"
+#include "CustomMessageBox.h"
+#include "CustomTitleBar.h"
 #include "ImageViewerDialog.h"
 #include "VideoStreamWidget.h"
 

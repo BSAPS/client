@@ -3,8 +3,8 @@
 #include "MainWindow.h"
 #include "TcpCommunicator.h"
 #include "EnvConfig.h"
-#include "customtitlebar.h"
-#include "custommessagebox.h"
+#include "CustomTitleBar.h"
+#include "CustomMessageBox.h"
 
 #include <QApplication>
 #include <QDebug>

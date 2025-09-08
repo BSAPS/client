@@ -1,6 +1,6 @@
 #include "LineDrawingDialog.h"
-#include "custommessagebox.h"
-#include "customtitlebar.h"
+#include "CustomMessageBox.h"
+#include "CustomTitleBar.h"
 #include <QApplication>
 #include <QMessageBox>
 #include <QDebug>

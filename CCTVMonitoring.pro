@@ -10,6 +10,7 @@ SOURCES += \
     LoginWindow.cpp \
     CustomMessageBox.cpp \
     CustomTitleBar.cpp \
+    VideoGraphicsView.cpp \
     main.cpp \
     MainWindow.cpp \
     VideoStreamWidget.cpp \
@@ -22,6 +23,7 @@ SOURCES += \
 HEADERS += \
     LoginWindow.h \
     MainWindow.h \
+    VideoGraphicsView.h \
     VideoStreamWidget.h \
     TcpCommunicator.h \
     ImageViewerDialog.h \

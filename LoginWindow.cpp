@@ -20,8 +20,6 @@
 #include <QPainter>
 #include <QLabel>
 
-
-
 LoginWindow::LoginWindow(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui_LoginWindow)

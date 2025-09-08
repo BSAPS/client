@@ -1,4 +1,5 @@
-#include "CustomMessageBox.h" // 헤더 파일 포함
+#include "CustomMessageBox.h"
+
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>

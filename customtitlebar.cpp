@@ -1,4 +1,5 @@
 #include "CustomTitleBar.h"
+
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>

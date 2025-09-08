@@ -1,3 +1,8 @@
+#include "LoginWindow.h"
+#include "MainWindow.h"
+#include "TcpCommunicator.h"
+#include "CustomMessageBox.h"
+
 #include <QApplication>
 #include <QLocalServer>
 #include <QLocalSocket>
@@ -5,10 +10,6 @@
 #include <QDir>
 #include <QDebug>
 #include <QFontDatabase>
-#include "LoginWindow.h"
-#include "MainWindow.h"
-#include "TcpCommunicator.h"
-#include "CustomMessageBox.h"
 
 int main(int argc, char *argv[])
 {

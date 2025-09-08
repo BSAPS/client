@@ -1,4 +1,6 @@
 #include "TcpCommunicator.h"
+#include "LineDrawingDialog.h"
+
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -6,8 +8,6 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFileInfo>
-
-#include "LineDrawingDialog.h"
 
 TcpCommunicator::TcpCommunicator(QObject *parent)
     : QObject(parent)

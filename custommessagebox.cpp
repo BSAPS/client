@@ -7,6 +7,15 @@
 #include <QGraphicsDropShadowEffect>
 #include <QMouseEvent>
 
+
+/**
+ * @brief CustomMessageBox 생성자
+ * @details 사용자 지정 메시지 박스를 생성합니다.
+ * @param parent 부모 위젯
+ * @param title 메시지 박스 타이틀
+ * @param message 표시할 메시지
+ */
+
 CustomMessageBox::CustomMessageBox(QWidget *parent, const QString &title, const QString &message)
     : QDialog(parent), m_dragging(false)
 {
@@ -85,6 +94,11 @@ CustomMessageBox::CustomMessageBox(QWidget *parent, const QString &title, const 
 
 }
 
+/**
+ * @brief 마우스 클릭 이벤트 처리
+ * @details 창 이동을 위한 드래그 시작 위치를 저장합니다.
+ * @param event 마우스 이벤트
+ */
 
 void CustomMessageBox::mousePressEvent(QMouseEvent *event)
 {
@@ -93,6 +107,11 @@ void CustomMessageBox::mousePressEvent(QMouseEvent *event)
         m_dragPos = event->globalPosition().toPoint() - frameGeometry().topLeft();
     }
 }
+/**
+ * @brief 마우스 이동 이벤트 처리
+ * @details 창을 드래그하여 이동합니다.
+ * @param event 마우스 이벤트
+ */
 
 void CustomMessageBox::mouseMoveEvent(QMouseEvent *event)
 {
@@ -100,6 +119,11 @@ void CustomMessageBox::mouseMoveEvent(QMouseEvent *event)
         move(event->globalPosition().toPoint() - m_dragPos);
     }
 }
+/**
+ * @brief 마우스 릴리즈 이벤트 처리
+ * @details 드래그 상태를 해제합니다.
+ * @param event 마우스 이벤트
+ */
 
 void CustomMessageBox::mouseReleaseEvent(QMouseEvent *event)
 {

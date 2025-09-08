@@ -8,6 +8,11 @@
 #include <QScreen>
 #include <QKeyEvent>
 
+/**
+ * @brief ImageViewerDialog 생성자
+ * @details 이미지 뷰어 다이얼로그를 생성하고 UI를 초기화합니다.
+ * @param parent 부모 위젯
+ */
 ImageViewerDialog::ImageViewerDialog(QWidget *parent)
     : QDialog(parent)
     , m_imageLabel(nullptr)
@@ -31,6 +36,10 @@ ImageViewerDialog::ImageViewerDialog(QWidget *parent)
          (screenGeometry.height() - height) / 2);
 }
 
+/**
+ * @brief UI 설정 함수
+ * @details 이미지 뷰어의 UI 요소들을 초기화합니다.
+ */
 void ImageViewerDialog::setupUI()
 {
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -90,6 +99,13 @@ void ImageViewerDialog::setupUI()
     setLayout(mainLayout);
 }
 
+/**
+ * @brief 이미지 및 로그 정보 설정
+ * @details 이미지와 로그 정보를 UI에 표시하고 창 크기를 동적으로 조정합니다.
+ * @param pixmap 이미지
+ * @param timestamp 촬영 시간
+ * @param logText 로그 텍스트
+ */
 void ImageViewerDialog::setImage(const QPixmap &pixmap, const QString &timestamp, const QString &logText)
 {
     if (!pixmap.isNull()) {

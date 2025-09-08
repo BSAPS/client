@@ -1,10 +1,7 @@
 #include "MainWindow.h"
-// #include "LineDrawingDialog.h"
 #include "EnvConfig.h"
 #include "CustomMessageBox.h"
 #include "CustomTitleBar.h"
-// #include "ImageViewerDialog.h"
-// #include "VideoStreamWidget.h"
 
 #include <QApplication>
 #include <QStackedLayout>
@@ -22,6 +19,11 @@
 #include <QDialog>
 
 // ClickableImageLabel 구현
+/**
+ * @brief ClickableImageLabel 생성자
+ * @param parent 부모 위젯
+ * @details 클릭 가능한 이미지 라벨을 생성합니다.
+ */
 ClickableImageLabel::ClickableImageLabel(QWidget *parent)
     : QLabel(parent)
 {
@@ -29,6 +31,13 @@ ClickableImageLabel::ClickableImageLabel(QWidget *parent)
     setStyleSheet("border: 2px solid #ddd; border-radius: 8px; padding: 5px; background-color: white;");
 }
 
+/**
+ * @brief 이미지 데이터 설정
+ * @param imagePath 이미지 경로
+ * @param timestamp 타임스탬프
+ * @param logText 로그 텍스트
+ * @details 이미지와 관련된 데이터를 설정합니다.
+ */
 void ClickableImageLabel::setImageData(const QString &imagePath, const QString &timestamp, const QString &logText)
 {
     m_imagePath = imagePath;
@@ -36,6 +45,11 @@ void ClickableImageLabel::setImageData(const QString &imagePath, const QString &
     m_logText = logText;
 }
 
+/**
+ * @brief 마우스 클릭 이벤트 처리
+ * @param event 마우스 이벤트
+ * @details 마우스 클릭 시 clicked 시그널을 발생시킵니다.
+ */
 void ClickableImageLabel::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
@@ -45,6 +59,11 @@ void ClickableImageLabel::mousePressEvent(QMouseEvent *event)
 }
 
 // MainWindow 구현
+/**
+ * @brief MainWindow 생성자
+ * @param parent 부모 위젯
+ * @details 메인 윈도우를 초기화하고 UI 및 네트워크를 설정합니다.
+ */
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_centralWidget(nullptr)
@@ -110,6 +129,10 @@ MainWindow::MainWindow(QWidget *parent)
          (screenGeometry.height() - fixedHeight) / 2);
 }
 
+/**
+ * @brief MainWindow 소멸자
+ * @details 타이머 등 리소스를 정리합니다.
+ */
 MainWindow::~MainWindow()
 {
     if (m_updateTimer) {
@@ -121,6 +144,11 @@ MainWindow::~MainWindow()
 }
 
 // TCP 통신기 설정 메서드
+/**
+ * @brief TCP 통신기 설정
+ * @param communicator TCP 통신 객체
+ * @details 기존 연결 해제 후 새 통신기와 시그널 연결
+ */
 void MainWindow::setTcpCommunicator(TcpCommunicator* communicator)
 {
     // 기존 연결 해제
@@ -162,6 +190,10 @@ void MainWindow::setTcpCommunicator(TcpCommunicator* communicator)
     }
 }
 
+/**
+ * @brief UI 설정
+ * @details 메인 레이아웃, 탭, 타이틀바 등 UI를 구성합니다.
+ */
 void MainWindow::setupUI()
 {
     m_centralWidget = new QWidget(this);
@@ -206,6 +238,10 @@ void MainWindow::setupUI()
     setLayout(mainLayout);
 }
 
+/**
+ * @brief 라이브 비디오 탭 설정
+ * @details 비디오 스트림 및 오버레이 버튼 UI를 구성합니다.
+ */
 void MainWindow::setupLiveVideoTab()
 {
 
@@ -288,6 +324,10 @@ void MainWindow::setupLiveVideoTab()
     m_tabWidget->addTab(m_liveVideoTab, "Live Video Stream");
 }
 
+/**
+ * @brief 드로우 버튼 클릭 슬롯
+ * @details 스트리밍 중일 때 라인 드로잉 다이얼로그를 실행합니다.
+ */
 void MainWindow::onDrawButtonClicked()
 {
     if (!m_videoStreamWidget->isStreaming()) {
@@ -309,6 +349,10 @@ void MainWindow::onDrawButtonClicked()
     m_lineDrawingDialog->exec();
 }
 
+/**
+ * @brief 캡처 이미지 탭 설정
+ * @details 날짜/시간 선택, 이미지 그리드 UI를 구성합니다.
+ */
 void MainWindow::setupCapturedImageTab()
 {
     m_capturedImageTab = new QWidget();
@@ -452,6 +496,10 @@ void MainWindow::setupCapturedImageTab()
 
 
 
+/**
+ * @brief 네트워크 연결 설정
+ * @details 네트워크 매니저, 타이머, 시그널 연결을 설정합니다.
+ */
 void MainWindow::setupNetworkConnection()
 {
     m_networkManager = new QNetworkAccessManager(this);
@@ -481,12 +529,20 @@ void MainWindow::setupNetworkConnection()
 
 }
 
+/**
+ * @brief 스타일 적용
+ * @details 메인 윈도우 스타일을 지정합니다.
+ */
 void MainWindow::applyStyles()
 {
     setStyleSheet("QMainWindow { background-color: #292d41; }");
 }
 
 
+/**
+ * @brief 이미지 그리드 초기화
+ * @details 이미지 그리드의 모든 위젯을 제거합니다.
+ */
 void MainWindow::clearImageGrid()
 {
     QLayoutItem *item;
@@ -496,6 +552,11 @@ void MainWindow::clearImageGrid()
     }
 }
 
+/**
+ * @brief 이미지 표시
+ * @param images 이미지 리스트
+ * @details 이미지 리스트를 그리드에 표시합니다.
+ */
 void MainWindow::displayImages(const QList<ImageData> &images)
 {
     clearImageGrid();
@@ -562,6 +623,10 @@ void MainWindow::displayImages(const QList<ImageData> &images)
     m_imageGridWidget->adjustSize();
 }
 
+/**
+ * @brief 비디오 스트림 클릭 슬롯
+ * @details 스트리밍 중일 때 라인 드로잉 다이얼로그를 실행합니다.
+ */
 void MainWindow::onVideoStreamClicked()
 {
     if (!m_videoStreamWidget->isStreaming()) {
@@ -586,11 +651,19 @@ void MainWindow::onVideoStreamClicked()
     m_lineDrawingDialog->exec();
 }
 
+/**
+ * @brief 날짜 변경 슬롯
+ * @param date 변경된 날짜
+ */
 void MainWindow::onDateChanged(const QDate &date)
 {
     qDebug() << "날짜 변경:" << date.toString("yyyy-MM-dd");
 }
 
+/**
+ * @brief 시간 변경 슬롯
+ * @param hour 변경된 시간
+ */
 void MainWindow::onHourChanged(int hour)
 {
     if (m_hourSpinBox) {
@@ -599,12 +672,20 @@ void MainWindow::onHourChanged(int hour)
     qDebug() << "시간 변경:" << QString("%1시~%2시").arg(hour).arg(hour + 1);
 }
 
+/**
+ * @brief 시간 콤보박스 변경 슬롯
+ * @param index 인덱스
+ */
 void MainWindow::onHourComboChanged(int index)
 {
     int selectedHour = m_hourComboBox->itemData(index).toInt();
     qDebug() << "시간 변경:" << QString("%1시~%2시").arg(selectedHour).arg(selectedHour + 1);
 }
 
+/**
+ * @brief 스트리밍 버튼 클릭 슬롯
+ * @details 스트리밍 시작/정지 동작을 수행합니다.
+ */
 void MainWindow::onStreamingButtonClicked()
 {
     if (m_videoStreamWidget) {
@@ -623,6 +704,10 @@ void MainWindow::onStreamingButtonClicked()
     }
 }
 
+/**
+ * @brief 이미지 요청 버튼 클릭 슬롯
+ * @details 서버에 이미지 요청을 보냅니다.
+ */
 void MainWindow::onRequestImagesClicked()
 {
     if (!m_tcpCommunicator || !m_tcpCommunicator->isConnectedToServer()) {
@@ -641,6 +726,10 @@ void MainWindow::onRequestImagesClicked()
     qDebug() << QString("JSON 이미지 요청: %1, %2시~%3시").arg(dateString).arg(selectedHour).arg(selectedHour + 1);
 }
 
+/**
+ * @brief TCP 연결 성공 슬롯
+ * @details UI를 업데이트하고 안내 메시지를 표시합니다.
+ */
 void MainWindow::onTcpConnected()
 {
     m_isConnected = true;
@@ -656,6 +745,10 @@ void MainWindow::onTcpConnected()
     msgBox.exec();
 }
 
+/**
+ * @brief TCP 연결 해제 슬롯
+ * @details UI를 업데이트합니다.
+ */
 void MainWindow::onTcpDisconnected()
 {
     m_isConnected = false;
@@ -666,6 +759,11 @@ void MainWindow::onTcpDisconnected()
     }
 }
 
+/**
+ * @brief TCP 에러 슬롯
+ * @param error 에러 메시지
+ * @details 에러 메시지를 표시하고 UI를 업데이트합니다.
+ */
 void MainWindow::onTcpError(const QString &error)
 {
     qDebug() << "TCP 에러:" << error;
@@ -680,16 +778,33 @@ void MainWindow::onTcpError(const QString &error)
     msgBox.exec();
 }
 
+/**
+ * @brief TCP 데이터 수신 슬롯
+ * @param data 수신 데이터
+ */
 void MainWindow::onTcpDataReceived(const QString &data)
 {
     qDebug() << "TCP 데이터 수신:" << data;
 }
 
+/**
+ * @brief TCP 패킷 수신 슬롯
+ * @param requestId 요청 ID
+ * @param success 성공 여부
+ * @param data1 데이터1
+ * @param data2 데이터2
+ * @param data3 데이터3
+ */
 void MainWindow::onTcpPacketReceived(int requestId, int success, const QString &/*data1*/, const QString &/*data2*/, const QString &/*data3*/)
 {
     qDebug() << QString("TCP 패킷 수신 - ID: %1, 성공: %2").arg(requestId).arg(success);
 }
 
+/**
+ * @brief 이미지 리스트 수신 슬롯
+ * @param images 이미지 리스트
+ * @details 이미지 리스트를 UI에 표시합니다.
+ */
 void MainWindow::onImagesReceived(const QList<ImageData> &images)
 {
     qDebug() << QString("이미지 리스트 수신: %1개").arg(images.size());
@@ -703,6 +818,13 @@ void MainWindow::onImagesReceived(const QList<ImageData> &images)
     m_requestButton->setEnabled(true);
 }
 
+/**
+ * @brief 이미지 클릭 슬롯
+ * @param imagePath 이미지 경로
+ * @param timestamp 타임스탬프
+ * @param logText 로그 텍스트
+ * @details 이미지 뷰어 다이얼로그를 실행합니다.
+ */
 void MainWindow::onImageClicked(const QString &imagePath, const QString &timestamp, const QString &logText)
 {
 
@@ -717,6 +839,10 @@ void MainWindow::onImageClicked(const QString &imagePath, const QString &timesta
     }
 }
 
+/**
+ * @brief 이미지 요청 타임아웃 슬롯
+ * @details 타임아웃 안내 메시지를 표시합니다.
+ */
 void MainWindow::onRequestTimeout()
 {
     qDebug() << "이미지 요청 타임아웃 (60초)";
@@ -731,6 +857,11 @@ void MainWindow::onRequestTimeout()
     msgBox.exec();
 }
 
+/**
+ * @brief 스트림 에러 슬롯
+ * @param error 에러 메시지
+ * @details 스트림 에러 안내 메시지를 표시합니다.
+ */
 void MainWindow::onStreamError(const QString &error)
 {
     qDebug() << "스트림 오류:" << error;
@@ -739,6 +870,12 @@ void MainWindow::onStreamError(const QString &error)
     msgBox.exec();
 }
 
+/**
+ * @brief 좌표 전송 확인 슬롯
+ * @param success 성공 여부
+ * @param message 메시지
+ * @details 좌표 전송 결과를 안내합니다.
+ */
 void MainWindow::onCoordinatesConfirmed(bool success, const QString &message)
 {
     qDebug() << "좌표 전송 확인 - 성공:" << success << "메시지:" << message;
@@ -754,6 +891,10 @@ void MainWindow::onCoordinatesConfirmed(bool success, const QString &message)
     }
 }
 
+/**
+ * @brief 상태 업데이트 슬롯
+ * @param status 상태 메시지
+ */
 void MainWindow::onStatusUpdated(const QString &status)
 {
     qDebug() << "상태 업데이트:" << status;
@@ -761,6 +902,12 @@ void MainWindow::onStatusUpdated(const QString &status)
 
 }
 
+/**
+ * @brief 좌표 데이터 전송
+ * @param roadLines 도로선 리스트
+ * @param detectionLines 감지선 리스트
+ * @details TCP로 도로선/감지선 데이터를 전송합니다.
+ */
 void MainWindow::sendCategorizedCoordinates(const QList<RoadLineData> &roadLines, const QList<DetectionLineData> &detectionLines)
 {
     if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {

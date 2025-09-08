@@ -9,14 +9,12 @@
 #include <QDateTime>
 #include <QThread>
 #include <QRect>
-
 #include <QSslSocket>
 #include <QSslError>
 #include <QSslConfiguration>
 
 // Forward declarations
 class VideoGraphicsView;
-
 
 // 메시지 타입 열거형
 enum class MessageType {
@@ -47,13 +45,6 @@ struct DetectionLineData {
     int rightMatrixNum;     // 오른쪽 매트릭스 번호
 };
 
-// 수직선 데이터 구조체
-struct PerpendicularLineData {
-    int index;              // 원본 감지선 번호
-    double a;               // y = ax + b에서 a값 (기울기)
-    double b;               // y = ax + b에서 b값 (y절편)
-};
-
 // BBox 데이터 구조체
 struct BBox {
     int object_id;          // 객체 ID
@@ -72,12 +63,12 @@ struct RoadLineData {
 };
 
 // 카테고리별 선 데이터 구조체 (기존 방식용)
-struct CategorizedLineData {
-    int x1;
-    int y1;
-    int x2;
-    int y2;
-};
+// struct CategorizedLineData {
+//     int x1;
+//     int y1;
+//     int x2;
+//     int y2;
+// };
 
 class TcpCommunicator : public QObject
 {
@@ -125,7 +116,6 @@ signals:
 
     // signals 섹션에 시그널 추가
     void roadLineConfirmed(bool success, const QString &message);
-    void perpendicularLineConfirmed(bool success, const QString &message);
     void savedRoadLinesReceived(const QList<RoadLineData> &roadLines);
     void savedDetectionLinesReceived(const QList<DetectionLineData> &detectionLines);
 

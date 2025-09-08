@@ -1,5 +1,6 @@
 #include "VideoStreamWidget.h"
-#include "custommessagebox.h"
+#include "CustomMessageBox.h"
+
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QApplication>
@@ -48,7 +49,7 @@ void VideoStreamWidget::setupUI()
     statusLayout->setContentsMargins(10, 4, 10, 4);
     statusLayout->setSpacing(10);
 
-    // LIVE Indicator 고치기
+    // LIVE Indicator
     m_liveIndicator = new QLabel("●");
     m_liveIndicator->setStyleSheet("color: red; font-size: 14px; font-weight: bold;");
     m_liveIndicator->setVisible(false);

@@ -1,10 +1,10 @@
 #include "MainWindow.h"
-#include "LineDrawingDialog.h"
+// #include "LineDrawingDialog.h"
 #include "EnvConfig.h"
-#include "custommessagebox.h"
-#include "customtitlebar.h"
-#include "ImageViewerDialog.h"
-#include "VideoStreamWidget.h"
+#include "CustomMessageBox.h"
+#include "CustomTitleBar.h"
+// #include "ImageViewerDialog.h"
+// #include "VideoStreamWidget.h"
 
 #include <QApplication>
 #include <QStackedLayout>
@@ -139,8 +139,6 @@ void MainWindow::setTcpCommunicator(TcpCommunicator* communicator)
                    this, &MainWindow::onCoordinatesConfirmed);
         disconnect(m_tcpCommunicator, &TcpCommunicator::statusUpdated,
                    this, &MainWindow::onStatusUpdated);
-        disconnect(m_tcpCommunicator, &TcpCommunicator::perpendicularLineConfirmed,
-                   this, nullptr);
     }
 
     m_tcpCommunicator = communicator;
@@ -161,19 +159,6 @@ void MainWindow::setTcpCommunicator(TcpCommunicator* communicator)
                 this, &MainWindow::onCoordinatesConfirmed);
         connect(m_tcpCommunicator, &TcpCommunicator::statusUpdated,
                 this, &MainWindow::onStatusUpdated);
-        connect(m_tcpCommunicator, &TcpCommunicator::perpendicularLineConfirmed,
-                this, [this](bool success, const QString &message) {
-                    qDebug() << "수직선 서버 응답 - 성공:" << success << "메시지:" << message;
-                    if (success) {
-                        CustomMessageBox msgBox(nullptr, "수직선 전송 완료", "수직선이 성공적으로 서버에 전송되었습니다.");
-
-                        msgBox.exec();
-                    } else {
-                        CustomMessageBox msgBox(nullptr, "수직선 전송 실패", "수직선 전송에 실패했습니다: " + message);
-
-                        msgBox.exec();
-                    }
-                });
     }
 }
 
@@ -486,22 +471,6 @@ void MainWindow::setupNetworkConnection()
         // 새로운 JSON 기반 시그널 연결
         connect(m_tcpCommunicator, &TcpCommunicator::coordinatesConfirmed, this, &MainWindow::onCoordinatesConfirmed);
         connect(m_tcpCommunicator, &TcpCommunicator::statusUpdated, this, &MainWindow::onStatusUpdated);
-
-        // 수직선 확인 시그널 연결 추가
-        connect(m_tcpCommunicator, &TcpCommunicator::perpendicularLineConfirmed,
-                this, [this](bool success, const QString &message) {
-                    qDebug() << "수직선 서버 응답 - 성공:" << success << "메시지:" << message;
-
-                    if (success) {
-                        CustomMessageBox msgBox(nullptr, "수직선 전송 완료", "수직선이 성공적으로 서버에 전송되었습니다.");
-
-                        msgBox.exec();
-                    } else {
-                        CustomMessageBox msgBox(nullptr, "수직선 전송 실패", "수직선 전송에 실패했습니다: " + message);
-
-                        msgBox.exec();
-                    }
-                });
     }
 
     // 이미지 요청 타임아웃 타이머 설정

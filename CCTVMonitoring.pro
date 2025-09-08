@@ -8,8 +8,9 @@ TEMPLATE = app
 # 소스 파일
 SOURCES += \
     LoginWindow.cpp \
-    custommessagebox.cpp \
-    customtitlebar.cpp \
+    CustomMessageBox.cpp \
+    CustomTitleBar.cpp \
+    VideoGraphicsView.cpp \
     main.cpp \
     MainWindow.cpp \
     VideoStreamWidget.cpp \
@@ -22,13 +23,14 @@ SOURCES += \
 HEADERS += \
     LoginWindow.h \
     MainWindow.h \
+    VideoGraphicsView.h \
     VideoStreamWidget.h \
     TcpCommunicator.h \
     ImageViewerDialog.h \
     LineDrawingDialog.h \
     EnvConfig.h \
-    custommessagebox.h \
-    customtitlebar.h
+    CustomMessageBox.h \
+    CustomTitleBar.h
 
 # 리소스 파일
 RESOURCES += resources.qrc

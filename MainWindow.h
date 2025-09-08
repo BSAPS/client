@@ -1,6 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "VideoStreamWidget.h"
+#include "TcpCommunicator.h"
+#include "ImageViewerDialog.h"
+#include "LineDrawingDialog.h"
+
 #include <QMainWindow>
 #include <QTabWidget>
 #include <QVBoxLayout>
@@ -18,11 +23,6 @@
 #include <QCalendarWidget>
 #include <QDialog>
 #include <QMouseEvent>
-
-#include "VideoStreamWidget.h"
-#include "TcpCommunicator.h"
-#include "ImageViewerDialog.h"
-#include "LineDrawingDialog.h"
 
 class CustomTitleBar;
 

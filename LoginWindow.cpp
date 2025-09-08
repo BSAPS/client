@@ -20,6 +20,11 @@
 #include <QPainter>
 #include <QLabel>
 
+/**
+ * @brief LoginWindow 생성자
+ * @details 로그인/회원가입 윈도우를 생성하고 UI 및 TCP 통신을 초기화합니다.
+ * @param parent 부모 위젯
+ */
 LoginWindow::LoginWindow(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui_LoginWindow)
@@ -87,6 +92,9 @@ LoginWindow::LoginWindow(QWidget *parent)
     qDebug() << "[LoginWindow] 생성자 완료";
 }
 
+/**
+ * @brief LoginWindow 소멸자
+ */
 LoginWindow::~LoginWindow()
 {
     qDebug() << "[LoginWindow] 소멸자 호출";
@@ -101,17 +109,28 @@ LoginWindow::~LoginWindow()
     qDebug() << "[LoginWindow] 소멸자 완료";
 }
 
-// 화면 상태 확인 메서드들
+/**
+ * @brief 로그인 창이 보이는지 확인
+ * @return 보이면 true
+ */
 bool LoginWindow::isLoginWindowVisible() const
 {
     return isVisible();
 }
 
+/**
+ * @brief 로그인 창이 숨겨졌는지 확인
+ * @return 숨겨졌으면 true
+ */
 bool LoginWindow::isLoginWindowHidden() const
 {
     return isHidden();
 }
 
+/**
+ * @brief 로그인 창 상태 문자열 반환
+ * @return 상태 문자열
+ */
 QString LoginWindow::getLoginWindowStatus() const
 {
     if (isVisible()) {
@@ -121,12 +140,19 @@ QString LoginWindow::getLoginWindowStatus() const
     }
 }
 
-// TCP 통신기 공유 메서드들
+/**
+ * @brief TCP 통신기 반환
+ * @return TcpCommunicator 포인터
+ */
 TcpCommunicator* LoginWindow::getTcpCommunicator() const
 {
     return m_tcpCommunicator;
 }
 
+/**
+ * @brief TCP 통신기 설정
+ * @param communicator TcpCommunicator 포인터
+ */
 void LoginWindow::setTcpCommunicator(TcpCommunicator* communicator)
 {
     // 기존 연결 해제
@@ -156,6 +182,9 @@ void LoginWindow::setTcpCommunicator(TcpCommunicator* communicator)
     }
 }
 
+/**
+ * @brief 연결 상태 라벨 설정
+ */
 void LoginWindow::setupConnectionStatusLabel()
 {
     // 연결 상태 표시 라벨 생성 (로그인 페이지 하단에)
@@ -164,6 +193,9 @@ void LoginWindow::setupConnectionStatusLabel()
     m_connectionStatusLabel->show();
 }
 
+/**
+ * @brief 연결 상태 타이머 설정
+ */
 void LoginWindow::setupConnectionTimer()
 {
     // 연결 상태 확인 타이머 (5초마다 확인)
@@ -173,6 +205,9 @@ void LoginWindow::setupConnectionTimer()
     m_connectionTimer->start();
 }
 
+/**
+ * @brief 연결 상태 확인
+ */
 void LoginWindow::checkConnectionStatus()
 {
     qDebug() << "[LoginWindow] 연결 상태 확인";
@@ -208,6 +243,9 @@ void LoginWindow::checkConnectionStatus()
     }
 }
 
+/**
+ * @brief 패스워드 필드 설정
+ */
 void LoginWindow::setupPasswordFields()
 {
     qDebug() << "[LoginWindow] 패스워드 필드 설정";
@@ -224,6 +262,9 @@ void LoginWindow::setupPasswordFields()
     connect(ui->pwLineEdit_4, &QLineEdit::textChanged, this, &LoginWindow::onPasswordChanged);
 }
 
+/**
+ * @brief 패스워드 에러 라벨 설정
+ */
 void LoginWindow::setupPasswordErrorLabel()
 {
     qDebug() << "[LoginWindow] 패스워드 오류 라벨 설정";
@@ -236,6 +277,9 @@ void LoginWindow::setupPasswordErrorLabel()
     m_passwordErrorLabel->hide(); // 초기에는 숨김
 }
 
+/**
+ * @brief 닫기 버튼 설정
+ */
 void LoginWindow::setupCloseButtons()
 {
     qDebug() << "[LoginWindow] 닫기 버튼 설정";
@@ -283,6 +327,9 @@ void LoginWindow::setupCloseButtons()
         );
 }
 
+/**
+ * @brief TCP 통신 설정
+ */
 void LoginWindow::setupTcpCommunication()
 {
     qDebug() << "[LoginWindow] TCP 통신 설정 시작";
@@ -317,6 +364,9 @@ void LoginWindow::setupTcpCommunication()
     qDebug() << "[LoginWindow] TCP 통신 설정 완료";
 }
 
+/**
+ * @brief 시그널 연결
+ */
 void LoginWindow::connectSignals()
 {
     qDebug() << "[LoginWindow] 시그널 연결 시작";
@@ -348,6 +398,9 @@ void LoginWindow::connectSignals()
             this, &LoginWindow::handleCloseOtpSignUp);
 }
 
+/**
+ * @brief 회원가입 닫기 처리
+ */
 void LoginWindow::handleCloseSignUp()
 {
     qDebug() << "[LoginWindow] Sign Up 닫기 버튼 클릭";
@@ -358,6 +411,9 @@ void LoginWindow::handleCloseSignUp()
     clearSignUpFields();
 }
 
+/**
+ * @brief OTP 회원가입 닫기 처리
+ */
 void LoginWindow::handleCloseOtpSignUp()
 {
     qDebug() << "[LoginWindow] OTP Sign Up 닫기 버튼 클릭";
@@ -366,6 +422,9 @@ void LoginWindow::handleCloseOtpSignUp()
     ui->OTPLoginWidget_3->setCurrentIndex(0); // SignUpPage
 }
 
+/**
+ * @brief 패스워드 변경 처리
+ */
 void LoginWindow::onPasswordChanged()
 {
     qDebug() << "[LoginWindow] 패스워드 변경됨";
@@ -393,6 +452,9 @@ void LoginWindow::onPasswordChanged()
     }
 }
 
+/**
+ * @brief 로그인 처리
+ */
 void LoginWindow::handleLogin()
 {
     qDebug() << "[LoginWindow] 로그인 버튼 클릭";
@@ -424,6 +486,9 @@ void LoginWindow::handleLogin()
     sendLoginRequest(id, password);
 }
 
+/**
+ * @brief 회원가입 페이지 전환 처리
+ */
 void LoginWindow::handleSignUpSwitch()
 {
     qDebug() << "[LoginWindow] Sign Up 전환";
@@ -436,6 +501,9 @@ void LoginWindow::handleSignUpSwitch()
     clearSignUpFields();
 }
 
+/**
+ * @brief OTP 회원가입 페이지 전환 처리
+ */
 void LoginWindow::handleOtpSignupSwitch()
 {
     qDebug() << "[LoginWindow] OTP Sign Up 전환";
@@ -444,6 +512,9 @@ void LoginWindow::handleOtpSignupSwitch()
     ui->OTPLoginWidget_3->setCurrentIndex(1); // OTPSignUpPage
 }
 
+/**
+ * @brief 회원가입 제출 처리
+ */
 void LoginWindow::handleSubmitSignUp()
 {
     qDebug() << "[LoginWindow] Sign Up 제출";
@@ -484,6 +555,9 @@ void LoginWindow::handleSubmitSignUp()
     sendSignUpRequest(id, password, useOtp);
 }
 
+/**
+ * @brief OTP 로그인 제출 처리
+ */
 void LoginWindow::handleSubmitOtpLogin()
 {
     qDebug() << "[LoginWindow] OTP 로그인 제출";
@@ -512,6 +586,9 @@ void LoginWindow::handleSubmitOtpLogin()
     sendOtpLoginRequest(otpCode);
 }
 
+/**
+ * @brief OTP 회원가입 제출 처리
+ */
 void LoginWindow::handleSubmitOtpSignUp()
 {
     qDebug() << "[LoginWindow] OTP 등록 완료 버튼 클릭. 로그인 페이지로 돌아감.";
@@ -531,6 +608,11 @@ void LoginWindow::handleSubmitOtpSignUp()
 
 }
 
+/**
+ * @brief 로그인 요청 전송
+ * @param id 아이디
+ * @param password 비밀번호
+ */
 void LoginWindow::sendLoginRequest(const QString &id, const QString &password)
 {
     qDebug() << "[LoginWindow] 로그인 요청 전송 - ID:" << id;
@@ -569,6 +651,12 @@ void LoginWindow::sendLoginRequest(const QString &id, const QString &password)
     }
 }
 
+/**
+ * @brief 회원가입 요청 전송
+ * @param id 아이디
+ * @param password 비밀번호
+ * @param useOtp OTP 사용 여부
+ */
 void LoginWindow::sendSignUpRequest(const QString &id, const QString &password, bool useOtp)
 {
     qDebug() << "[LoginWindow] 회원가입 요청 전송 - ID:" << id << "OTP:" << useOtp;
@@ -602,6 +690,10 @@ void LoginWindow::sendSignUpRequest(const QString &id, const QString &password, 
     }
 }
 
+/**
+ * @brief OTP 로그인 요청 전송
+ * @param otpCode OTP 코드
+ */
 void LoginWindow::sendOtpLoginRequest(const QString &otpCode)
 {
     qDebug() << "[LoginWindow] OTP 2차 로그인 요청 전송";
@@ -634,18 +726,27 @@ void LoginWindow::sendOtpLoginRequest(const QString &otpCode)
 }
 
 
+/**
+ * @brief 로그인 버튼 리셋
+ */
 void LoginWindow::resetLoginButton()
 {
     ui->SubmitButton->setEnabled(true);
     ui->SubmitButton->setText("SUBMIT");
 }
 
+/**
+ * @brief OTP 로그인 버튼 리셋
+ */
 void LoginWindow::resetOtpLoginButton()
 {
     ui->SubmitButton_2->setEnabled(true);
     ui->SubmitButton_2->setText("SUBMIT");
 }
 
+/**
+ * @brief 회원가입 입력 필드 초기화
+ */
 void LoginWindow::clearSignUpFields()
 {
     ui->IDLabel->clear();
@@ -655,6 +756,9 @@ void LoginWindow::clearSignUpFields()
     m_passwordErrorLabel->hide(); // 오류 메시지도 숨김
 }
 
+/**
+ * @brief 로그인 입력 필드 초기화
+ */
 void LoginWindow::clearLoginFields()
 {
     ui->idLineEdit->clear();
@@ -663,6 +767,9 @@ void LoginWindow::clearLoginFields()
     ui->lineEdit->clear();
 }
 
+/**
+ * @brief TCP 연결 성공 처리
+ */
 void LoginWindow::onTcpConnected()
 {
     qDebug() << "[LoginWindow] TCP 연결 성공";
@@ -678,6 +785,9 @@ void LoginWindow::onTcpConnected()
         );
 }
 
+/**
+ * @brief TCP 연결 해제 처리
+ */
 void LoginWindow::onTcpDisconnected()
 {
     qDebug() << "[LoginWindow] TCP 연결 해제";
@@ -706,6 +816,10 @@ void LoginWindow::onTcpDisconnected()
     }
 }
 
+/**
+ * @brief TCP 에러 처리
+ * @param error 에러 메시지
+ */
 void LoginWindow::onTcpError(const QString &error)
 {
     qDebug() << "[LoginWindow] TCP 오류:" << error;
@@ -728,6 +842,10 @@ void LoginWindow::onTcpError(const QString &error)
     qDebug() << "[LoginWindow] 상세 오류 정보:" << error;
 }
 
+/**
+ * @brief TCP 메시지 수신 처리
+ * @param message 수신 메시지
+ */
 void LoginWindow::onTcpMessageReceived(const QString &message)
 {
     qDebug() << "[LoginWindow] TCP 메시지 수신:" << message;
@@ -769,6 +887,10 @@ void LoginWindow::onTcpMessageReceived(const QString &message)
     }
 }
 
+/**
+ * @brief 로그인 응답 처리
+ * @param response 응답 객체
+ */
 void LoginWindow::handleLoginResponse(const QJsonObject &response)
 {
     int success = response["step1_success"].toInt();
@@ -799,6 +921,10 @@ void LoginWindow::handleLoginResponse(const QJsonObject &response)
     }
 }
 
+/**
+ * @brief 회원가입 응답 처리
+ * @param response 응답 객체
+ */
 void LoginWindow::handleSignUpResponse(const QJsonObject &response)
 {
     int success = response["sign_up_success"].toInt();
@@ -832,6 +958,10 @@ void LoginWindow::handleSignUpResponse(const QJsonObject &response)
 
 }
 
+/**
+ * @brief OTP 로그인 응답 처리
+ * @param response 응답 객체
+ */
 void LoginWindow::handleOtpLoginResponse(const QJsonObject &response)
 {
     int success = response["final_login_success"].toInt();
@@ -851,6 +981,10 @@ void LoginWindow::handleOtpLoginResponse(const QJsonObject &response)
     }
 }
 
+/**
+ * @brief QR 코드 응답 처리
+ * @param response 응답 객체
+ */
 void LoginWindow::handleQrCodeResponse(const QJsonObject &response)
 {
     QString svgData = response["qr_code_svg"].toString();

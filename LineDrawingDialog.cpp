@@ -12,7 +12,12 @@
 #include <QInputDialog>
 #include <QToolTip>
 
-// LineDrawingDialog 구현
+/**
+ * @brief 생성자 (TCP 미사용)
+ * @param rtspUrl RTSP URL
+ * @param parent 부모 위젯
+ * @details 영상 기준선 그리기 다이얼로그를 초기화합니다.
+ */
 LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     : QDialog(parent)
     , m_mappingCountLabel(nullptr)
@@ -58,6 +63,13 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, QWidget *parent)
     QTimer::singleShot(500, this, &LineDrawingDialog::startVideoStream);
 }
 
+/**
+ * @brief 생성자 (TCP 사용)
+ * @param rtspUrl RTSP URL
+ * @param tcpCommunicator TCP 통신 객체
+ * @param parent 부모 위젯
+ * @details TCP 통신 객체를 받아 초기화합니다.
+ */
 LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, TcpCommunicator* tcpCommunicator, QWidget *parent)
     : QDialog(parent)
     , m_mappingCountLabel(nullptr)
@@ -103,7 +115,10 @@ LineDrawingDialog::LineDrawingDialog(const QString &rtspUrl, TcpCommunicator* tc
     QTimer::singleShot(500, this, &LineDrawingDialog::startVideoStream);
 }
 
-// TCP 통신기 설정 메서드
+/**
+ * @brief TCP 통신기 설정
+ * @param communicator TCP 통신 객체
+ */
 void LineDrawingDialog::setTcpCommunicator(TcpCommunicator* communicator)
 {
     // 기존 연결 해제
@@ -131,6 +146,9 @@ void LineDrawingDialog::setTcpCommunicator(TcpCommunicator* communicator)
     }
 }
 
+/**
+ * @brief TCP 연결 설정
+ */
 void LineDrawingDialog::setupTcpConnection()
 {
     // TcpCommunicator가 이미 설정되어 있으면 부모 위젯에서 찾지 않음
@@ -163,6 +181,9 @@ void LineDrawingDialog::setupTcpConnection()
     }
 }
 
+/**
+ * @brief 서버로부터 저장된 선 요청
+ */
 void LineDrawingDialog::requestSavedLinesFromServer()
 {
     if (m_tcpCommunicator && m_tcpCommunicator->isConnectedToServer()) {
@@ -183,6 +204,10 @@ void LineDrawingDialog::requestSavedLinesFromServer()
     }
 }
 
+/**
+ * @brief 저장된 도로선 수신 슬롯
+ * @param roadLines 도로선 리스트
+ */
 void LineDrawingDialog::onSavedRoadLinesReceived(const QList<RoadLineData> &roadLines)
 {
     addLogMessage("=== 도로선 데이터 수신 ===", "SYSTEM");
@@ -237,6 +262,10 @@ void LineDrawingDialog::onSavedRoadLinesReceived(const QList<RoadLineData> &road
     checkAndLoadAllLines();
 }
 
+/**
+ * @brief 저장된 감지선 수신 슬롯
+ * @param detectionLines 감지선 리스트
+ */
 void LineDrawingDialog::onSavedDetectionLinesReceived(const QList<DetectionLineData> &detectionLines)
 {
     addLogMessage("=== 감지선 데이터 수신 ===", "SYSTEM");
@@ -275,6 +304,9 @@ void LineDrawingDialog::onSavedDetectionLinesReceived(const QList<DetectionLineD
     checkAndLoadAllLines();
 }
 
+/**
+ * @brief 모든 선 데이터 로드 확인
+ */
 void LineDrawingDialog::checkAndLoadAllLines()
 {
     // 도로선과 감지선 모두 로드되었을 때 화면에 표시
@@ -311,6 +343,12 @@ void LineDrawingDialog::checkAndLoadAllLines()
     }
 }
 
+/**
+ * @brief 좌표 클릭 슬롯
+ * @param lineIndex 선 인덱스
+ * @param coordinate 좌표
+ * @param isStartPoint 시작점 여부
+ */
 void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordinate, bool isStartPoint)
 {
     QString pointType = isStartPoint ? "시작점" : "끝점";
@@ -371,6 +409,9 @@ void LineDrawingDialog::onCoordinateClicked(int lineIndex, const QPoint &coordin
     }
 }
 
+/**
+ * @brief 소멸자
+ */
 LineDrawingDialog::~LineDrawingDialog()
 {
     stopVideoStream();
@@ -382,6 +423,9 @@ LineDrawingDialog::~LineDrawingDialog()
     }
 }
 
+/**
+ * @brief UI 설정
+ */
 void LineDrawingDialog::setupUI()
 {
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
@@ -668,6 +712,9 @@ void LineDrawingDialog::setupUI()
 
     qDebug() << "UI 설정 완료";
 }
+/**
+ * @brief 그리기 시작 버튼 클릭 슬롯
+ */
 void LineDrawingDialog::onStartDrawingClicked()
 {
     addLogMessage("감지선을 그리면 수직선이 자동으로 계산되고 전송됨", "INFO");
@@ -687,6 +734,9 @@ void LineDrawingDialog::onStartDrawingClicked()
     qDebug() << "그리기 모드 활성화";
 }
 
+/**
+ * @brief 미디어 플레이어 설정
+ */
 void LineDrawingDialog::setupMediaPlayer()
 {
     m_mediaPlayer = new QMediaPlayer(this);
@@ -703,6 +753,9 @@ void LineDrawingDialog::setupMediaPlayer()
     qDebug() << "미디어 플레이어 설정 완료";
 }
 
+/**
+ * @brief 비디오 스트림 시작
+ */
 void LineDrawingDialog::startVideoStream()
 {
     if (!m_rtspUrl.isEmpty()) {
@@ -714,6 +767,9 @@ void LineDrawingDialog::startVideoStream()
     }
 }
 
+/**
+ * @brief 비디오 스트림 정지
+ */
 void LineDrawingDialog::stopVideoStream()
 {
     if (m_mediaPlayer) {
@@ -722,6 +778,9 @@ void LineDrawingDialog::stopVideoStream()
 
 }
 
+/**
+ * @brief 그리기 종료 버튼 클릭 슬롯
+ */
 void LineDrawingDialog::onStopDrawingClicked()
 {
     addLogMessage("각 좌표별 Dot Matrix 번호를 설정", "INFO");
@@ -740,6 +799,9 @@ void LineDrawingDialog::onStopDrawingClicked()
     qDebug() << "그리기 모드 비활성화";
 }
 
+/**
+ * @brief 선 전체 삭제 슬롯
+ */
 void LineDrawingDialog::onClearLinesClicked()
 {
     m_tcpCommunicator->requestDeleteLines();
@@ -757,6 +819,9 @@ void LineDrawingDialog::onClearLinesClicked()
 }
 
 
+/**
+ * @brief 카테고리 변경 슬롯
+ */
 void LineDrawingDialog::onCategoryChanged()
 {
     int selectedId = m_categoryButtonGroup->checkedId();
@@ -775,6 +840,12 @@ void LineDrawingDialog::onCategoryChanged()
     }
 }
 
+/**
+ * @brief 선 그리기 완료 시 슬롯
+ * @param start 시작점
+ * @param end 끝점
+ * @param category 선 카테고리
+ */
 void LineDrawingDialog::onLineDrawn(const QPoint &start, const QPoint &end, LineCategory category)
 {
     QString categoryName = (category == LineCategory::ROAD_DEFINITION) ? "도로 명시선" : "객체 감지선";
@@ -788,6 +859,9 @@ void LineDrawingDialog::onLineDrawn(const QPoint &start, const QPoint &end, Line
     updateButtonStates();
 }
 
+/**
+ * @brief 카테고리 정보 업데이트
+ */
 void LineDrawingDialog::updateCategoryInfo()
 {
     int roadCount = m_videoView->getCategoryLineCount(LineCategory::ROAD_DEFINITION);
@@ -797,6 +871,9 @@ void LineDrawingDialog::updateCategoryInfo()
     m_detectionLineCountLabel->setText(QString("감지선: %1개").arg(detectionCount));
 }
 
+/**
+ * @brief 좌표 전송 버튼 클릭 슬롯
+ */
 void LineDrawingDialog::onSendCoordinatesClicked()
 {
     QList<CategorizedLine> allLines = m_videoView->getCategorizedLines();
@@ -887,11 +964,18 @@ void LineDrawingDialog::onSendCoordinatesClicked()
 
 }
 
+/**
+ * @brief 로그 지우기 버튼 클릭 슬롯
+ */
 void LineDrawingDialog::onClearLogClicked()
 {
     clearLog();
 }
 
+/**
+ * @brief 플레이어 상태 변경 슬롯
+ * @param state 상태
+ */
 void LineDrawingDialog::onPlayerStateChanged(QMediaPlayer::PlaybackState state)
 {
     switch (state) {
@@ -905,6 +989,11 @@ void LineDrawingDialog::onPlayerStateChanged(QMediaPlayer::PlaybackState state)
     }
 }
 
+/**
+ * @brief 플레이어 에러 슬롯
+ * @param error 에러 코드
+ * @param errorString 에러 메시지
+ */
 void LineDrawingDialog::onPlayerError(QMediaPlayer::Error error, const QString &errorString)
 {
     QString errorMsg = QString("비디오 스트림 오류: %1").arg(errorString);
@@ -912,6 +1001,10 @@ void LineDrawingDialog::onPlayerError(QMediaPlayer::Error error, const QString &
     qDebug() << "미디어 플레이어 오류:" << error << errorString;
 }
 
+/**
+ * @brief 미디어 상태 변경 슬롯
+ * @param status 상태
+ */
 void LineDrawingDialog::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
 {
     switch (status) {
@@ -934,6 +1027,11 @@ void LineDrawingDialog::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
 }
 
 
+/**
+ * @brief 로그 메시지 추가
+ * @param message 메시지
+ * @param type 메시지 타입
+ */
 void LineDrawingDialog::addLogMessage(const QString &message, const QString &type)
 {
     QString timestamp = QDateTime::currentDateTime().toString("[yyyy.MM.dd]" " (hh:mm:ss)");
@@ -971,6 +1069,9 @@ void LineDrawingDialog::addLogMessage(const QString &message, const QString &typ
     m_logCountLabel->setText(QString("로그: %1개").arg(logCount));
 }
 
+/**
+ * @brief 로그 전체 삭제
+ */
 void LineDrawingDialog::clearLog()
 {
     m_logTextEdit->clear();
@@ -978,6 +1079,9 @@ void LineDrawingDialog::clearLog()
     addLogMessage("로그 삭제됨", "SYSTEM");
 }
 
+/**
+ * @brief 버튼 상태 업데이트
+ */
 void LineDrawingDialog::updateButtonStates()
 {
     bool hasLines = !m_videoView->getLines().isEmpty();
@@ -986,7 +1090,13 @@ void LineDrawingDialog::updateButtonStates()
 }
 
 
-// 좌표별 Matrix 매핑 관련 함수들
+/**
+ * @brief 좌표 매핑 추가
+ * @param lineIndex 선 인덱스
+ * @param coordinate 좌표
+ * @param isStartPoint 시작점 여부
+ * @param matrixNum 매트릭스 번호
+ */
 void LineDrawingDialog::addCoordinateMapping(int lineIndex, const QPoint &coordinate, bool isStartPoint, int matrixNum)
 {
     // 기존 매핑 제거 (같은 선의 같은 점에 대해)
@@ -1008,17 +1118,27 @@ void LineDrawingDialog::addCoordinateMapping(int lineIndex, const QPoint &coordi
     m_coordinateMatrixMappings.append(mapping);
 }
 
+/**
+ * @brief 좌표 매핑 전체 삭제
+ */
 void LineDrawingDialog::clearCoordinateMappings()
 {
     m_coordinateMatrixMappings.clear();
     updateMappingInfo();
 }
 
+/**
+ * @brief 매핑 정보 업데이트
+ */
 void LineDrawingDialog::updateMappingInfo()
 {
     m_mappingCountLabel->setText(QString("매핑: %1개").arg(m_coordinateMatrixMappings.size()));
 }
 
+/**
+ * @brief 도로선 매핑 리스트 반환
+ * @return 도로선 리스트
+ */
 QList<RoadLineData> LineDrawingDialog::getCoordinateMappingsAsRoadLines() const
 {
     QList<RoadLineData> roadLines;
@@ -1064,6 +1184,9 @@ QList<RoadLineData> LineDrawingDialog::getCoordinateMappingsAsRoadLines() const
     return roadLines;
 }
 
+/**
+ * @brief 저장된 선 불러오기 슬롯
+ */
 void LineDrawingDialog::onLoadSavedLinesClicked()
 {
     if (!m_tcpCommunicator) {
@@ -1112,7 +1235,11 @@ void LineDrawingDialog::onLoadSavedLinesClicked()
     }
 }
 
-// BBox 데이터 수신 슬롯 구현
+/**
+ * @brief BBox 데이터 수신 슬롯
+ * @param bboxes BBox 리스트
+ * @param timestamp 타임스탬프
+ */
 void LineDrawingDialog::onBBoxesReceived(const QList<BBox> &bboxes, qint64 timestamp)
 {
     qDebug() << QString("Bounding Box 데이터 수신 - %1개 객체, 타임스탬프: %2").arg(bboxes.size()).arg(timestamp);
@@ -1153,7 +1280,9 @@ void LineDrawingDialog::onBBoxesReceived(const QList<BBox> &bboxes, qint64 times
     }
 }
 
-// BBox ON 버튼 클릭 슬롯
+/**
+ * @brief BBox ON 버튼 클릭 슬롯
+ */
 void LineDrawingDialog::onBBoxOnClicked()
 {
     m_bboxOffButton->show();
@@ -1179,7 +1308,9 @@ void LineDrawingDialog::onBBoxOnClicked()
     }
 }
 
-// BBox OFF 버튼 클릭 슬롯
+/**
+ * @brief BBox OFF 버튼 클릭 슬롯
+ */
 void LineDrawingDialog::onBBoxOffClicked()
 {
     m_bboxOffButton->hide();

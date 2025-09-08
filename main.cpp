@@ -11,6 +11,13 @@
 #include <QDebug>
 #include <QFontDatabase>
 
+/**
+ * @brief 프로그램 진입점
+ * @details CCTV Monitoring System의 메인 함수. 환경설정, 싱글 인스턴스, 테마, 아이콘, 로그인/메인 윈도우를 초기화합니다.
+ * @param argc 인자 개수
+ * @param argv 인자 배열
+ * @return 프로그램 종료 코드
+ */
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);

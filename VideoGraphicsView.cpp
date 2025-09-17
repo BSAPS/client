@@ -3,7 +3,10 @@
 #include <QDebug>
 #include <QGraphicsProxyWidget>
 
-// VideoGraphicsView 구현
+/**
+ * @brief VideoGraphicsView 생성자
+ * @param parent 부모 위젯
+ */
 VideoGraphicsView::VideoGraphicsView(QWidget *parent)
     : QGraphicsView(parent)
     , m_scene(nullptr)
@@ -56,6 +59,10 @@ VideoGraphicsView::VideoGraphicsView(QWidget *parent)
     qDebug() << "비디오 아이템 Z-Value:" << m_videoItem->zValue();
 }
 
+/**
+ * @brief 그리기 모드 설정
+ * @param enabled 활성화 여부
+ */
 void VideoGraphicsView::setDrawingMode(bool enabled)
 {
     m_drawingMode = enabled;
@@ -63,6 +70,9 @@ void VideoGraphicsView::setDrawingMode(bool enabled)
     qDebug() << "그리기 모드 변경:" << enabled;
 }
 
+/**
+ * @brief 모든 선 지우기
+ */
 void VideoGraphicsView::clearLines()
 {
     clearHighlight();
@@ -86,22 +96,39 @@ void VideoGraphicsView::clearLines()
     qDebug() << "모든 선이 지워짐";
 }
 
+/**
+ * @brief 선 리스트 반환
+ * @return 선 좌표 쌍 리스트
+ */
 QList<QPair<QPoint, QPoint>> VideoGraphicsView::getLines() const
 {
     return m_lines;
 }
 
+/**
+ * @brief 현재 카테고리 설정
+ * @param category 카테고리
+ */
 void VideoGraphicsView::setCurrentCategory(LineCategory category)
 {
     m_currentCategory = category;
     qDebug() << "카테고리 변경:" << (category == LineCategory::ROAD_DEFINITION ? "도로 명시선" : "객체 감지선");
 }
 
+/**
+ * @brief 카테고리별 선 리스트 반환
+ * @return CategorizedLine 리스트
+ */
 QList<CategorizedLine> VideoGraphicsView::getCategorizedLines() const
 {
     return m_categorizedLines;
 }
 
+/**
+ * @brief 카테고리별 선 개수 반환
+ * @param category 카테고리
+ * @return 선 개수
+ */
 int VideoGraphicsView::getCategoryLineCount(LineCategory category) const
 {
     int count = 0;
@@ -113,6 +140,10 @@ int VideoGraphicsView::getCategoryLineCount(LineCategory category) const
     return count;
 }
 
+/**
+ * @brief 저장된 도로선 데이터 화면에 그리기
+ * @param roadLines 도로선 데이터 리스트
+ */
 void VideoGraphicsView::loadSavedRoadLines(const QList<RoadLineData> &roadLines)
 {
     qDebug() << "=== loadSavedRoadLines 시작 ===";
@@ -197,7 +228,10 @@ void VideoGraphicsView::loadSavedRoadLines(const QList<RoadLineData> &roadLines)
     qDebug() << "=== loadSavedRoadLines 완료 ===";
 }
 
-// 감지선만 처리하는 함수
+/**
+ * @brief 저장된 감지선 데이터 화면에 그리기
+ * @param detectionLines 감지선 데이터 리스트
+ */
 void VideoGraphicsView::loadSavedDetectionLines(const QList<DetectionLineData> &detectionLines)
 {
     qDebug() << "=== loadSavedDetectionLines 시작 ===";
@@ -265,6 +299,10 @@ void VideoGraphicsView::loadSavedDetectionLines(const QList<DetectionLineData> &
     qDebug() << "=== loadSavedDetectionLines 완료 ===";
 }
 
+/**
+ * @brief 마우스 클릭 이벤트 처리
+ * @param event 마우스 이벤트
+ */
 void VideoGraphicsView::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() != Qt::LeftButton) {
@@ -317,7 +355,10 @@ void VideoGraphicsView::mousePressEvent(QMouseEvent *event)
     qDebug() << "선 그리기 시작:" << m_startPoint;
 }
 
-
+/**
+ * @brief 도로선 하이라이트
+ * @param lineIndex 하이라이트할 선 인덱스
+ */
 void VideoGraphicsView::highlightRoadLine(int lineIndex)
 {
     clearHighlight();
@@ -338,6 +379,11 @@ void VideoGraphicsView::highlightRoadLine(int lineIndex)
     }
 }
 
+/**
+ * @brief 좌표 하이라이트
+ * @param lineIndex 선 인덱스
+ * @param isStartPoint 시작점 여부
+ */
 void VideoGraphicsView::highlightCoordinate(int lineIndex, bool isStartPoint)
 {
     clearHighlight();
@@ -363,6 +409,9 @@ void VideoGraphicsView::highlightCoordinate(int lineIndex, bool isStartPoint)
     }
 }
 
+/**
+ * @brief 하이라이트 제거
+ */
 void VideoGraphicsView::clearHighlight()
 {
     // 하이라이트 선들 제거
@@ -375,7 +424,11 @@ void VideoGraphicsView::clearHighlight()
     }
 }
 
-// BBox 관련 함수 구현
+/**
+ * @brief BBox 표시
+ * @param bboxes BBox 리스트
+ * @param timestamp 타임스탬프
+ */
 void VideoGraphicsView::setBBoxes(const QList<BBox> &bboxes, qint64 timestamp)
 {
     // 기존 BBox 아이템들 제거
@@ -430,6 +483,9 @@ void VideoGraphicsView::setBBoxes(const QList<BBox> &bboxes, qint64 timestamp)
     qDebug() << QString("[VideoView] BBox 시각화 완료 - %1개 객체, 타임스탬프: %2").arg(bboxes.size()).arg(timestamp);
 }
 
+/**
+ * @brief BBox 모두 제거
+ */
 void VideoGraphicsView::clearBBoxes()
 {
     // 기존 BBox 사각형 아이템들 제거
@@ -453,6 +509,10 @@ void VideoGraphicsView::clearBBoxes()
     qDebug() << "[VideoView] BBox 아이템들 제거 완료";
 }
 
+/**
+ * @brief 마우스 이동 이벤트 처리
+ * @param event 마우스 이벤트
+ */
 void VideoGraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
     if (!m_drawingMode || !m_drawing) {
@@ -470,6 +530,10 @@ void VideoGraphicsView::mouseMoveEvent(QMouseEvent *event)
     }
 }
 
+/**
+ * @brief 마우스 릴리즈 이벤트 처리
+ * @param event 마우스 이벤트
+ */
 void VideoGraphicsView::mouseReleaseEvent(QMouseEvent *event)
 {
     if (!m_drawingMode || !m_drawing || event->button() != Qt::LeftButton) {

@@ -9,6 +9,10 @@
 #include <QDir>
 #include <QFileInfo>
 
+/**
+ * @brief TcpCommunicator 생성자
+ * @param parent 부모 객체
+ */
 TcpCommunicator::TcpCommunicator(QObject *parent)
     : QObject(parent)
     , m_socket(new QSslSocket(this))
@@ -64,11 +68,17 @@ TcpCommunicator::TcpCommunicator(QObject *parent)
     qDebug() << "[TCP] TcpCommunicator 초기화 완료";
 }
 
+/**
+ * @brief TcpCommunicator 소멸자
+ */
 TcpCommunicator::~TcpCommunicator()
 {
     disconnectFromServer();
 }
 
+/**
+ * @brief 서버 연결 해제
+ */
 void TcpCommunicator::disconnectFromServer()
 {
     if (m_connectionTimer->isActive()) {
@@ -86,6 +96,9 @@ void TcpCommunicator::disconnectFromServer()
     }
 }
 
+/**
+ * @brief SSL 설정 구성
+ */
 void TcpCommunicator::setupSslConfiguration() {
     // Register server's CA certificate (e.g., ca-cert.pem file)
     QSslConfiguration sslConfiguration = QSslConfiguration::defaultConfiguration();
@@ -110,6 +123,11 @@ void TcpCommunicator::setupSslConfiguration() {
     qDebug() << "[TCP] SSL Peer verification mode set to VerifyNone for development";
 }
 
+/**
+ * @brief 서버에 연결
+ * @param host 호스트 주소
+ * @param port 포트 번호
+ */
 void TcpCommunicator::connectToServer(const QString &host, quint16 port)
 {
     qDebug() << "[TCP] connectToServer 호출 - 호스트:" << host << "포트:" << port;
@@ -140,11 +158,20 @@ void TcpCommunicator::connectToServer(const QString &host, quint16 port)
     }
 }
 
+/**
+ * @brief 서버 연결 여부 반환
+ * @return 연결 여부
+ */
 bool TcpCommunicator::isConnectedToServer() const
 {
     return m_isConnected && m_socket && m_socket->state() == QAbstractSocket::ConnectedState;
 }
 
+/**
+ * @brief JSON 메시지 전송
+ * @param message 전송할 JSON 객체
+ * @return 성공 여부
+ */
 bool TcpCommunicator::sendJsonMessage(const QJsonObject &message)
 {
     if (!isConnectedToServer()) {
@@ -182,11 +209,20 @@ bool TcpCommunicator::sendJsonMessage(const QJsonObject &message)
     return true;
 }
 
+/**
+ * @brief 비디오 뷰 설정
+ * @param videoView VideoGraphicsView 포인터
+ */
 void TcpCommunicator::setVideoView(VideoGraphicsView* videoView)
 {
     m_videoView = videoView;
 }
 
+/**
+ * @brief 탐지선 데이터 전송
+ * @param lineData 탐지선 데이터
+ * @return 성공 여부
+ */
 bool TcpCommunicator::sendDetectionLine(const DetectionLineData &lineData)
 {
     if (!isConnectedToServer()) {
@@ -219,6 +255,11 @@ bool TcpCommunicator::sendDetectionLine(const DetectionLineData &lineData)
     return success;
 }
 
+/**
+ * @brief 도로선 데이터 전송
+ * @param lineData 도로선 데이터
+ * @return 성공 여부
+ */
 bool TcpCommunicator::sendRoadLine(const RoadLineData &lineData)
 {
     if (!isConnectedToServer()) {
@@ -251,7 +292,10 @@ bool TcpCommunicator::sendRoadLine(const RoadLineData &lineData)
     return success;
 }
 
-// 저장된 도로선 데이터 요청 함수 (request_id: 7)
+/**
+ * @brief 저장된 도로선 데이터 요청
+ * @return 성공 여부
+ */
 bool TcpCommunicator::requestSavedRoadLines()
 {
     if (!isConnectedToServer()) {
@@ -274,7 +318,10 @@ bool TcpCommunicator::requestSavedRoadLines()
     return success;
 }
 
-// 저장된 감지선 데이터 요청 함수 (request_id: 3)
+/**
+ * @brief 저장된 감지선 데이터 요청 
+ * @return 성공 여부
+ */
 bool TcpCommunicator::requestSavedDetectionLines()
 {
     if (!isConnectedToServer()) {
@@ -297,6 +344,10 @@ bool TcpCommunicator::requestSavedDetectionLines()
     return success;
 }
 
+/**
+ * @brief 저장된 선 데이터 삭제 요청
+ * @return 성공 여부
+ */
 bool TcpCommunicator::requestDeleteLines()
 {
     if (!isConnectedToServer()) {
@@ -319,6 +370,11 @@ bool TcpCommunicator::requestDeleteLines()
     return success;
 }
 
+/**
+ * @brief 여러 도로선 데이터 전송
+ * @param roadLines 도로선 데이터 리스트
+ * @return 성공 여부
+ */
 bool TcpCommunicator::sendMultipleRoadLines(const QList<RoadLineData> &roadLines)
 {
     if (!isConnectedToServer()) {
@@ -345,6 +401,11 @@ bool TcpCommunicator::sendMultipleRoadLines(const QList<RoadLineData> &roadLines
     return allSuccess;
 }
 
+/**
+ * @brief 여러 탐지선 데이터 전송
+ * @param detectionLines 탐지선 데이터 리스트
+ * @return 성공 여부
+ */
 bool TcpCommunicator::sendMultipleDetectionLines(const QList<DetectionLineData> &detectionLines)
 {
     if (!isConnectedToServer()) {
@@ -371,6 +432,11 @@ bool TcpCommunicator::sendMultipleDetectionLines(const QList<DetectionLineData> 
     return allSuccess;
 }
 
+/**
+ * @brief 이미지 데이터 요청
+ * @param date 날짜(선택)
+ * @param hour 시간(선택)
+ */
 void TcpCommunicator::requestImageData(const QString &date, int hour)
 {
     if (!isConnectedToServer()) {
@@ -405,16 +471,27 @@ void TcpCommunicator::requestImageData(const QString &date, int hour)
     }
 }
 
+/**
+ * @brief 연결 타임아웃 설정
+ * @param timeoutMs 타임아웃(ms)
+ */
 void TcpCommunicator::setConnectionTimeout(int timeoutMs)
 {
     m_connectionTimeoutMs = timeoutMs;
 }
 
+/**
+ * @brief 자동 재연결 활성화 설정
+ * @param enabled 활성화 여부
+ */
 void TcpCommunicator::setReconnectEnabled(bool enabled)
 {
     m_reconnectEnabled = enabled;
 }
 
+/**
+ * @brief 서버 연결 슬롯
+ */
 void TcpCommunicator::onConnected()
 {
     m_connectionTimer->stop();
@@ -426,6 +503,9 @@ void TcpCommunicator::onConnected()
     emit statusUpdated("Connected to server");
 }
 
+/**
+ * @brief 서버 연결 해제 슬롯
+ */
 void TcpCommunicator::onDisconnected()
 {
     m_isConnected = false;
@@ -446,6 +526,9 @@ void TcpCommunicator::onDisconnected()
     }
 }
 
+/**
+ * @brief 데이터 수신 슬롯
+ */
 void TcpCommunicator::onReadyRead()
 {
     static QByteArray buffer;
@@ -513,6 +596,10 @@ void TcpCommunicator::onReadyRead()
     }
 }
 
+/**
+ * @brief 에러 슬롯
+ * @param error 소켓 에러
+ */
 void TcpCommunicator::onError(QAbstractSocket::SocketError error)
 {
     m_connectionTimer->stop();
@@ -549,6 +636,9 @@ void TcpCommunicator::onError(QAbstractSocket::SocketError error)
     }
 }
 
+/**
+ * @brief 연결 타임아웃 슬롯
+ */
 void TcpCommunicator::onConnectionTimeout()
 {
     qDebug() << "[TCP] Connection timeout.";
@@ -556,10 +646,17 @@ void TcpCommunicator::onConnectionTimeout()
     emit errorOccurred("Connection timed out.");
 }
 
+/**
+ * @brief SSL 암호화 슬롯
+ */
 void TcpCommunicator::onSslEncrypted() {
     qDebug() << "[TCP] SSL encrypted connection established.";
 }
 
+/**
+ * @brief SSL 에러 슬롯
+ * @param errors SSL 에러 리스트
+ */
 void TcpCommunicator::onSslErrors(const QList<QSslError> &errors) {
     qDebug() << "[TCP] SSL 오류 발생 - 총" << errors.size() << "개의 오류";
     for (const auto &err : errors) {
@@ -572,6 +669,9 @@ void TcpCommunicator::onSslErrors(const QList<QSslError> &errors) {
     m_socket->ignoreSslErrors();
 }
 
+/**
+ * @brief 소켓 연결 슬롯
+ */
 void TcpCommunicator::onSocketConnected()
 {
     qDebug() << "[TCP] 소켓 연결 성공";
@@ -583,6 +683,9 @@ void TcpCommunicator::onSocketConnected()
     emit connected();
 }
 
+/**
+ * @brief 소켓 연결 해제 슬롯
+ */
 void TcpCommunicator::onSocketDisconnected()
 {
     qDebug() << "[TCP] 소켓 연결 해제";
@@ -596,6 +699,9 @@ void TcpCommunicator::onSocketDisconnected()
     }
 }
 
+/**
+ * @brief 소켓 데이터 수신 슬롯
+ */
 void TcpCommunicator::onSocketReadyRead()
 {
     while (m_socket->canReadLine()) {
@@ -618,6 +724,10 @@ void TcpCommunicator::onSocketReadyRead()
     }
 }
 
+/**
+ * @brief 소켓 에러 슬롯
+ * @param error 소켓 에러
+ */
 void TcpCommunicator::onSocketError(QAbstractSocket::SocketError error)
 {
     QString errorString = m_socket->errorString();
@@ -632,6 +742,9 @@ void TcpCommunicator::onSocketError(QAbstractSocket::SocketError error)
     }
 }
 
+/**
+ * @brief 재연결 타이머 슬롯
+ */
 void TcpCommunicator::onReconnectTimer()
 {
     if (m_reconnectAttempts >= m_maxReconnectAttempts) {
@@ -649,6 +762,9 @@ void TcpCommunicator::onReconnectTimer()
     m_socket->connectToHostEncrypted(m_host, static_cast<qint16>(m_port));
 }
 
+/**
+ * @brief 재연결 타이머 시작
+ */
 void TcpCommunicator::startReconnectTimer()
 {
     if (!m_reconnectTimer->isActive() && m_reconnectAttempts < m_maxReconnectAttempts) {
@@ -657,6 +773,9 @@ void TcpCommunicator::startReconnectTimer()
     }
 }
 
+/**
+ * @brief 재연결 타이머 중지
+ */
 void TcpCommunicator::stopReconnectTimer()
 {
     if (m_reconnectTimer->isActive()) {
@@ -665,6 +784,10 @@ void TcpCommunicator::stopReconnectTimer()
     }
 }
 
+/**
+ * @brief JSON 메시지 처리
+ * @param jsonObj 수신된 JSON 객체
+ */
 void TcpCommunicator::processJsonMessage(const QJsonObject &jsonObj)
 {
     // request_id 또는 response_id 확인 (서버 호환성)
@@ -699,7 +822,10 @@ void TcpCommunicator::processJsonMessage(const QJsonObject &jsonObj)
     }
 }
 
-// request_id 12: 감지선 데이터 처리 핸들러
+/**
+ * @brief 감지선 데이터 응답 처리
+ * @param jsonObj 수신된 JSON 객체
+ */
 void TcpCommunicator::handleDetectionLinesFromServer(const QJsonObject &jsonObj)
 {
     qDebug() << "[TCP] handleDetectionLinesFromServer 호출됨 (request_id: 12)";
@@ -729,6 +855,10 @@ void TcpCommunicator::handleDetectionLinesFromServer(const QJsonObject &jsonObj)
     }
 }
 
+/**
+ * @brief 도로선 데이터 응답 처리
+ * @param jsonObj 수신된 JSON 객체
+ */
 void TcpCommunicator::handleRoadLinesFromServer(const QJsonObject &jsonObj)
 {
     qDebug() << "[TCP] handleRoadLinesFromServer 호출됨 (request_id: 16)";
@@ -758,6 +888,12 @@ void TcpCommunicator::handleRoadLinesFromServer(const QJsonObject &jsonObj)
     }
 }
 
+/**
+ * @brief Base64 이미지 저장
+ * @param base64Data Base64 인코딩 이미지 데이터
+ * @param timestamp 타임스탬프
+ * @return 저장된 파일 경로
+ */
 QString TcpCommunicator::saveBase64Image(const QString &base64Data, const QString &timestamp)
 {
     QString cleanBase64 = base64Data;
@@ -785,6 +921,10 @@ QString TcpCommunicator::saveBase64Image(const QString &base64Data, const QStrin
     }
 }
 
+/**
+ * @brief 이미지 응답 처리
+ * @param jsonObj 수신된 JSON 객체
+ */
 void TcpCommunicator::handleImagesResponse(const QJsonObject &jsonObj)
 {
     qDebug() << "[TCP] Processing image response...";
@@ -833,30 +973,11 @@ void TcpCommunicator::handleImagesResponse(const QJsonObject &jsonObj)
     emit statusUpdated(QString("Loaded %1 images.").arg(images.size()));
 }
 
-// QString TcpCommunicator::messageTypeToString(MessageType type) const
-// {
-//     switch (type) {
-//     case MessageType::REQUEST_IMAGES: return "request_images";
-//     case MessageType::IMAGES_RESPONSE: return "images_response";
-//     case MessageType::SEND_COORDINATES: return "send_coordinates";
-//     case MessageType::COORDINATES_RESPONSE: return "coordinates_response";
-//     case MessageType::STATUS_UPDATE: return "status_update";
-//     case MessageType::ERROR_RESPONSE: return "error_response";
-//     default: return "unknown";
-//     }
-// }
-
-// MessageType TcpCommunicator::stringToMessageType(const QString &typeStr) const
-// {
-//     if (typeStr == "request_images") return MessageType::REQUEST_IMAGES;
-//     if (typeStr == "images_response") return MessageType::IMAGES_RESPONSE;
-//     if (typeStr == "send_coordinates") return MessageType::SEND_COORDINATES;
-//     if (typeStr == "coordinates_response") return MessageType::COORDINATES_RESPONSE;
-//     if (typeStr == "status_update") return MessageType::STATUS_UPDATE;
-//     if (typeStr == "error_response") return MessageType::ERROR_RESPONSE;
-//     return MessageType::ERROR_RESPONSE; // Default
-// }
-
+/**
+ * @brief JSON 메시지 로깅
+ * @param jsonObj JSON 객체
+ * @param outgoing 송신 여부
+ */
 void TcpCommunicator::logJsonMessage(const QJsonObject &jsonObj, bool outgoing) const
 {
     QString direction = outgoing ? "Sent" : "Received";
@@ -871,7 +992,10 @@ void TcpCommunicator::logJsonMessage(const QJsonObject &jsonObj, bool outgoing) 
 #endif
 }
 
-// BBox 데이터 처리 함수
+/**
+ * @brief BBox 응답 처리
+ * @param jsonObj 수신된 JSON 객체
+ */
 void TcpCommunicator::handleBBoxResponse(const QJsonObject &jsonObj)
 {
     qDebug() << "[TCP] handleBBoxResponse 호출됨 (response_id: 200)";

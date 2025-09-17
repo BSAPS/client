@@ -10,6 +10,11 @@
 #include <QMessageBox>
 #include <QPushButton>
 
+/**
+ * @brief VideoStreamWidget 생성자
+ * @details RTSP 비디오 스트림 위젯을 생성하고 UI, 미디어플레이어, 타이머를 초기화합니다.
+ * @param parent 부모 위젯
+ */
 VideoStreamWidget::VideoStreamWidget(QWidget *parent)
     : QWidget(parent)
     , m_videoWidget(nullptr)
@@ -28,6 +33,9 @@ VideoStreamWidget::VideoStreamWidget(QWidget *parent)
     setupTimers();
 }
 
+/**
+ * @brief VideoStreamWidget 소멸자
+ */
 VideoStreamWidget::~VideoStreamWidget()
 {
     stopStream();
@@ -36,6 +44,9 @@ VideoStreamWidget::~VideoStreamWidget()
     }
 }
 
+/**
+ * @brief UI 설정 함수
+ */
 void VideoStreamWidget::setupUI()
 {
     m_layout = new QVBoxLayout(this);
@@ -89,7 +100,9 @@ void VideoStreamWidget::setupUI()
     setLayout(m_layout);
 }
 
-
+/**
+ * @brief 미디어플레이어 설정 함수
+ */
 void VideoStreamWidget::setupMediaPlayer()
 {
     m_mediaPlayer = new QMediaPlayer(this);
@@ -105,6 +118,9 @@ void VideoStreamWidget::setupMediaPlayer()
             this, &VideoStreamWidget::onErrorOccurred);
 }
 
+/**
+ * @brief 타이머 설정 함수
+ */
 void VideoStreamWidget::setupTimers()
 {
     // 연결 타임아웃 타이머
@@ -129,6 +145,10 @@ void VideoStreamWidget::setupTimers()
     connect(m_statusUpdateTimer, &QTimer::timeout, this, &VideoStreamWidget::updateConnectionStatus);
 }
 
+/**
+ * @brief 스트림 시작
+ * @param rtspUrl RTSP 주소
+ */
 void VideoStreamWidget::startStream(const QString &rtspUrl)
 {
     if (m_isStreaming) {
@@ -152,6 +172,9 @@ void VideoStreamWidget::startStream(const QString &rtspUrl)
     m_isStreaming = true;
 }
 
+/**
+ * @brief 스트림 중지
+ */
 void VideoStreamWidget::stopStream()
 {
     if (!m_isStreaming) return;
@@ -174,16 +197,28 @@ void VideoStreamWidget::stopStream()
     qDebug() << "스트림 중지됨";
 }
 
+/**
+ * @brief 스트리밍 여부 반환
+ * @return 스트리밍 중이면 true
+ */
 bool VideoStreamWidget::isStreaming() const
 {
     return m_isStreaming;
 }
 
+/**
+ * @brief 스트림 URL 설정
+ * @param url RTSP 주소
+ */
 void VideoStreamWidget::setStreamUrl(const QString &url)
 {
     m_rtspUrl = url;
 }
 
+/**
+ * @brief 마우스 클릭 이벤트 처리
+ * @param event 마우스 이벤트
+ */
 void VideoStreamWidget::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
@@ -192,6 +227,10 @@ void VideoStreamWidget::mousePressEvent(QMouseEvent *event)
     QWidget::mousePressEvent(event);
 }
 
+/**
+ * @brief 미디어 상태 변경 슬롯
+ * @param status 미디어 상태
+ */
 void VideoStreamWidget::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
 {
     qDebug() << "미디어 상태 변경:" << status;
@@ -245,6 +284,10 @@ void VideoStreamWidget::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
     }
 }
 
+/**
+ * @brief 재생 상태 변경 슬롯
+ * @param state 재생 상태
+ */
 void VideoStreamWidget::onPlaybackStateChanged(QMediaPlayer::PlaybackState state)
 {
     qDebug() << "재생 상태 변경:" << state;
@@ -266,6 +309,11 @@ void VideoStreamWidget::onPlaybackStateChanged(QMediaPlayer::PlaybackState state
     }
 }
 
+/**
+ * @brief 에러 발생 슬롯
+ * @param error 에러 코드
+ * @param errorString 에러 메시지
+ */
 void VideoStreamWidget::onErrorOccurred(QMediaPlayer::Error error, const QString &errorString)
 {
     qDebug() << "미디어 플레이어 에러:" << error << errorString;
@@ -306,6 +354,9 @@ void VideoStreamWidget::onErrorOccurred(QMediaPlayer::Error error, const QString
     }
 }
 
+/**
+ * @brief 연결 타임아웃 슬롯
+ */
 void VideoStreamWidget::onConnectionTimeout()
 {
     qDebug() << "연결 타임아웃";
@@ -314,6 +365,9 @@ void VideoStreamWidget::onConnectionTimeout()
     attemptReconnection();
 }
 
+/**
+ * @brief 재연결 시도 슬롯
+ */
 void VideoStreamWidget::attemptReconnection()
 {
     if (m_reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
@@ -343,6 +397,9 @@ void VideoStreamWidget::attemptReconnection()
     });
 }
 
+/**
+ * @brief 연결 상태 업데이트 슬롯
+ */
 void VideoStreamWidget::updateConnectionStatus()
 {
     if (!m_isStreaming) {
@@ -360,6 +417,11 @@ void VideoStreamWidget::updateConnectionStatus()
     }
 }
 
+/**
+ * @brief 연결 상태 표시
+ * @param status 상태 문자열
+ * @param color 색상
+ */
 void VideoStreamWidget::showConnectionStatus(const QString &status, const QString &color)
 {
     m_statusLabel->setText(status);
